@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CardioSynth Bias Quantifier</title>
+<meta property="og:title" content="CardioSynth Bias Quantifier">
+<meta property="og:description" content="Non-posting bias, outcome switching (ORBI), funnel plots, and Egger's test for CT.gov-only meta-analysis.">
+<style>
+  :root {
+    --blue: #1e40af;
+    --blue-light: #3b82f6;
+    --blue-dark: #1e3a8a;
+    --blue-50: #eff6ff;
+    --blue-100: #dbeafe;
+    --blue-200: #bfdbfe;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    --green: #059669;
+    --amber: #d97706;
+    --red: #dc2626;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    background: var(--gray-50);
+    color: var(--gray-800);
+    line-height: 1.5;
+  }
+  .header {
+    background: linear-gradient(135deg, var(--blue-dark), var(--blue));
+    color: white;
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .header h1 { font-size: 1.5rem; font-weight: 700; }
+  .header .subtitle { font-size: 0.875rem; opacity: 0.85; margin-top: 0.125rem; }
+  .header .badge {
+    background: rgba(255,255,255,0.2);
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+  .container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .card {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .card h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--blue);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .card-full { grid-column: 1 / -1; }
+  label { display: block; font-size: 0.8125rem; font-weight: 600; color: var(--gray-600); margin-bottom: 0.25rem; }
+  textarea, select, input[type="text"] {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--gray-300);
+    border-radius: 0.5rem;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--gray-800);
+    background: var(--gray-50);
+    transition: border-color 0.15s;
+  }
+  textarea:focus, select:focus, input:focus { outline: none; border-color: var(--blue-light); box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+  textarea { resize: vertical; min-height: 140px; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-primary { background: var(--blue); color: white; }
+  .btn-primary:hover { background: var(--blue-dark); }
+  .btn-secondary { background: var(--gray-200); color: var(--gray-700); }
+  .btn-secondary:hover { background: var(--gray-300); }
+  .btn-green { background: var(--green); color: white; }
+  .btn-green:hover { opacity: 0.9; }
+  .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; }
+  .stat-item { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 0.5rem; padding: 0.75rem; }
+  .stat-label { font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--gray-500); }
+  .stat-value { font-size: 1.125rem; font-weight: 700; color: var(--gray-900); margin-top: 0.125rem; }
+  .stat-sub { font-size: 0.75rem; color: var(--gray-500); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+  th { background: var(--gray-100); padding: 0.5rem 0.75rem; text-align: left; font-weight: 600; color: var(--gray-600); border-bottom: 2px solid var(--gray-200); }
+  td { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--gray-100); }
+  tr:hover td { background: var(--blue-50); }
+  .mono { font-family: 'Consolas', 'Monaco', monospace; }
+  .text-right { text-align: right; }
+  .text-center { text-align: center; }
+  .tag { display: inline-block; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.6875rem; font-weight: 600; }
+  .tag-pass { background: #d1fae5; color: #065f46; }
+  .tag-fail { background: #fee2e2; color: #991b1b; }
+  .tag-warn { background: #fef3c7; color: #92400e; }
+  .tag-info { background: #dbeafe; color: #1e40af; }
+  .hidden { display: none; }
+  .section-gap { margin-top: 1.5rem; }
+  .svg-container { overflow-x: auto; padding: 0.5rem 0; }
+  .svg-container svg { display: block; margin: 0 auto; }
+  .warn-box {
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.8125rem;
+    color: #92400e;
+    margin-top: 0.75rem;
+  }
+  .info-box {
+    background: var(--blue-50);
+    border: 1px solid var(--blue-200);
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.8125rem;
+    color: var(--blue);
+    margin-top: 0.75rem;
+  }
+  .nct-list {
+    max-height: 200px;
+    overflow-y: auto;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.75rem;
+    background: var(--gray-900);
+    color: #a7f3d0;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    margin-top: 0.5rem;
+  }
+  .orbi-table-wrap {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-top: 0.5rem;
+  }
+  @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>CardioSynth Bias Quantifier</h1>
+    <div class="subtitle">Non-posting bias, outcome switching (ORBI), funnel plot, and Egger's test</div>
+  </div>
+  <div class="badge">Phase 0.6</div>
+</div>
+
+<div class="container">
+
+  <!-- INPUT SECTION -->
+  <div class="grid-2">
+    <div class="card">
+      <h2>All Harvested Studies</h2>
+      <label for="harvestedInput">JSON from ct-harvester (includes studies without results)</label>
+      <textarea id="harvestedInput" placeholder='[{"nctId":"NCT01234567","overallStatus":"COMPLETED","hasResults":true,"leadSponsorClass":"INDUSTRY","phases":["PHASE3"]}, ...]'></textarea>
+      <div style="margin-top:0.375rem">
+        <button class="btn btn-secondary" onclick="loadSampleHarvested()">Load Sample</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Certified Extractions</h2>
+      <label for="extractionsInput">JSON from metaengine (studies in synthesis pool)</label>
+      <textarea id="extractionsInput" placeholder='[{"nct":"NCT01234567","yi":-0.35,"vi":0.029,"registered_outcomes":{"primary":[{"measure":"..."}]},"outcomes":[{"type":"PRIMARY","title":"..."}]}, ...]'></textarea>
+      <div style="margin-top:0.375rem">
+        <button class="btn btn-secondary" onclick="loadSampleExtractions()">Load Sample</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-group" style="margin-top:1rem">
+    <button class="btn btn-primary" onclick="runAnalysis()">Analyze Bias</button>
+    <button class="btn btn-green" id="exportBtn" onclick="exportReport()" disabled>Export Bias Report JSON</button>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="resultsArea" class="hidden section-gap">
+
+    <!-- NON-POSTING BIAS -->
+    <div class="grid-2 section-gap">
+      <div class="card card-full">
+        <h2>Non-Posting Bias Estimator</h2>
+        <div class="stat-grid" id="nonPostingStats"></div>
+        <div class="grid-2 section-gap">
+          <div>
+            <h3 style="font-size:0.875rem;font-weight:600;color:var(--gray-700);margin-bottom:0.5rem">Posting Rate by Sponsor Type</h3>
+            <div class="svg-container" id="sponsorChart"></div>
+          </div>
+          <div>
+            <h3 style="font-size:0.875rem;font-weight:600;color:var(--gray-700);margin-bottom:0.5rem">Posting Rate by Phase</h3>
+            <div class="svg-container" id="phaseChart"></div>
+          </div>
+        </div>
+        <div id="nonPostingList"></div>
+      </div>
+    </div>
+
+    <!-- ORBI -->
+    <div class="grid-2 section-gap">
+      <div class="card card-full">
+        <h2>Outcome Registration Bias Index (ORBI)</h2>
+        <div class="stat-grid" id="orbiStats"></div>
+        <div class="orbi-table-wrap" id="orbiTable"></div>
+      </div>
+    </div>
+
+    <!-- FUNNEL PLOT -->
+    <div class="grid-2 section-gap">
+      <div class="card card-full">
+        <h2>Funnel Plot</h2>
+        <div id="funnelArea"></div>
+      </div>
+    </div>
+
+    <!-- EGGER'S TEST -->
+    <div class="grid-2 section-gap">
+      <div class="card card-full">
+        <h2>Egger's Test (Radial Version)</h2>
+        <div id="eggerArea"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TESTS -->
+  <div class="section-gap">
+    <button class="btn btn-secondary" onclick="runTests()">Run Self-Tests</button>
+    <div id="testResults" class="hidden" style="margin-top:0.75rem"></div>
+  </div>
+
+</div>
+
+<script>
+// =========================================================================
+// Math utilities (from metaengine)
+// =========================================================================
+
+function gammaln(x) {
+  var coef = [
+    76.18009172947146, -86.50532032941677, 24.01409824083091,
+    -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5
+  ];
+  var y = x;
+  var tmp = x + 5.5;
+  tmp -= (x + 0.5) * Math.log(tmp);
+  var ser = 1.000000000190015;
+  for (var j = 0; j < 6; j++) ser += coef[j] / ++y;
+  return -tmp + Math.log(2.5066282746310005 * ser / x);
+}
+
+function normalCDF(x) {
+  var a1 =  0.254829592;
+  var a2 = -0.284496736;
+  var a3 =  1.421413741;
+  var a4 = -1.453152027;
+  var a5 =  1.061405429;
+  var p  =  0.3275911;
+  var sign = x < 0 ? -1 : 1;
+  var ax = Math.abs(x) / Math.sqrt(2);
+  var t = 1.0 / (1.0 + p * ax);
+  var y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-ax * ax);
+  return 0.5 * (1.0 + sign * y);
+}
+
+function incompleteBeta(a, b, x) {
+  if (x === 0) return 0;
+  if (x === 1) return 1;
+  var bt = Math.exp(gammaln(a + b) - gammaln(a) - gammaln(b) +
+            a * Math.log(x) + b * Math.log(1 - x));
+  if (x < (a + 1) / (a + b + 2)) {
+    return bt * betacf(a, b, x) / a;
+  } else {
+    return 1 - bt * betacf(b, a, 1 - x) / b;
+  }
+}
+
+function betacf(a, b, x) {
+  var maxIter = 100;
+  var eps = 1e-10;
+  var qab = a + b;
+  var qap = a + 1;
+  var qam = a - 1;
+  var c = 1;
+  var d = 1 - qab * x / qap;
+  if (Math.abs(d) < 1e-30) d = 1e-30;
+  d = 1 / d;
+  var h = d;
+  for (var m = 1; m <= maxIter; m++) {
+    var m2 = 2 * m;
+    var aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+    d = 1 + aa * d;
+    if (Math.abs(d) < 1e-30) d = 1e-30;
+    c = 1 + aa / c;
+    if (Math.abs(c) < 1e-30) c = 1e-30;
+    d = 1 / d;
+    h *= d * c;
+    aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+    d = 1 + aa * d;
+    if (Math.abs(d) < 1e-30) d = 1e-30;
+    c = 1 + aa / c;
+    if (Math.abs(c) < 1e-30) c = 1e-30;
+    d = 1 / d;
+    var del = d * c;
+    h *= del;
+    if (Math.abs(del - 1) < eps) break;
+  }
+  return h;
+}
+
+function tCDF(t, df) {
+  var x = df / (df + t * t);
+  var halfBeta = 0.5 * incompleteBeta(df / 2, 0.5, x);
+  return t >= 0 ? 1 - halfBeta : halfBeta;
+}
+
+// =========================================================================
+// Levenshtein Similarity (from truthcert)
+// =========================================================================
+
+function levenshteinSimilarity(a, b) {
+  a = (a || '').toLowerCase().trim();
+  b = (b || '').toLowerCase().trim();
+  if (a === b) return 1;
+  if (!a.length || !b.length) return 0;
+  var matrix = Array.from({ length: a.length + 1 }, function(_, i) {
+    return Array.from({ length: b.length + 1 }, function(_, j) {
+      return (i === 0 ? j : j === 0 ? i : 0);
+    });
+  });
+  for (var i = 1; i <= a.length; i++) {
+    for (var j = 1; j <= b.length; j++) {
+      var cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost
+      );
+    }
+  }
+  return 1 - matrix[a.length][b.length] / Math.max(a.length, b.length);
+}
+
+// =========================================================================
+// SVG helpers
+// =========================================================================
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderBarChart(data, width, height, title) {
+  // data: [{label, value, total}]
+  if (!data.length) return '<div class="info-box">No data available.</div>';
+  var margin = { top: 20, right: 30, bottom: 60, left: 50 };
+  var w = width - margin.left - margin.right;
+  var h = height - margin.top - margin.bottom;
+  var barWidth = Math.min(60, Math.floor(w / data.length) - 8);
+  var maxVal = 1; // percentage 0-1
+  var lines = [];
+  lines.push('<svg width="' + width + '" height="' + height + '" xmlns="http://www.w3.org/2000/svg">');
+  lines.push('<g transform="translate(' + margin.left + ',' + margin.top + ')">');
+
+  // Y axis gridlines
+  for (var yy = 0; yy <= 4; yy++) {
+    var yPos = h - (yy / 4) * h;
+    var label = (yy * 25) + '%';
+    lines.push('<line x1="0" y1="' + yPos + '" x2="' + w + '" y2="' + yPos + '" stroke="#e5e7eb" stroke-width="1"/>');
+    lines.push('<text x="-8" y="' + (yPos + 4) + '" text-anchor="end" fill="#6b7280" font-size="11">' + label + '</text>');
+  }
+
+  // Bars
+  var step = w / data.length;
+  for (var i = 0; i < data.length; i++) {
+    var rate = data[i].total > 0 ? data[i].value / data[i].total : 0;
+    var barH = rate * h;
+    var cx = step * i + step / 2;
+    var bx = cx - barWidth / 2;
+    var by = h - barH;
+    var color = rate >= 0.6 ? '#059669' : rate >= 0.3 ? '#d97706' : '#dc2626';
+    lines.push('<rect x="' + bx + '" y="' + by + '" width="' + barWidth + '" height="' + barH + '" fill="' + color + '" rx="3"/>');
+    // Percentage label
+    lines.push('<text x="' + cx + '" y="' + (by - 6) + '" text-anchor="middle" fill="#374151" font-size="11" font-weight="600">' + (rate * 100).toFixed(0) + '%</text>');
+    // Count label
+    lines.push('<text x="' + cx + '" y="' + (by - 18) + '" text-anchor="middle" fill="#9ca3af" font-size="10">' + data[i].value + '/' + data[i].total + '</text>');
+    // X label (rotated)
+    lines.push('<text x="' + cx + '" y="' + (h + 16) + '" text-anchor="middle" fill="#374151" font-size="11" transform="rotate(-30,' + cx + ',' + (h + 16) + ')">' + escHtml(data[i].label) + '</text>');
+  }
+
+  lines.push('</g></svg>');
+  return lines.join('\n');
+}
+
+// =========================================================================
+// 1. Non-Posting Bias Estimator
+// =========================================================================
+
+function estimateNonPostingBias(allStudies) {
+  var completed = allStudies.filter(function(s) {
+    var st = (s.overallStatus || s.status || '').toUpperCase();
+    return st === 'COMPLETED' || st === 'TERMINATED' || st === 'WITHDRAWN';
+  });
+  var withResults = completed.filter(function(s) { return s.hasResults; });
+  var postingRate = completed.length > 0 ? withResults.length / completed.length : 0;
+
+  // Stratify by sponsor type
+  var byType = {};
+  for (var i = 0; i < completed.length; i++) {
+    var s = completed[i];
+    var type = s.leadSponsorClass || s.sponsor_type || 'OTHER';
+    if (!byType[type]) byType[type] = { total: 0, posted: 0, studies: [] };
+    byType[type].total++;
+    if (s.hasResults) byType[type].posted++;
+    byType[type].studies.push(s.nctId || s.nct || 'unknown');
+  }
+
+  // Stratify by phase
+  var byPhase = {};
+  for (var i = 0; i < completed.length; i++) {
+    var s = completed[i];
+    var phases = s.phases || s.phase;
+    var phase;
+    if (Array.isArray(phases)) {
+      phase = phases.length > 0 ? phases.join('/') : 'Unknown';
+    } else if (typeof phases === 'string') {
+      phase = phases || 'Unknown';
+    } else {
+      phase = 'Unknown';
+    }
+    if (!byPhase[phase]) byPhase[phase] = { total: 0, posted: 0 };
+    byPhase[phase].total++;
+    if (s.hasResults) byPhase[phase].posted++;
+  }
+
+  // Estimated direction
+  var industryPosted = (byType['INDUSTRY'] ? byType['INDUSTRY'].posted : 0);
+  var industryTotal = (byType['INDUSTRY'] ? byType['INDUSTRY'].total : 0);
+  var otherPosted = (byType['OTHER'] ? byType['OTHER'].posted : 0);
+  var otherTotal = (byType['OTHER'] ? byType['OTHER'].total : 0);
+  var industryRate = industryTotal > 0 ? industryPosted / industryTotal : 0;
+  var otherRate = otherTotal > 0 ? otherPosted / otherTotal : 0;
+  var biasDirection;
+  if (industryTotal === 0 && otherTotal === 0) {
+    biasDirection = 'unknown';
+  } else if (industryRate > otherRate) {
+    biasDirection = 'positive (industry over-reports)';
+  } else if (industryRate < otherRate) {
+    biasDirection = 'negative (industry under-reports)';
+  } else {
+    biasDirection = 'unknown';
+  }
+
+  // Non-posting NCT IDs
+  var nonPostingIds = completed.filter(function(s) { return !s.hasResults; }).map(function(s) { return s.nctId || s.nct || 'unknown'; });
+
+  return {
+    postingRate: postingRate,
+    byType: byType,
+    byPhase: byPhase,
+    biasDirection: biasDirection,
+    nCompleted: completed.length,
+    nPosted: withResults.length,
+    nWithoutResults: completed.length - withResults.length,
+    nonPostingIds: nonPostingIds
+  };
+}
+
+// =========================================================================
+// 2. ORBI — Outcome Registration Bias Index
+// =========================================================================
+
+function calculateORBI(extractions) {
+  var scores = extractions.map(function(ext) {
+    var regPrimaries = ext.registered_outcomes && ext.registered_outcomes.primary;
+    var registered = '';
+    if (Array.isArray(regPrimaries) && regPrimaries.length > 0) {
+      registered = regPrimaries[0].measure || '';
+    }
+    var reported = '';
+    if (Array.isArray(ext.outcomes)) {
+      var primary = ext.outcomes.find(function(o) {
+        return (o.type || '').toUpperCase() === 'PRIMARY';
+      });
+      if (primary) reported = primary.title || primary.measure || '';
+    }
+    var similarity = levenshteinSimilarity(registered, reported);
+    return {
+      nct: ext.nct || ext.nctId || 'unknown',
+      registered: registered,
+      reported: reported,
+      similarity: similarity,
+      score: 1 - similarity // 0=perfect match, 1=complete switch
+    };
+  });
+  var meanORBI = scores.length > 0 ? scores.reduce(function(s, x) { return s + x.score; }, 0) / scores.length : 0;
+  return {
+    meanORBI: meanORBI,
+    perStudy: scores,
+    warning: meanORBI > 0.3 ? 'High outcome switching risk (ORBI > 0.3)' : null
+  };
+}
+
+// =========================================================================
+// 3. Funnel Plot (SVG, k >= 10 only)
+// =========================================================================
+
+function pooledEstimate(studies) {
+  // Inverse-variance fixed-effect pooling for funnel plot center
+  var sumWY = 0, sumW = 0;
+  for (var i = 0; i < studies.length; i++) {
+    if (studies[i].vi > 0) {
+      var w = 1 / studies[i].vi;
+      sumWY += w * studies[i].yi;
+      sumW += w;
+    }
+  }
+  return sumW > 0 ? sumWY / sumW : 0;
+}
+
+function renderFunnelPlot(studies) {
+  var container = document.getElementById('funnelArea');
+  var validStudies = studies.filter(function(s) {
+    return typeof s.yi === 'number' && isFinite(s.yi) && typeof s.vi === 'number' && s.vi > 0;
+  });
+  if (validStudies.length < 10) {
+    container.innerHTML = '<div class="info-box">Funnel plot requires k >= 10 studies. Currently k = ' + validStudies.length + '.</div>';
+    return;
+  }
+
+  var theta = pooledEstimate(validStudies);
+  var ses = validStudies.map(function(s) { return Math.sqrt(s.vi); });
+  var yis = validStudies.map(function(s) { return s.yi; });
+  var maxSE = Math.max.apply(null, ses) * 1.1;
+  var minSE = 0;
+  var allEffects = yis.slice();
+  // Pseudo-CI bounds
+  allEffects.push(theta - 1.96 * maxSE);
+  allEffects.push(theta + 1.96 * maxSE);
+  var minEff = Math.min.apply(null, allEffects);
+  var maxEff = Math.max.apply(null, allEffects);
+  var effRange = maxEff - minEff;
+  minEff -= effRange * 0.08;
+  maxEff += effRange * 0.08;
+
+  var width = 600, height = 450;
+  var margin = { top: 30, right: 40, bottom: 50, left: 60 };
+  var w = width - margin.left - margin.right;
+  var h = height - margin.top - margin.bottom;
+
+  function xPos(eff) { return (eff - minEff) / (maxEff - minEff) * w; }
+  function yPos(se) { return (se - minSE) / (maxSE - minSE) * h; } // top = low SE
+
+  var svg = [];
+  svg.push('<svg width="' + width + '" height="' + height + '" xmlns="http://www.w3.org/2000/svg">');
+  svg.push('<g transform="translate(' + margin.left + ',' + margin.top + ')">');
+
+  // Pseudo-95% CI triangle
+  svg.push('<polygon points="');
+  svg.push(xPos(theta) + ',' + yPos(0) + ' ');
+  svg.push(xPos(theta - 1.96 * maxSE) + ',' + yPos(maxSE) + ' ');
+  svg.push(xPos(theta + 1.96 * maxSE) + ',' + yPos(maxSE));
+  svg.push('" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1" opacity="0.7"/>');
+
+  // Dashed line at pooled estimate
+  svg.push('<line x1="' + xPos(theta) + '" y1="0" x2="' + xPos(theta) + '" y2="' + h + '" stroke="#1e40af" stroke-width="1.5" stroke-dasharray="6,4"/>');
+
+  // X axis
+  svg.push('<line x1="0" y1="' + h + '" x2="' + w + '" y2="' + h + '" stroke="#374151" stroke-width="1"/>');
+  // Y axis
+  svg.push('<line x1="0" y1="0" x2="0" y2="' + h + '" stroke="#374151" stroke-width="1"/>');
+
+  // X axis ticks
+  var nXTicks = 7;
+  for (var t = 0; t <= nXTicks; t++) {
+    var eff = minEff + (maxEff - minEff) * t / nXTicks;
+    var xp = xPos(eff);
+    svg.push('<line x1="' + xp + '" y1="' + h + '" x2="' + xp + '" y2="' + (h + 6) + '" stroke="#374151" stroke-width="1"/>');
+    svg.push('<text x="' + xp + '" y="' + (h + 20) + '" text-anchor="middle" fill="#374151" font-size="10">' + eff.toFixed(2) + '</text>');
+  }
+  svg.push('<text x="' + (w / 2) + '" y="' + (h + 40) + '" text-anchor="middle" fill="#374151" font-size="12">Effect Size</text>');
+
+  // Y axis ticks (SE, inverted: top = 0)
+  var nYTicks = 5;
+  for (var t = 0; t <= nYTicks; t++) {
+    var se = minSE + (maxSE - minSE) * t / nYTicks;
+    var yp = yPos(se);
+    svg.push('<line x1="-6" y1="' + yp + '" x2="0" y2="' + yp + '" stroke="#374151" stroke-width="1"/>');
+    svg.push('<text x="-10" y="' + (yp + 4) + '" text-anchor="end" fill="#374151" font-size="10">' + se.toFixed(3) + '</text>');
+  }
+  svg.push('<text x="-45" y="' + (h / 2) + '" text-anchor="middle" fill="#374151" font-size="12" transform="rotate(-90,-45,' + (h / 2) + ')">Standard Error</text>');
+
+  // Study dots
+  for (var i = 0; i < validStudies.length; i++) {
+    var sx = xPos(validStudies[i].yi);
+    var sy = yPos(Math.sqrt(validStudies[i].vi));
+    var nct = validStudies[i].nct || validStudies[i].nctId || validStudies[i].id || ('Study ' + (i + 1));
+    svg.push('<circle cx="' + sx + '" cy="' + sy + '" r="4.5" fill="#1e40af" stroke="white" stroke-width="1.5" opacity="0.85">');
+    svg.push('<title>' + escHtml(nct) + ': yi=' + validStudies[i].yi.toFixed(4) + ', SE=' + Math.sqrt(validStudies[i].vi).toFixed(4) + '</title>');
+    svg.push('</circle>');
+  }
+
+  svg.push('</g></svg>');
+  container.innerHTML = '<div class="svg-container">' + svg.join('\n') + '</div>' +
+    '<div style="font-size:0.75rem;color:var(--gray-500);margin-top:0.375rem">Pooled estimate (dashed): ' + theta.toFixed(4) + '. Shaded region: pseudo-95% CI. k = ' + validStudies.length + '.</div>';
+}
+
+// =========================================================================
+// 4. Egger's Test (radial version) — per advanced-stats.md
+// =========================================================================
+
+function eggersTest(studies) {
+  var valid = studies.filter(function(s) {
+    return typeof s.yi === 'number' && isFinite(s.yi) && typeof s.vi === 'number' && s.vi > 0;
+  });
+  var n = valid.length;
+  if (n < 10) {
+    return { pValue: null, warning: "Egger's test unreliable: k < 10 (k=" + n + "). Per advanced-stats.md, low power for k<10.", n: n };
+  }
+
+  // Radial Egger's: regress z_i/sqrt(vi) on 1/sqrt(vi)
+  var x = valid.map(function(s) { return 1 / Math.sqrt(s.vi); }); // precision
+  var y = valid.map(function(s) { return s.yi / Math.sqrt(s.vi); }); // standardized effect
+
+  // Simple linear regression
+  var xMean = x.reduce(function(a, b) { return a + b; }, 0) / n;
+  var yMean = y.reduce(function(a, b) { return a + b; }, 0) / n;
+  var ssxy = 0, ssxx = 0, ssyy = 0;
+  for (var i = 0; i < n; i++) {
+    ssxy += (x[i] - xMean) * (y[i] - yMean);
+    ssxx += (x[i] - xMean) * (x[i] - xMean);
+    ssyy += (y[i] - yMean) * (y[i] - yMean);
+  }
+  var slope = ssxy / ssxx;
+  var intercept = yMean - slope * xMean;
+  var residSS = ssyy - slope * ssxy;
+  var sResid = Math.sqrt(residSS / (n - 2));
+  var seIntercept = sResid * Math.sqrt(1 / n + xMean * xMean / ssxx);
+  var tStat = intercept / seIntercept;
+  var pValue = 2 * (1 - tCDF(Math.abs(tStat), n - 2));
+  return {
+    intercept: intercept,
+    slope: slope,
+    tStat: tStat,
+    pValue: pValue,
+    significant: pValue < 0.1,
+    df: n - 2,
+    n: n,
+    warning: null
+  };
+}
+
+// =========================================================================
+// Rendering
+// =========================================================================
+
+var lastReport = null;
+
+function runAnalysis() {
+  var harvestedRaw = document.getElementById('harvestedInput').value.trim();
+  var extractionsRaw = document.getElementById('extractionsInput').value.trim();
+
+  var harvested = [], extractions = [];
+
+  if (harvestedRaw) {
+    try { harvested = JSON.parse(harvestedRaw); } catch(e) {
+      alert('Invalid JSON in Harvested Studies: ' + e.message);
+      return;
+    }
+    if (!Array.isArray(harvested)) { alert('Harvested Studies must be a JSON array.'); return; }
+  }
+  if (extractionsRaw) {
+    try { extractions = JSON.parse(extractionsRaw); } catch(e) {
+      alert('Invalid JSON in Certified Extractions: ' + e.message);
+      return;
+    }
+    if (!Array.isArray(extractions)) { alert('Certified Extractions must be a JSON array.'); return; }
+  }
+
+  if (harvested.length === 0 && extractions.length === 0) {
+    alert('Please provide at least one data source (harvested studies or extractions).');
+    return;
+  }
+
+  var report = {};
+
+  // 1. Non-Posting Bias
+  if (harvested.length > 0) {
+    report.nonPosting = estimateNonPostingBias(harvested);
+    renderNonPosting(report.nonPosting);
+  } else {
+    document.getElementById('nonPostingStats').innerHTML = '<div class="info-box">No harvested studies provided. Non-posting bias analysis requires all harvested studies.</div>';
+    document.getElementById('sponsorChart').innerHTML = '';
+    document.getElementById('phaseChart').innerHTML = '';
+    document.getElementById('nonPostingList').innerHTML = '';
+  }
+
+  // 2. ORBI
+  if (extractions.length > 0) {
+    report.orbi = calculateORBI(extractions);
+    renderORBI(report.orbi);
+  } else {
+    document.getElementById('orbiStats').innerHTML = '<div class="info-box">No extractions provided. ORBI analysis requires certified extractions.</div>';
+    document.getElementById('orbiTable').innerHTML = '';
+  }
+
+  // 3. Funnel Plot
+  if (extractions.length > 0) {
+    renderFunnelPlot(extractions);
+  } else {
+    document.getElementById('funnelArea').innerHTML = '<div class="info-box">No extractions provided for funnel plot.</div>';
+  }
+
+  // 4. Egger's Test
+  if (extractions.length > 0) {
+    report.egger = eggersTest(extractions);
+    renderEgger(report.egger);
+  } else {
+    document.getElementById('eggerArea').innerHTML = '<div class="info-box">No extractions provided for Egger\'s test.</div>';
+  }
+
+  report.timestamp = new Date().toISOString();
+  lastReport = report;
+  document.getElementById('resultsArea').classList.remove('hidden');
+  document.getElementById('exportBtn').disabled = false;
+}
+
+function renderNonPosting(np) {
+  // Stats badges
+  var rateColor = np.postingRate >= 0.6 ? 'tag-pass' : np.postingRate >= 0.3 ? 'tag-warn' : 'tag-fail';
+  var dirTag;
+  if (np.biasDirection.indexOf('positive') >= 0) dirTag = 'tag-warn';
+  else if (np.biasDirection.indexOf('negative') >= 0) dirTag = 'tag-fail';
+  else dirTag = 'tag-info';
+
+  document.getElementById('nonPostingStats').innerHTML =
+    '<div class="stat-item"><div class="stat-label">Completed Studies</div><div class="stat-value">' + np.nCompleted + '</div></div>' +
+    '<div class="stat-item"><div class="stat-label">Results Posted</div><div class="stat-value">' + np.nPosted + '</div></div>' +
+    '<div class="stat-item"><div class="stat-label">Without Results</div><div class="stat-value">' + np.nWithoutResults + '</div></div>' +
+    '<div class="stat-item"><div class="stat-label">Posting Rate</div><div class="stat-value"><span class="tag ' + rateColor + '">' + (np.postingRate * 100).toFixed(1) + '%</span></div></div>' +
+    '<div class="stat-item"><div class="stat-label">Estimated Bias Direction</div><div class="stat-value"><span class="tag ' + dirTag + '" style="font-size:0.625rem">' + escHtml(np.biasDirection) + '</span></div></div>';
+
+  // Sponsor chart
+  var sponsorData = [];
+  var types = Object.keys(np.byType).sort();
+  for (var i = 0; i < types.length; i++) {
+    sponsorData.push({ label: types[i], value: np.byType[types[i]].posted, total: np.byType[types[i]].total });
+  }
+  document.getElementById('sponsorChart').innerHTML = sponsorData.length > 0
+    ? renderBarChart(sponsorData, 500, 260)
+    : '<div class="info-box">No sponsor type data available.</div>';
+
+  // Phase chart
+  var phaseData = [];
+  var phases = Object.keys(np.byPhase).sort();
+  for (var i = 0; i < phases.length; i++) {
+    phaseData.push({ label: phases[i], value: np.byPhase[phases[i]].posted, total: np.byPhase[phases[i]].total });
+  }
+  document.getElementById('phaseChart').innerHTML = phaseData.length > 0
+    ? renderBarChart(phaseData, 500, 260)
+    : '<div class="info-box">No phase data available.</div>';
+
+  // Non-posting list
+  if (np.nonPostingIds.length > 0) {
+    document.getElementById('nonPostingList').innerHTML =
+      '<div style="margin-top:0.75rem"><h3 style="font-size:0.875rem;font-weight:600;color:var(--gray-700);margin-bottom:0.25rem">Non-Posting Studies (' + np.nonPostingIds.length + ')</h3>' +
+      '<div class="nct-list">' + np.nonPostingIds.join('\n') + '</div></div>';
+  } else {
+    document.getElementById('nonPostingList').innerHTML = '';
+  }
+}
+
+function renderORBI(orbi) {
+  var orbiColor = orbi.meanORBI < 0.1 ? 'tag-pass' : orbi.meanORBI <= 0.3 ? 'tag-warn' : 'tag-fail';
+  var statsHtml =
+    '<div class="stat-item"><div class="stat-label">Mean ORBI Score</div><div class="stat-value"><span class="tag ' + orbiColor + '">' + orbi.meanORBI.toFixed(3) + '</span></div>' +
+    '<div class="stat-sub">' + (orbi.meanORBI < 0.1 ? 'Low risk' : orbi.meanORBI <= 0.3 ? 'Moderate risk' : 'High outcome switching risk') + '</div></div>' +
+    '<div class="stat-item"><div class="stat-label">Studies Assessed</div><div class="stat-value">' + orbi.perStudy.length + '</div></div>';
+  if (orbi.warning) {
+    statsHtml += '<div class="stat-item"><div class="stat-label">Warning</div><div class="stat-value"><span class="tag tag-fail" style="font-size:0.625rem">' + escHtml(orbi.warning) + '</span></div></div>';
+  }
+  document.getElementById('orbiStats').innerHTML = statsHtml;
+
+  // ORBI table
+  if (orbi.perStudy.length > 0) {
+    var rows = orbi.perStudy.map(function(s) {
+      var scoreTag = s.score < 0.1 ? 'tag-pass' : s.score <= 0.3 ? 'tag-warn' : 'tag-fail';
+      return '<tr>' +
+        '<td class="mono">' + escHtml(s.nct) + '</td>' +
+        '<td style="max-width:250px;word-wrap:break-word">' + escHtml(s.registered || '(none)') + '</td>' +
+        '<td style="max-width:250px;word-wrap:break-word">' + escHtml(s.reported || '(none)') + '</td>' +
+        '<td class="text-right">' + s.similarity.toFixed(3) + '</td>' +
+        '<td class="text-right"><span class="tag ' + scoreTag + '">' + s.score.toFixed(3) + '</span></td>' +
+        '</tr>';
+    });
+    document.getElementById('orbiTable').innerHTML =
+      '<table><thead><tr><th>NCT</th><th>Registered Primary</th><th>Reported Primary</th><th class="text-right">Similarity</th><th class="text-right">ORBI Score</th></tr></thead><tbody>' +
+      rows.join('') + '</tbody></table>';
+  } else {
+    document.getElementById('orbiTable').innerHTML = '';
+  }
+}
+
+function renderEgger(result) {
+  var container = document.getElementById('eggerArea');
+  if (result.warning) {
+    container.innerHTML = '<div class="warn-box">' + escHtml(result.warning) + '</div>';
+    return;
+  }
+  var sigTag = result.significant ? 'tag-fail' : 'tag-pass';
+  var sigText = result.significant ? 'Significant asymmetry (p < 0.1)' : 'No significant asymmetry';
+  container.innerHTML =
+    '<div class="stat-grid">' +
+    '<div class="stat-item"><div class="stat-label">Intercept</div><div class="stat-value">' + result.intercept.toFixed(4) + '</div></div>' +
+    '<div class="stat-item"><div class="stat-label">Slope</div><div class="stat-value">' + result.slope.toFixed(4) + '</div></div>' +
+    '<div class="stat-item"><div class="stat-label">t-Statistic</div><div class="stat-value">' + result.tStat.toFixed(4) + '</div><div class="stat-sub">df = ' + result.df + '</div></div>' +
+    '<div class="stat-item"><div class="stat-label">p-Value</div><div class="stat-value"><span class="tag ' + sigTag + '">' + result.pValue.toFixed(4) + '</span></div></div>' +
+    '<div class="stat-item"><div class="stat-label">Conclusion</div><div class="stat-value"><span class="tag ' + sigTag + '" style="font-size:0.625rem">' + sigText + '</span></div></div>' +
+    '<div class="stat-item"><div class="stat-label">Studies</div><div class="stat-value">' + result.n + '</div></div>' +
+    '</div>' +
+    '<div class="info-box" style="margin-top:0.75rem">Radial version of Egger\'s test. Regresses z<sub>i</sub>/sqrt(v<sub>i</sub>) on 1/sqrt(v<sub>i</sub>). Significance threshold: p &lt; 0.1.</div>';
+}
+
+// =========================================================================
+// Export
+// =========================================================================
+
+function exportReport() {
+  if (!lastReport) return;
+  var blob = new Blob([JSON.stringify(lastReport, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'bias-report-' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// =========================================================================
+// Sample Data
+// =========================================================================
+
+function loadSampleHarvested() {
+  var sample = [
+    {"nctId":"NCT00001001","overallStatus":"COMPLETED","hasResults":true,"leadSponsorClass":"INDUSTRY","phases":["PHASE3"]},
+    {"nctId":"NCT00001002","overallStatus":"COMPLETED","hasResults":true,"leadSponsorClass":"INDUSTRY","phases":["PHASE3"]},
+    {"nctId":"NCT00001003","overallStatus":"COMPLETED","hasResults":false,"leadSponsorClass":"INDUSTRY","phases":["PHASE3"]},
+    {"nctId":"NCT00001004","overallStatus":"COMPLETED","hasResults":true,"leadSponsorClass":"OTHER","phases":["PHASE2"]},
+    {"nctId":"NCT00001005","overallStatus":"COMPLETED","hasResults":false,"leadSponsorClass":"OTHER","phases":["PHASE2"]},
+    {"nctId":"NCT00001006","overallStatus":"COMPLETED","hasResults":false,"leadSponsorClass":"OTHER","phases":["PHASE2"]},
+    {"nctId":"NCT00001007","overallStatus":"COMPLETED","hasResults":true,"leadSponsorClass":"NETWORK","phases":["PHASE3"]},
+    {"nctId":"NCT00001008","overallStatus":"TERMINATED","hasResults":false,"leadSponsorClass":"INDUSTRY","phases":["PHASE2"]},
+    {"nctId":"NCT00001009","overallStatus":"COMPLETED","hasResults":true,"leadSponsorClass":"INDUSTRY","phases":["PHASE4"]},
+    {"nctId":"NCT00001010","overallStatus":"COMPLETED","hasResults":false,"leadSponsorClass":"OTHER","phases":["PHASE4"]},
+    {"nctId":"NCT00001011","overallStatus":"WITHDRAWN","hasResults":false,"leadSponsorClass":"OTHER","phases":["PHASE1"]},
+    {"nctId":"NCT00001012","overallStatus":"RECRUITING","hasResults":false,"leadSponsorClass":"INDUSTRY","phases":["PHASE3"]},
+    {"nctId":"NCT00001013","overallStatus":"COMPLETED","hasResults":true,"leadSponsorClass":"INDUSTRY","phases":["PHASE3"]},
+    {"nctId":"NCT00001014","overallStatus":"COMPLETED","hasResults":true,"leadSponsorClass":"FED","phases":["PHASE3"]},
+    {"nctId":"NCT00001015","overallStatus":"COMPLETED","hasResults":false,"leadSponsorClass":"FED","phases":["PHASE2"]}
+  ];
+  document.getElementById('harvestedInput').value = JSON.stringify(sample, null, 2);
+}
+
+function loadSampleExtractions() {
+  var sample = [
+    {"nct":"NCT00001001","yi":-0.356,"vi":0.029,"registered_outcomes":{"primary":[{"measure":"Major Adverse Cardiac Events at 1 Year"}]},"outcomes":[{"type":"PRIMARY","title":"Major Adverse Cardiac Events at 12 Months"}]},
+    {"nct":"NCT00001002","yi":-0.198,"vi":0.042,"registered_outcomes":{"primary":[{"measure":"All-cause mortality at 30 days"}]},"outcomes":[{"type":"PRIMARY","title":"All-cause mortality at 30 days"}]},
+    {"nct":"NCT00001004","yi":-0.521,"vi":0.078,"registered_outcomes":{"primary":[{"measure":"Cardiovascular Death"}]},"outcomes":[{"type":"PRIMARY","title":"Cardiovascular Death or MI"}]},
+    {"nct":"NCT00001007","yi":-0.102,"vi":0.015,"registered_outcomes":{"primary":[{"measure":"Change in LDL cholesterol"}]},"outcomes":[{"type":"PRIMARY","title":"Percent change in LDL cholesterol from baseline"}]},
+    {"nct":"NCT00001009","yi":-0.445,"vi":0.035,"registered_outcomes":{"primary":[{"measure":"Recurrent MI at 2 years"}]},"outcomes":[{"type":"PRIMARY","title":"Recurrent MI at 2 years"}]},
+    {"nct":"NCT00001013","yi":-0.287,"vi":0.022,"registered_outcomes":{"primary":[{"measure":"Heart Failure Hospitalization"}]},"outcomes":[{"type":"PRIMARY","title":"Heart Failure Hospitalization"}]},
+    {"nct":"NCT00001014","yi":-0.133,"vi":0.051,"registered_outcomes":{"primary":[{"measure":"Composite endpoint of death, MI, stroke"}]},"outcomes":[{"type":"PRIMARY","title":"Composite of cardiovascular death, MI, or stroke"}]},
+    {"nct":"NCT00002001","yi":-0.392,"vi":0.031,"registered_outcomes":{"primary":[{"measure":"Time to first MACE"}]},"outcomes":[{"type":"PRIMARY","title":"Time to first major adverse cardiac event"}]},
+    {"nct":"NCT00002002","yi":-0.178,"vi":0.048,"registered_outcomes":{"primary":[{"measure":"All-cause mortality"}]},"outcomes":[{"type":"PRIMARY","title":"All-cause mortality"}]},
+    {"nct":"NCT00002003","yi":-0.501,"vi":0.063,"registered_outcomes":{"primary":[{"measure":"Target vessel revascularization"}]},"outcomes":[{"type":"PRIMARY","title":"Target vessel revascularization at 1 year"}]},
+    {"nct":"NCT00002004","yi":-0.067,"vi":0.019,"registered_outcomes":{"primary":[{"measure":"Stent thrombosis"}]},"outcomes":[{"type":"PRIMARY","title":"Definite or probable stent thrombosis"}]},
+    {"nct":"NCT00002005","yi":-0.299,"vi":0.027,"registered_outcomes":{"primary":[{"measure":"Major bleeding events"}]},"outcomes":[{"type":"PRIMARY","title":"Major bleeding (BARC 3-5)"}]}
+  ];
+  document.getElementById('extractionsInput').value = JSON.stringify(sample, null, 2);
+}
+
+// =========================================================================
+// Self-Tests
+// =========================================================================
+
+function runTests() {
+  var results = [];
+  var passed = 0;
+  var failed = 0;
+
+  function assert(name, condition, detail) {
+    if (condition) {
+      results.push({ name: name, pass: true });
+      passed++;
+    } else {
+      results.push({ name: name, pass: false, detail: detail || '' });
+      failed++;
+    }
+  }
+
+  // --- Test 1: Levenshtein ---
+  assert('Levenshtein: identical', levenshteinSimilarity('hello', 'hello') === 1);
+  assert('Levenshtein: empty', levenshteinSimilarity('hello', '') === 0);
+  assert('Levenshtein: both null', levenshteinSimilarity(null, null) === 1);
+  assert('Levenshtein: one null', levenshteinSimilarity(null, 'hello') === 0);
+  var sim = levenshteinSimilarity('kitten', 'sitting');
+  assert('Levenshtein: kitten/sitting ~0.571', Math.abs(sim - 0.571) < 0.01, 'Got ' + sim);
+
+  // --- Test 2: Non-posting basic ---
+  var npResult = estimateNonPostingBias([
+    { nctId: 'A', overallStatus: 'COMPLETED', hasResults: true, leadSponsorClass: 'INDUSTRY', phases: ['PHASE3'] },
+    { nctId: 'B', overallStatus: 'COMPLETED', hasResults: false, leadSponsorClass: 'INDUSTRY', phases: ['PHASE3'] },
+    { nctId: 'C', overallStatus: 'COMPLETED', hasResults: true, leadSponsorClass: 'OTHER', phases: ['PHASE2'] },
+    { nctId: 'D', overallStatus: 'COMPLETED', hasResults: false, leadSponsorClass: 'OTHER', phases: ['PHASE2'] },
+    { nctId: 'E', overallStatus: 'RECRUITING', hasResults: false, leadSponsorClass: 'OTHER', phases: ['PHASE2'] }
+  ]);
+  assert('NonPosting: completed count', npResult.nCompleted === 4, 'Got ' + npResult.nCompleted);
+  assert('NonPosting: posted count', npResult.nPosted === 2, 'Got ' + npResult.nPosted);
+  assert('NonPosting: without results', npResult.nWithoutResults === 2, 'Got ' + npResult.nWithoutResults);
+  assert('NonPosting: posting rate 50%', Math.abs(npResult.postingRate - 0.5) < 0.001, 'Got ' + npResult.postingRate);
+  assert('NonPosting: industry has 2 total', npResult.byType['INDUSTRY'].total === 2);
+  assert('NonPosting: RECRUITING excluded', npResult.nonPostingIds.length === 2);
+  assert('NonPosting: biasDirection is unknown (equal rates)', npResult.biasDirection === 'unknown', 'Got ' + npResult.biasDirection);
+
+  // --- Test 3: Non-posting with bias direction ---
+  var npResult2 = estimateNonPostingBias([
+    { nctId: 'A', overallStatus: 'COMPLETED', hasResults: true, leadSponsorClass: 'INDUSTRY' },
+    { nctId: 'B', overallStatus: 'COMPLETED', hasResults: true, leadSponsorClass: 'INDUSTRY' },
+    { nctId: 'C', overallStatus: 'COMPLETED', hasResults: false, leadSponsorClass: 'OTHER' },
+    { nctId: 'D', overallStatus: 'COMPLETED', hasResults: false, leadSponsorClass: 'OTHER' }
+  ]);
+  assert('NonPosting: industry over-reports', npResult2.biasDirection === 'positive (industry over-reports)', 'Got ' + npResult2.biasDirection);
+
+  // --- Test 4: Non-posting terminated/withdrawn ---
+  var npResult3 = estimateNonPostingBias([
+    { nctId: 'A', overallStatus: 'TERMINATED', hasResults: false, leadSponsorClass: 'OTHER' },
+    { nctId: 'B', overallStatus: 'WITHDRAWN', hasResults: false, leadSponsorClass: 'OTHER' }
+  ]);
+  assert('NonPosting: TERMINATED counted', npResult3.nCompleted === 2);
+  assert('NonPosting: 0% posting rate', npResult3.postingRate === 0);
+
+  // --- Test 5: Non-posting empty ---
+  var npResult4 = estimateNonPostingBias([]);
+  assert('NonPosting: empty input', npResult4.nCompleted === 0 && npResult4.postingRate === 0);
+
+  // --- Test 6: ORBI basic ---
+  var orbiResult = calculateORBI([
+    { nct: 'NCT001', registered_outcomes: { primary: [{ measure: 'All-cause mortality at 1 year' }] }, outcomes: [{ type: 'PRIMARY', title: 'All-cause mortality at 1 year' }] },
+    { nct: 'NCT002', registered_outcomes: { primary: [{ measure: 'MACE' }] }, outcomes: [{ type: 'PRIMARY', title: 'Death or MI' }] }
+  ]);
+  assert('ORBI: 2 studies', orbiResult.perStudy.length === 2);
+  assert('ORBI: first study perfect match (score=0)', orbiResult.perStudy[0].score === 0, 'Got ' + orbiResult.perStudy[0].score);
+  assert('ORBI: second study high score', orbiResult.perStudy[1].score > 0.3, 'Got ' + orbiResult.perStudy[1].score);
+  assert('ORBI: meanORBI > 0', orbiResult.meanORBI > 0);
+
+  // --- Test 7: ORBI empty registered ---
+  var orbiResult2 = calculateORBI([
+    { nct: 'NCT003', registered_outcomes: {}, outcomes: [{ type: 'PRIMARY', title: 'Something' }] }
+  ]);
+  assert('ORBI: missing registered -> score=1', orbiResult2.perStudy[0].score === 1, 'Got ' + orbiResult2.perStudy[0].score);
+
+  // --- Test 8: ORBI empty input ---
+  var orbiResult3 = calculateORBI([]);
+  assert('ORBI: empty input -> meanORBI=0', orbiResult3.meanORBI === 0);
+  assert('ORBI: empty input -> no warning', orbiResult3.warning === null);
+
+  // --- Test 9: ORBI warning threshold ---
+  var orbiResult4 = calculateORBI([
+    { nct: 'NCT004', registered_outcomes: { primary: [{ measure: 'Alpha' }] }, outcomes: [{ type: 'PRIMARY', title: 'Zeta completely different endpoint' }] }
+  ]);
+  assert('ORBI: high score triggers warning', orbiResult4.warning !== null, 'Got ' + orbiResult4.warning);
+
+  // --- Test 10: tCDF ---
+  var p = tCDF(0, 10);
+  assert('tCDF(0,10) = 0.5', Math.abs(p - 0.5) < 0.001, 'Got ' + p);
+  var p2 = tCDF(2.228, 10);
+  assert('tCDF(2.228,10) ~ 0.975', Math.abs(p2 - 0.975) < 0.005, 'Got ' + p2);
+
+  // --- Test 11: Egger's k<10 ---
+  var smallStudies = [];
+  for (var i = 0; i < 5; i++) smallStudies.push({ yi: -0.3 + i * 0.1, vi: 0.05 });
+  var eggerSmall = eggersTest(smallStudies);
+  assert("Egger: k<10 returns warning", eggerSmall.warning !== null);
+  assert("Egger: k<10 pValue null", eggerSmall.pValue === null);
+
+  // --- Test 12: Egger's k>=10 ---
+  var largeStudies = [];
+  for (var i = 0; i < 12; i++) {
+    largeStudies.push({ yi: -0.3 + (i - 6) * 0.05, vi: 0.02 + i * 0.005 });
+  }
+  var eggerLarge = eggersTest(largeStudies);
+  assert("Egger: k>=10 returns pValue", eggerLarge.pValue !== null && isFinite(eggerLarge.pValue), 'Got p=' + eggerLarge.pValue);
+  assert("Egger: k>=10 df = k-2", eggerLarge.df === 10, 'Got df=' + eggerLarge.df);
+  assert("Egger: pValue in [0,1]", eggerLarge.pValue >= 0 && eggerLarge.pValue <= 1, 'Got ' + eggerLarge.pValue);
+
+  // --- Test 13: Egger's symmetric data -> non-significant ---
+  var symStudies = [];
+  for (var i = 0; i < 12; i++) {
+    var eff = (i % 2 === 0 ? 0.1 : -0.1);
+    symStudies.push({ yi: eff, vi: 0.05 });
+  }
+  var eggerSym = eggersTest(symStudies);
+  assert("Egger: symmetric -> not significant", !eggerSym.significant, 'p=' + eggerSym.pValue);
+
+  // --- Test 14: pooledEstimate ---
+  var pe = pooledEstimate([
+    { yi: -0.3, vi: 0.025 },
+    { yi: -0.5, vi: 0.025 }
+  ]);
+  assert('pooledEstimate: equal weights -> mean', Math.abs(pe - (-0.4)) < 0.001, 'Got ' + pe);
+
+  // --- Test 15: pooledEstimate weighted ---
+  var pe2 = pooledEstimate([
+    { yi: -0.3, vi: 0.01 },  // weight=100
+    { yi: -0.5, vi: 0.1 }    // weight=10
+  ]);
+  assert('pooledEstimate: weighted toward precise', pe2 > -0.4 && pe2 < -0.28, 'Got ' + pe2);
+
+  // --- Test 16: Non-posting phase handling ---
+  var npPhase = estimateNonPostingBias([
+    { nctId: 'A', overallStatus: 'COMPLETED', hasResults: true, phase: 'PHASE3' },
+    { nctId: 'B', overallStatus: 'COMPLETED', hasResults: false, phase: 'PHASE3' }
+  ]);
+  assert('NonPosting: string phase field', npPhase.byPhase['PHASE3'] !== undefined, 'Got ' + JSON.stringify(npPhase.byPhase));
+
+  // --- Test 17: Non-posting sponsor_type fallback ---
+  var npSponsor = estimateNonPostingBias([
+    { nctId: 'A', overallStatus: 'COMPLETED', hasResults: true, sponsor_type: 'INDUSTRY' }
+  ]);
+  assert('NonPosting: sponsor_type fallback', npSponsor.byType['INDUSTRY'] !== undefined);
+
+  // --- Test 18: ORBI with measure field in outcomes ---
+  var orbiMeasure = calculateORBI([
+    { nct: 'NCT005', registered_outcomes: { primary: [{ measure: 'Test outcome' }] }, outcomes: [{ type: 'PRIMARY', measure: 'Test outcome' }] }
+  ]);
+  assert('ORBI: measure field fallback', orbiMeasure.perStudy[0].score === 0, 'Got ' + orbiMeasure.perStudy[0].score);
+
+  // --- Test 19: normalCDF ---
+  var n0 = normalCDF(0);
+  assert('normalCDF(0) = 0.5', Math.abs(n0 - 0.5) < 0.001, 'Got ' + n0);
+  var n196 = normalCDF(1.96);
+  assert('normalCDF(1.96) ~ 0.975', Math.abs(n196 - 0.975) < 0.002, 'Got ' + n196);
+
+  // --- Test 20: gammaln ---
+  var g1 = gammaln(1);
+  assert('gammaln(1) ~ 0', Math.abs(g1) < 0.001, 'Got ' + g1);
+  var g5 = gammaln(5);
+  // ln(4!) = ln(24) ~ 3.178
+  assert('gammaln(5) ~ 3.178', Math.abs(g5 - 3.178) < 0.01, 'Got ' + g5);
+
+  // --- Test 21: Egger radial regression values ---
+  // Create known asymmetric data
+  var asymStudies = [];
+  for (var i = 0; i < 15; i++) {
+    var se = 0.1 + i * 0.03;
+    // Smaller studies show larger effects (positive asymmetry)
+    var eff = -0.2 - se * 1.5 + (i % 3) * 0.02;
+    asymStudies.push({ yi: eff, vi: se * se });
+  }
+  var eggerAsym = eggersTest(asymStudies);
+  assert("Egger: asymmetric has intercept", typeof eggerAsym.intercept === 'number' && isFinite(eggerAsym.intercept), 'Got ' + eggerAsym.intercept);
+
+  // --- Test 22: ORBI case insensitive ---
+  var orbiCase = calculateORBI([
+    { nct: 'NCT006', registered_outcomes: { primary: [{ measure: 'MACE AT ONE YEAR' }] }, outcomes: [{ type: 'PRIMARY', title: 'mace at one year' }] }
+  ]);
+  assert('ORBI: case insensitive match', orbiCase.perStudy[0].score === 0, 'Got ' + orbiCase.perStudy[0].score);
+
+  // --- Test 23: Egger's with invalid vi ---
+  var eggerBad = eggersTest([
+    { yi: 0.1, vi: 0 },
+    { yi: 0.2, vi: -1 }
+  ]);
+  assert("Egger: filters invalid vi", eggerBad.warning !== null);
+
+  // --- Test 24: Non-posting IDs correctness ---
+  var npIds = estimateNonPostingBias([
+    { nctId: 'POSTED1', overallStatus: 'COMPLETED', hasResults: true },
+    { nctId: 'MISSING1', overallStatus: 'COMPLETED', hasResults: false },
+    { nctId: 'MISSING2', overallStatus: 'TERMINATED', hasResults: false }
+  ]);
+  assert('NonPosting: non-posting IDs correct', npIds.nonPostingIds.indexOf('MISSING1') >= 0 && npIds.nonPostingIds.indexOf('MISSING2') >= 0 && npIds.nonPostingIds.indexOf('POSTED1') < 0, 'Got ' + npIds.nonPostingIds.join(','));
+
+  // --- Test 25: escHtml ---
+  assert('escHtml: <>&', escHtml('<b>"test"&</b>') === '&lt;b&gt;&quot;test&quot;&amp;&lt;/b&gt;');
+
+  // Render results
+  var container = document.getElementById('testResults');
+  container.classList.remove('hidden');
+  var html = '<div style="font-size:0.875rem;font-weight:700;margin-bottom:0.5rem">' + passed + '/' + (passed + failed) + ' tests passed</div>';
+  html += '<table><thead><tr><th>#</th><th>Test</th><th class="text-center">Result</th><th>Detail</th></tr></thead><tbody>';
+  for (var i = 0; i < results.length; i++) {
+    var r = results[i];
+    html += '<tr><td>' + (i + 1) + '</td><td>' + escHtml(r.name) + '</td>';
+    html += '<td class="text-center"><span class="tag ' + (r.pass ? 'tag-pass' : 'tag-fail') + '">' + (r.pass ? 'PASS' : 'FAIL') + '</span></td>';
+    html += '<td>' + (r.detail ? escHtml(r.detail) : '') + '</td></tr>';
+  }
+  html += '</tbody></table>';
+  if (failed > 0) {
+    html += '<div class="warn-box">' + failed + ' test(s) failed!</div>';
+  }
+  container.innerHTML = html;
+}
+</script>
+</body>
+</html>
