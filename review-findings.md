@@ -57,4 +57,18 @@
 
 ---
 
-### Status: REVIEW COMPLETE — fixes pending
+### Status: REVIEW CLEAN — all P0 and P1 fixed (commit 84ed204)
+
+#### Fix Log
+- [FIXED] P0-1: hksjApplied flag now set true whenever HKSJ path entered
+- [FIXED] P0-2: DL warning surfaced in UI when k<10
+- [FIXED] P0-3: Per-query try-catch in harvest loop
+- [FIXED] P0-4: E156 question broadened to "coronary artery disease" (matches actual query scope)
+- [FIXED] P0-5: Div balance confirmed balanced by Python counter (grep discrepancy from JS strings)
+- [FIXED] P1-1: I2 uses Higgins formula ((Q-(k-1))/Q) instead of signal-ratio
+- [FIXED] P1-2: Egger's test annotated as standard (not radial); Peters' test recommended
+- [FIXED] P1-3: autoGRADE now checks tau magnitude alongside I2
+- [FIXED] P1-4: localStorage restore uses allowlist of known STATE keys
+- [FIXED] P1-5: phase field wrapped in escHtml()
+- [FIXED] P1-6: Retry-After clamped to max 300s
+- [FIXED] P2-1: E156 generateE156() now passes actual bias flags
