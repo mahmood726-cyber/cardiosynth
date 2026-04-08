@@ -594,9 +594,9 @@ function buildQueryString(params) {
     parts.push('query.intr=' + encodeURIComponent(params.intervention));
   }
 
-  // Study type filter
+  // Study type filter (CT.gov v2: use filter.studyType, not filter.overallStatus)
   if (params.studyType) {
-    parts.push('filter.overallStatus=' + encodeURIComponent(params.studyType));
+    parts.push('filter.studyType=' + encodeURIComponent(params.studyType));
   }
 
   // Results-only filter: use aggFilters (v2 API correct parameter)
