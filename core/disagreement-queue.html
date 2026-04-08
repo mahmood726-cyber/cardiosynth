@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CardioSynth Disagreement Queue</title>
+<meta name="description" content="CardioSynth Phase 0.4 — Two-agent extraction comparison and human arbitration interface">
+<meta property="og:title" content="CardioSynth Disagreement Queue">
+<meta property="og:description" content="Compare dual-agent ExtractionObjects field-by-field, resolve disagreements, merge with witness_count=2">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue-900: #1e3a5f;
+    --blue-800: #1e40af;
+    --blue-700: #1d4ed8;
+    --blue-600: #2563eb;
+    --blue-500: #3b82f6;
+    --blue-100: #dbeafe;
+    --blue-50: #eff6ff;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    --green-700: #15803d;
+    --green-600: #16a34a;
+    --green-100: #dcfce7;
+    --green-50: #f0fdf4;
+    --red-700: #b91c1c;
+    --red-600: #dc2626;
+    --red-100: #fee2e2;
+    --red-50: #fef2f2;
+    --amber-700: #b45309;
+    --amber-600: #d97706;
+    --amber-100: #fef3c7;
+    --amber-50: #fffbeb;
+    --purple-600: #9333ea;
+    --purple-100: #f3e8ff;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: #fff;
+    color: var(--gray-800);
+    line-height: 1.6;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, var(--blue-900) 0%, var(--blue-800) 100%);
+    color: #fff;
+    padding: 24px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .header-icon {
+    width: 48px; height: 48px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+  }
+  .header-info { flex: 1; }
+  .header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+  .header .subtitle { font-size: 13px; opacity: 0.8; margin-top: 2px; }
+  .queue-badge {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .queue-badge:hover { background: rgba(255,255,255,0.3); }
+  .queue-badge .count {
+    background: #fff;
+    color: var(--blue-800);
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-left: 6px;
+  }
+
+  /* Main layout */
+  .container { max-width: 1400px; margin: 0 auto; padding: 24px 32px; }
+
+  /* Status bar */
+  .status-bar {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  .status-bar.active { display: flex; }
+  .status-bar.info { background: var(--blue-50); border: 1px solid var(--blue-100); color: var(--blue-800); }
+  .status-bar.error { background: var(--red-100); border: 1px solid #fecaca; color: var(--red-600); }
+  .status-bar.success { background: var(--green-100); border: 1px solid #bbf7d0; color: var(--green-600); }
+
+  /* Buttons */
+  .btn {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: var(--blue-600); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: var(--blue-700); }
+  .btn-secondary { background: var(--gray-100); color: var(--gray-700); border: 1px solid var(--gray-300); }
+  .btn-secondary:hover:not(:disabled) { background: var(--gray-200); }
+  .btn-success { background: var(--green-600); color: #fff; }
+  .btn-success:hover:not(:disabled) { background: var(--green-700); }
+  .btn-danger { background: var(--red-600); color: #fff; }
+  .btn-danger:hover:not(:disabled) { background: #b91c1c; }
+  .btn-small { padding: 6px 14px; font-size: 12px; }
+
+  /* Input panels */
+  .input-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .input-panel {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .input-panel h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .input-panel h3 .label-badge {
+    padding: 2px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .label-a { background: var(--blue-600); }
+  .label-b { background: var(--purple-600); }
+  .input-panel textarea {
+    width: 100%;
+    height: 200px;
+    border: 1px solid var(--gray-300);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 12px;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+    color: var(--gray-800);
+    background: #fff;
+    resize: vertical;
+    line-height: 1.5;
+  }
+  .input-panel textarea:focus {
+    outline: none;
+    border-color: var(--blue-500);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+  }
+  .upload-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    align-items: center;
+  }
+  .upload-row input[type="file"] {
+    font-size: 12px;
+    color: var(--gray-600);
+  }
+
+  /* Action bar */
+  .action-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .action-bar .spacer { flex: 1; }
+
+  /* Summary stats */
+  .summary-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .summary-card {
+    padding: 16px 24px;
+    border-radius: 10px;
+    border: 1px solid var(--gray-200);
+    min-width: 160px;
+    text-align: center;
+  }
+  .summary-card .number {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .summary-card .label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+  }
+  .card-agree { background: var(--green-50); border-color: #bbf7d0; }
+  .card-agree .number { color: var(--green-700); }
+  .card-agree .label { color: var(--green-600); }
+  .card-disagree { background: var(--red-50); border-color: #fecaca; }
+  .card-disagree .number { color: var(--red-700); }
+  .card-disagree .label { color: var(--red-600); }
+  .card-resolved { background: var(--blue-50); border-color: var(--blue-100); }
+  .card-resolved .number { color: var(--blue-800); }
+  .card-resolved .label { color: var(--blue-600); }
+  .card-nct { background: var(--amber-50); border-color: #fde68a; }
+  .card-nct .number { color: var(--amber-700); font-size: 16px; font-family: 'SFMono-Regular', Consolas, monospace; }
+  .card-nct .label { color: var(--amber-600); }
+
+  /* Disagreement table */
+  .disagree-table-wrap {
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .disagree-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .disagree-table th {
+    background: var(--gray-50);
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--gray-600);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .disagree-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--gray-100);
+    vertical-align: middle;
+  }
+  .disagree-table tr:last-child td { border-bottom: none; }
+  .disagree-table tr:hover { background: var(--gray-50); }
+  .path-cell {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+    font-size: 12px;
+    color: var(--blue-700);
+    word-break: break-all;
+  }
+  .value-cell {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+    font-size: 12px;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .value-a { color: var(--blue-700); background: rgba(37,99,235,0.06); border-radius: 4px; padding: 2px 6px; }
+  .value-b { color: var(--purple-600); background: rgba(147,51,234,0.06); border-radius: 4px; padding: 2px 6px; }
+  .type-badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .type-numeric { background: var(--amber-100); color: var(--amber-700); }
+  .type-string { background: var(--blue-100); color: var(--blue-800); }
+  .type-boolean { background: var(--purple-100); color: var(--purple-600); }
+  .type-type_mismatch { background: var(--red-100); color: var(--red-600); }
+  .deviation-cell { font-size: 12px; color: var(--gray-500); }
+
+  /* Resolution controls */
+  .resolution-group {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .resolution-group label {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--gray-200);
+    background: #fff;
+    transition: all 0.1s;
+  }
+  .resolution-group label:hover { border-color: var(--blue-400); }
+  .resolution-group label.selected { border-color: var(--blue-500); background: var(--blue-50); }
+  .resolution-group input[type="radio"] { width: 12px; height: 12px; }
+  .custom-input {
+    margin-top: 4px;
+    width: 100%;
+    padding: 4px 8px;
+    border: 1px solid var(--gray-300);
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    display: none;
+  }
+  .custom-input.visible { display: block; }
+
+  /* Diff panels */
+  .diff-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .diff-panel {
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .diff-panel-header {
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .diff-panel-a .diff-panel-header { background: var(--blue-50); color: var(--blue-800); }
+  .diff-panel-b .diff-panel-header { background: var(--purple-100); color: var(--purple-600); }
+  .diff-tree {
+    padding: 12px 16px;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    max-height: 500px;
+    overflow: auto;
+    background: #fff;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .diff-tree .line-agree { color: var(--gray-600); }
+  .diff-tree .line-disagree { background: var(--red-50); color: var(--red-700); font-weight: 600; border-left: 3px solid var(--red-600); padding-left: 8px; margin-left: -8px; }
+
+  /* Output section */
+  .output-section {
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .output-header {
+    padding: 14px 20px;
+    background: var(--green-50);
+    border-bottom: 1px solid #bbf7d0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--green-700);
+  }
+  .output-body {
+    padding: 16px 20px;
+  }
+  .output-json {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 16px;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    max-height: 400px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    color: var(--gray-700);
+  }
+  .output-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+
+  /* Queue panel (modal overlay) */
+  .queue-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+  .queue-overlay.active { display: flex; }
+  .queue-modal {
+    background: #fff;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 900px;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .queue-modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--gray-200);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .queue-modal-header h2 {
+    font-size: 18px;
+    font-weight: 700;
+    flex: 1;
+  }
+  .queue-modal-body {
+    padding: 20px 24px;
+    overflow-y: auto;
+    flex: 1;
+  }
+  .queue-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    transition: background 0.1s;
+  }
+  .queue-item:hover { background: var(--gray-50); }
+  .queue-item .qi-nct {
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-weight: 600;
+    color: var(--blue-700);
+    min-width: 140px;
+  }
+  .queue-item .qi-status {
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+  .qi-pending { background: var(--amber-100); color: var(--amber-700); }
+  .qi-resolved { background: var(--green-100); color: var(--green-700); }
+  .queue-item .qi-info {
+    flex: 1;
+    font-size: 13px;
+    color: var(--gray-500);
+  }
+  .queue-item .qi-actions { display: flex; gap: 6px; }
+  .queue-empty {
+    text-align: center;
+    padding: 40px;
+    color: var(--gray-400);
+    font-size: 14px;
+  }
+
+  /* Section toggle */
+  .section-toggle {
+    cursor: pointer;
+    user-select: none;
+    padding: 12px 20px;
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gray-700);
+  }
+  .section-toggle:hover { background: var(--gray-100); }
+  .section-toggle .chevron {
+    transition: transform 0.2s;
+    font-size: 12px;
+    color: var(--gray-400);
+  }
+  .section-toggle.open .chevron { transform: rotate(90deg); }
+  .section-content { display: none; }
+  .section-content.visible { display: block; }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .input-panels, .diff-panels { grid-template-columns: 1fr; }
+    .container { padding: 16px; }
+  }
+
+  /* Hidden utility */
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-icon">&#x2696;</div>
+  <div class="header-info">
+    <h1>CardioSynth Disagreement Queue</h1>
+    <div class="subtitle">Phase 0.4 &mdash; Dual-Agent Extraction Comparison &amp; Human Arbitration</div>
+  </div>
+  <div class="queue-badge" id="queueBadge" onclick="openQueueModal()">
+    Pending Queue <span class="count" id="queueCount">0</span>
+  </div>
+</div>
+
+<!-- Main container -->
+<div class="container">
+
+  <!-- Status bar -->
+  <div class="status-bar" id="statusBar">
+    <span id="statusIcon"></span>
+    <span id="statusText"></span>
+  </div>
+
+  <!-- Input panels -->
+  <div class="input-panels">
+    <div class="input-panel">
+      <h3><span class="label-badge label-a">A</span> Extraction A (Agent 1)</h3>
+      <textarea id="inputA" placeholder="Paste ExtractionObject JSON from Agent A..."></textarea>
+      <div class="upload-row">
+        <input type="file" id="fileA" accept=".json" onchange="loadFile('A')">
+        <button class="btn btn-secondary btn-small" onclick="loadDemoData('A')">Load Demo</button>
+      </div>
+    </div>
+    <div class="input-panel">
+      <h3><span class="label-badge label-b">B</span> Extraction B (Agent 2)</h3>
+      <textarea id="inputB" placeholder="Paste ExtractionObject JSON from Agent B..."></textarea>
+      <div class="upload-row">
+        <input type="file" id="fileB" accept=".json" onchange="loadFile('B')">
+        <button class="btn btn-secondary btn-small" onclick="loadDemoData('B')">Load Demo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action bar -->
+  <div class="action-bar">
+    <button class="btn btn-primary" id="compareBtn" onclick="runComparison()">Compare Extractions</button>
+    <button class="btn btn-secondary" onclick="clearAll()">Clear All</button>
+    <span class="spacer"></span>
+    <button class="btn btn-success hidden" id="autoMergeBtn" onclick="autoMerge()">Auto-Merge (Perfect Agreement)</button>
+    <button class="btn btn-success hidden" id="mergeBtn" onclick="mergeAndCertify()" disabled>Merge &amp; Certify</button>
+  </div>
+
+  <!-- Results area (hidden initially) -->
+  <div id="resultsArea" class="hidden">
+
+    <!-- Summary cards -->
+    <div class="summary-row" id="summaryRow"></div>
+
+    <!-- Disagreement table -->
+    <div id="disagreeSection" class="hidden">
+      <div class="section-toggle open" onclick="toggleSection('disagreeContent', this)">
+        <span class="chevron">&#x25B6;</span>
+        Disagreements &mdash; Resolve Each Field
+      </div>
+      <div class="section-content visible" id="disagreeContent">
+        <div class="disagree-table-wrap">
+          <table class="disagree-table" id="disagreeTable">
+            <thead>
+              <tr>
+                <th style="width:22%">Field Path</th>
+                <th style="width:18%">Agent A Value</th>
+                <th style="width:18%">Agent B Value</th>
+                <th style="width:8%">Type</th>
+                <th style="width:8%">Deviation</th>
+                <th style="width:26%">Resolution</th>
+              </tr>
+            </thead>
+            <tbody id="disagreeBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Diff view -->
+    <div class="section-toggle" onclick="toggleSection('diffContent', this)">
+      <span class="chevron">&#x25B6;</span>
+      Side-by-Side Diff View
+    </div>
+    <div class="section-content" id="diffContent">
+      <div class="diff-panels">
+        <div class="diff-panel diff-panel-a">
+          <div class="diff-panel-header">
+            <span class="label-badge label-a">A</span> Agent A Extraction
+          </div>
+          <div class="diff-tree" id="diffTreeA"></div>
+        </div>
+        <div class="diff-panel diff-panel-b">
+          <div class="diff-panel-header">
+            <span class="label-badge label-b">B</span> Agent B Extraction
+          </div>
+          <div class="diff-tree" id="diffTreeB"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Output section (hidden initially) -->
+  <div id="outputSection" class="hidden">
+    <div class="output-section">
+      <div class="output-header">
+        &#x2714; Merged ExtractionObject (witness_count = 2)
+      </div>
+      <div class="output-body">
+        <pre class="output-json" id="mergedOutput"></pre>
+        <div class="output-actions">
+          <button class="btn btn-primary btn-small" onclick="copyMerged()">Copy to Clipboard</button>
+          <button class="btn btn-success btn-small" onclick="downloadMerged()">Download Merged JSON</button>
+          <button class="btn btn-secondary btn-small" onclick="saveToQueue()">Save to Queue</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Queue modal overlay -->
+<div class="queue-overlay" id="queueOverlay" onclick="closeQueueModal(event)">
+  <div class="queue-modal" onclick="event.stopPropagation()">
+    <div class="queue-modal-header">
+      <h2>Disagreement Queue</h2>
+      <button class="btn btn-secondary btn-small" onclick="clearQueue()">Clear All</button>
+      <button class="btn btn-secondary btn-small" onclick="closeQueueModal()">Close</button>
+    </div>
+    <div class="queue-modal-body" id="queueList"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CardioSynth Disagreement Queue — Phase 0.4
+// Self-contained. No external dependencies.
+// ============================================================
+
+var QUEUE_KEY = 'cardiosynth_disagree_queue';
+var currentDisagreements = [];
+var currentResolutions = {};
+var parsedA = null;
+var parsedB = null;
+var mergedResult = null;
+
+// --- Levenshtein Similarity ---
+function levenshteinSimilarity(a, b) {
+  a = (a || '').toLowerCase().trim();
+  b = (b || '').toLowerCase().trim();
+  if (a === b) return 1;
+  if (!a.length || !b.length) return 0;
+  var matrix = Array.from({ length: a.length + 1 }, function(_, i) {
+    return Array.from({ length: b.length + 1 }, function(_, j) {
+      return (i === 0 ? j : j === 0 ? i : 0);
+    });
+  });
+  for (var i = 1; i <= a.length; i++) {
+    for (var j = 1; j <= b.length; j++) {
+      var cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost
+      );
+    }
+  }
+  return 1 - matrix[a.length][b.length] / Math.max(a.length, b.length);
+}
+
+// --- Fields to skip during comparison ---
+var SKIP_FIELDS = new Set([
+  'extraction_timestamp',
+  'extractor_id'
+]);
+
+var SKIP_PATHS = new Set([
+  'extraction_timestamp',
+  'extractor_id',
+  'provenance.raw_hash',
+  'provenance.extraction_timestamp',
+  'provenance.extractor_id'
+]);
+
+// --- Comparison Engine ---
+function compareExtractions(a, b) {
+  var disagreements = [];
+  var agreementCount = 0;
+
+  function compare(objA, objB, path) {
+    // Skip designated paths
+    if (SKIP_PATHS.has(path)) return;
+
+    if (objA === null && objB === null) { agreementCount++; return; }
+    if (objA === undefined && objB === undefined) return;
+
+    // Numeric comparison: flag if relative deviation > 1%
+    if (typeof objA === 'number' && typeof objB === 'number') {
+      var maxVal = Math.max(Math.abs(objA), Math.abs(objB));
+      if (maxVal > 0 && Math.abs(objA - objB) / maxVal > 0.01) {
+        disagreements.push({
+          path: path,
+          valueA: objA,
+          valueB: objB,
+          type: 'numeric',
+          deviation: (Math.abs(objA - objB) / maxVal * 100).toFixed(2) + '%'
+        });
+      } else {
+        agreementCount++;
+      }
+      return;
+    }
+
+    // String comparison: flag if Levenshtein similarity < 0.95
+    if (typeof objA === 'string' && typeof objB === 'string') {
+      var sim = levenshteinSimilarity(objA, objB);
+      if (sim < 0.95) {
+        disagreements.push({
+          path: path,
+          valueA: objA,
+          valueB: objB,
+          type: 'string',
+          similarity: sim.toFixed(3)
+        });
+      } else {
+        agreementCount++;
+      }
+      return;
+    }
+
+    // Boolean comparison
+    if (typeof objA === 'boolean' && typeof objB === 'boolean') {
+      if (objA !== objB) {
+        disagreements.push({ path: path, valueA: objA, valueB: objB, type: 'boolean' });
+      } else {
+        agreementCount++;
+      }
+      return;
+    }
+
+    // Array comparison: element-by-element
+    if (Array.isArray(objA) && Array.isArray(objB)) {
+      var maxLen = Math.max(objA.length, objB.length);
+      for (var i = 0; i < maxLen; i++) {
+        compare(objA[i], objB[i], path + '[' + i + ']');
+      }
+      return;
+    }
+
+    // Object comparison: recurse
+    if (typeof objA === 'object' && typeof objB === 'object' && objA !== null && objB !== null) {
+      var allKeys = new Set([].concat(Object.keys(objA), Object.keys(objB)));
+      allKeys.forEach(function(key) {
+        if (key.startsWith('_')) return;
+        if (SKIP_FIELDS.has(key)) return;
+        var childPath = path ? path + '.' + key : key;
+        if (SKIP_PATHS.has(childPath)) return;
+        compare(objA[key], objB[key], childPath);
+      });
+      return;
+    }
+
+    // Type mismatch or one side undefined/null
+    if (objA !== objB) {
+      disagreements.push({
+        path: path,
+        valueA: objA,
+        valueB: objB,
+        type: 'type_mismatch'
+      });
+    } else {
+      agreementCount++;
+    }
+  }
+
+  compare(a, b, '');
+  return { disagreements: disagreements, agreementCount: agreementCount };
+}
+
+// --- Nested value getter/setter ---
+function getNestedValue(obj, path) {
+  var parts = parsePath(path);
+  var current = obj;
+  for (var i = 0; i < parts.length; i++) {
+    if (current === null || current === undefined) return undefined;
+    current = current[parts[i]];
+  }
+  return current;
+}
+
+function setNestedValue(obj, path, value) {
+  var parts = parsePath(path);
+  var current = obj;
+  for (var i = 0; i < parts.length - 1; i++) {
+    if (current[parts[i]] === undefined || current[parts[i]] === null) {
+      current[parts[i]] = typeof parts[i + 1] === 'number' ? [] : {};
+    }
+    current = current[parts[i]];
+  }
+  current[parts[parts.length - 1]] = value;
+}
+
+function parsePath(path) {
+  // Convert "foo.bar[2].baz" -> ["foo", "bar", 2, "baz"]
+  var parts = [];
+  var segments = path.split('.');
+  for (var i = 0; i < segments.length; i++) {
+    var seg = segments[i];
+    // Check for array brackets
+    var bracketMatch = seg.match(/^([^\[]*)\[(\d+)\]$/);
+    if (bracketMatch) {
+      if (bracketMatch[1]) parts.push(bracketMatch[1]);
+      parts.push(parseInt(bracketMatch[2], 10));
+    } else {
+      // Might have nested brackets like [0][1]
+      var remaining = seg;
+      var first = true;
+      while (remaining) {
+        var bm = remaining.match(/^\[(\d+)\](.*)/);
+        if (bm) {
+          parts.push(parseInt(bm[1], 10));
+          remaining = bm[2];
+          first = false;
+        } else if (first) {
+          var bm2 = remaining.match(/^([^\[]+)(.*)/);
+          if (bm2) {
+            parts.push(bm2[1]);
+            remaining = bm2[2];
+          } else {
+            parts.push(remaining);
+            remaining = '';
+          }
+          first = false;
+        } else {
+          parts.push(remaining);
+          remaining = '';
+        }
+      }
+    }
+  }
+  return parts;
+}
+
+// --- Merge Engine ---
+function mergeExtractions(a, b, resolutions) {
+  // Start with A as base
+  var merged = JSON.parse(JSON.stringify(a));
+
+  // Apply human resolutions
+  for (var i = 0; i < resolutions.length; i++) {
+    var resolution = resolutions[i];
+    if (resolution.choice === 'B') {
+      setNestedValue(merged, resolution.path, getNestedValue(b, resolution.path));
+    } else if (resolution.choice === 'custom') {
+      var customVal = resolution.customValue;
+      // Try to parse as number or boolean
+      if (customVal === 'true') customVal = true;
+      else if (customVal === 'false') customVal = false;
+      else if (customVal === 'null') customVal = null;
+      else if (!isNaN(Number(customVal)) && customVal.trim() !== '') customVal = Number(customVal);
+      setNestedValue(merged, resolution.path, customVal);
+    }
+    // 'A' = keep A's value (default)
+  }
+
+  // Set witness metadata
+  merged.witness_count = 2;
+  merged.merge_timestamp = new Date().toISOString();
+  merged.merge_source = {
+    extractorA: a.extractor_id || 'unknown-A',
+    extractorB: b.extractor_id || 'unknown-B'
+  };
+
+  return merged;
+}
+
+// --- UI Helpers ---
+function setStatus(type, message) {
+  var bar = document.getElementById('statusBar');
+  var icon = document.getElementById('statusIcon');
+  var text = document.getElementById('statusText');
+  bar.className = 'status-bar active ' + type;
+  if (type === 'info') {
+    icon.innerHTML = '&#x23F3;';
+  } else if (type === 'error') {
+    icon.textContent = '\u2716';
+  } else if (type === 'success') {
+    icon.textContent = '\u2714';
+  }
+  text.textContent = message;
+}
+
+function clearStatus() {
+  document.getElementById('statusBar').className = 'status-bar';
+}
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '<em>null</em>';
+  if (typeof str === 'boolean') return String(str);
+  if (typeof str === 'number') return String(str);
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function truncateValue(val, maxLen) {
+  var s = typeof val === 'string' ? val : JSON.stringify(val);
+  if (!s) return 'undefined';
+  if (s.length > (maxLen || 80)) return s.substring(0, maxLen || 80) + '...';
+  return s;
+}
+
+function toggleSection(contentId, toggle) {
+  var content = document.getElementById(contentId);
+  if (content.classList.contains('visible')) {
+    content.classList.remove('visible');
+    toggle.classList.remove('open');
+  } else {
+    content.classList.add('visible');
+    toggle.classList.add('open');
+  }
+}
+
+// --- File Upload ---
+function loadFile(side) {
+  var fileInput = document.getElementById('file' + side);
+  var textarea = document.getElementById('input' + side);
+  if (!fileInput.files || !fileInput.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    textarea.value = e.target.result;
+  };
+  reader.readAsText(fileInput.files[0]);
+}
+
+// --- Demo Data ---
+function loadDemoData(side) {
+  var demoA = {
+    nct: 'NCT00000001',
+    extraction_timestamp: '2026-04-08T10:00:00.000Z',
+    extractor_id: 'agent-browser-1',
+    study_metadata: {
+      title: 'A Randomized Trial of Colchicine After Myocardial Infarction',
+      phase: 'PHASE3',
+      sponsor_type: 'OTHER',
+      enrollment_actual: 4745,
+      primary_completion_date: '2025-06-15',
+      study_first_submit_date: '2020-01-10'
+    },
+    arms: [
+      { arm_id: 'colchicine', arm_label: 'Colchicine 0.5mg', arm_type: 'EXPERIMENTAL', n_randomized: 2366, n_analyzed: 2310 },
+      { arm_id: 'placebo', arm_label: 'Placebo', arm_type: 'PLACEBO_COMPARATOR', n_randomized: 2379, n_analyzed: 2335 }
+    ],
+    outcomes: [
+      {
+        outcome_id: 'OM_1',
+        title: 'Major Adverse Cardiovascular Events (MACE)',
+        type: 'PRIMARY',
+        timeframe: '24 months',
+        measure_type: 'COUNT',
+        unit: 'Participants',
+        dispersion_type: '',
+        data: [
+          { arm_id: 'colchicine', arm_label: 'Colchicine 0.5mg', value: 138, spread: null, lower_limit: null, upper_limit: null, spread_type: '', participants: 2310, class_title: null, category_title: null },
+          { arm_id: 'placebo', arm_label: 'Placebo', value: 182, spread: null, lower_limit: null, upper_limit: null, spread_type: '', participants: 2335, class_title: null, category_title: null }
+        ]
+      }
+    ],
+    adverse_events: {
+      frequency_threshold: 5,
+      groups: [
+        { id: 'EG000', title: 'Colchicine', seriousNumAffected: 198, seriousNumAtRisk: 2366, otherNumAffected: 1102, otherNumAtRisk: 2366, deathsNumAffected: 24 },
+        { id: 'EG001', title: 'Placebo', seriousNumAffected: 212, seriousNumAtRisk: 2379, otherNumAffected: 1089, otherNumAtRisk: 2379, deathsNumAffected: 31 }
+      ]
+    },
+    participant_flow: {
+      groups: [
+        { id: 'FG000', title: 'Colchicine', started: 2366, completed: 2210, discontinued: 156 },
+        { id: 'FG001', title: 'Placebo', started: 2379, completed: 2241, discontinued: 138 }
+      ]
+    },
+    registered_outcomes: {
+      primary: [{ measure: 'MACE at 24 months', description: 'Composite of CV death, MI, stroke, ischemia-driven revascularization', timeFrame: '24 months' }],
+      secondary: []
+    },
+    provenance: {
+      source_url: 'https://clinicaltrials.gov/api/v2/studies/NCT00000001',
+      api_version: 'v2',
+      raw_hash: 'abc123def456abc123def456abc123def456abc123def456abc123def456abc12345',
+      extraction_timestamp: '2026-04-08T10:00:00.000Z',
+      extractor_id: 'agent-browser-1'
+    }
+  };
+
+  var demoB = JSON.parse(JSON.stringify(demoA));
+  demoB.extraction_timestamp = '2026-04-08T10:05:00.000Z';
+  demoB.extractor_id = 'agent-browser-2';
+  demoB.provenance.raw_hash = 'xyz789xyz789xyz789xyz789xyz789xyz789xyz789xyz789xyz789xyz789xyz78901';
+  demoB.provenance.extraction_timestamp = '2026-04-08T10:05:00.000Z';
+  demoB.provenance.extractor_id = 'agent-browser-2';
+
+  // Introduce deliberate disagreements for demo
+  demoB.study_metadata.enrollment_actual = 4750; // numeric: ~0.1% off
+  demoB.arms[0].n_analyzed = 2305; // numeric: ~0.2% off
+  demoB.outcomes[0].data[0].value = 141; // numeric: ~2.2% off — should flag
+  demoB.outcomes[0].title = 'Major Adverse Cardiac Events (MACE)'; // string diff: Cardiovascular vs Cardiac
+  demoB.adverse_events.groups[0].deathsNumAffected = 26; // numeric: ~8% off
+  demoB.participant_flow.groups[0].discontinued = 160; // numeric: ~2.6% off
+
+  var textarea = document.getElementById('input' + side);
+  if (side === 'A') {
+    textarea.value = JSON.stringify(demoA, null, 2);
+  } else {
+    textarea.value = JSON.stringify(demoB, null, 2);
+  }
+  setStatus('success', 'Demo data loaded for Agent ' + side);
+}
+
+// --- Run Comparison ---
+function runComparison() {
+  clearStatus();
+  mergedResult = null;
+  document.getElementById('outputSection').classList.add('hidden');
+
+  // Parse inputs
+  var rawA = document.getElementById('inputA').value.trim();
+  var rawB = document.getElementById('inputB').value.trim();
+
+  if (!rawA || !rawB) {
+    setStatus('error', 'Both Extraction A and Extraction B are required.');
+    return;
+  }
+
+  try {
+    parsedA = JSON.parse(rawA);
+  } catch (e) {
+    setStatus('error', 'Extraction A: Invalid JSON — ' + e.message);
+    return;
+  }
+
+  try {
+    parsedB = JSON.parse(rawB);
+  } catch (e) {
+    setStatus('error', 'Extraction B: Invalid JSON — ' + e.message);
+    return;
+  }
+
+  // Validate same NCT
+  if (parsedA.nct && parsedB.nct && parsedA.nct !== parsedB.nct) {
+    setStatus('error', 'NCT mismatch: A=' + parsedA.nct + ' vs B=' + parsedB.nct + '. Both extractions must be for the same study.');
+    return;
+  }
+
+  // Run comparison
+  var result = compareExtractions(parsedA, parsedB);
+  currentDisagreements = result.disagreements;
+  currentResolutions = {};
+
+  // Render results
+  renderSummary(result.agreementCount, currentDisagreements.length, parsedA.nct || 'N/A');
+  renderDisagreements(currentDisagreements);
+  renderDiffView(parsedA, parsedB, currentDisagreements);
+
+  // Show results
+  document.getElementById('resultsArea').classList.remove('hidden');
+
+  // Show appropriate merge button
+  if (currentDisagreements.length === 0) {
+    document.getElementById('autoMergeBtn').classList.remove('hidden');
+    document.getElementById('mergeBtn').classList.add('hidden');
+    document.getElementById('disagreeSection').classList.add('hidden');
+    setStatus('success', 'Perfect agreement across all ' + result.agreementCount + ' compared fields. Ready for auto-merge.');
+  } else {
+    document.getElementById('autoMergeBtn').classList.add('hidden');
+    document.getElementById('mergeBtn').classList.remove('hidden');
+    document.getElementById('mergeBtn').disabled = true;
+    document.getElementById('disagreeSection').classList.remove('hidden');
+    setStatus('info', currentDisagreements.length + ' disagreement(s) found. Resolve each to enable merge.');
+  }
+}
+
+// --- Render Summary ---
+function renderSummary(agreeCount, disagreeCount, nct) {
+  var row = document.getElementById('summaryRow');
+  row.innerHTML = '';
+
+  var cards = [
+    { cls: 'card-nct', number: nct, label: 'Study NCT' },
+    { cls: 'card-agree', number: agreeCount, label: 'Agreements' },
+    { cls: 'card-disagree', number: disagreeCount, label: 'Disagreements' },
+    { cls: 'card-resolved', number: '0 / ' + disagreeCount, label: 'Resolved' }
+  ];
+
+  for (var i = 0; i < cards.length; i++) {
+    var c = cards[i];
+    var div = document.createElement('div');
+    div.className = 'summary-card ' + c.cls;
+    if (c.cls === 'card-resolved') div.id = 'resolvedCard';
+    div.innerHTML = '<div class="number">' + escapeHtml(String(c.number)) + '</div><div class="label">' + c.label + '</div>';
+    row.appendChild(div);
+  }
+}
+
+// --- Render Disagreements Table ---
+function renderDisagreements(disagreements) {
+  var tbody = document.getElementById('disagreeBody');
+  tbody.innerHTML = '';
+
+  for (var i = 0; i < disagreements.length; i++) {
+    var d = disagreements[i];
+    var tr = document.createElement('tr');
+    tr.id = 'row-' + i;
+
+    var deviationStr = '';
+    if (d.type === 'numeric') deviationStr = d.deviation;
+    else if (d.type === 'string') deviationStr = 'sim=' + d.similarity;
+    else deviationStr = '—';
+
+    var typeCls = 'type-' + d.type;
+
+    tr.innerHTML =
+      '<td class="path-cell">' + escapeHtml(d.path) + '</td>' +
+      '<td class="value-cell"><span class="value-a">' + escapeHtml(truncateValue(d.valueA, 60)) + '</span></td>' +
+      '<td class="value-cell"><span class="value-b">' + escapeHtml(truncateValue(d.valueB, 60)) + '</span></td>' +
+      '<td><span class="type-badge ' + typeCls + '">' + escapeHtml(d.type) + '</span></td>' +
+      '<td class="deviation-cell">' + escapeHtml(deviationStr) + '</td>' +
+      '<td>' + buildResolutionControl(i) + '</td>';
+
+    tbody.appendChild(tr);
+  }
+}
+
+function buildResolutionControl(idx) {
+  var nameAttr = 'res_' + idx;
+  return '<div class="resolution-group" id="resGroup_' + idx + '">' +
+    '<label onclick="selectResolution(' + idx + ', \'A\', this)"><input type="radio" name="' + nameAttr + '" value="A"> Use A</label>' +
+    '<label onclick="selectResolution(' + idx + ', \'B\', this)"><input type="radio" name="' + nameAttr + '" value="B"> Use B</label>' +
+    '<label onclick="selectResolution(' + idx + ', \'custom\', this)"><input type="radio" name="' + nameAttr + '" value="custom"> Custom</label>' +
+    '<input type="text" class="custom-input" id="custom_' + idx + '" placeholder="Enter custom value" onchange="updateCustomValue(' + idx + ')" onkeyup="updateCustomValue(' + idx + ')">' +
+    '</div>';
+}
+
+function selectResolution(idx, choice, labelEl) {
+  // Update visual state
+  var group = document.getElementById('resGroup_' + idx);
+  var labels = group.querySelectorAll('label');
+  for (var i = 0; i < labels.length; i++) {
+    labels[i].classList.remove('selected');
+  }
+  labelEl.classList.add('selected');
+
+  // Show/hide custom input
+  var customInput = document.getElementById('custom_' + idx);
+  if (choice === 'custom') {
+    customInput.classList.add('visible');
+    customInput.focus();
+  } else {
+    customInput.classList.remove('visible');
+  }
+
+  // Store resolution
+  currentResolutions[idx] = {
+    path: currentDisagreements[idx].path,
+    choice: choice
+  };
+
+  if (choice === 'custom') {
+    currentResolutions[idx].customValue = customInput.value;
+  }
+
+  updateResolutionCount();
+}
+
+function updateCustomValue(idx) {
+  if (currentResolutions[idx] && currentResolutions[idx].choice === 'custom') {
+    currentResolutions[idx].customValue = document.getElementById('custom_' + idx).value;
+  }
+}
+
+function updateResolutionCount() {
+  var total = currentDisagreements.length;
+  var resolved = Object.keys(currentResolutions).length;
+
+  var card = document.getElementById('resolvedCard');
+  if (card) {
+    card.querySelector('.number').textContent = resolved + ' / ' + total;
+  }
+
+  var mergeBtn = document.getElementById('mergeBtn');
+  if (resolved >= total && total > 0) {
+    mergeBtn.disabled = false;
+  } else {
+    mergeBtn.disabled = true;
+  }
+}
+
+// --- Diff View ---
+function renderDiffView(objA, objB, disagreements) {
+  var disagreePathSet = new Set();
+  for (var i = 0; i < disagreements.length; i++) {
+    disagreePathSet.add(disagreements[i].path);
+  }
+
+  var treeA = document.getElementById('diffTreeA');
+  var treeB = document.getElementById('diffTreeB');
+
+  treeA.innerHTML = renderJsonTree(objA, '', disagreePathSet);
+  treeB.innerHTML = renderJsonTree(objB, '', disagreePathSet);
+}
+
+function renderJsonTree(obj, basePath, disagreeSet) {
+  var lines = [];
+  renderJsonLines(obj, '', 0, lines, disagreeSet);
+  return lines.join('\n');
+}
+
+function renderJsonLines(obj, currentPath, indent, lines, disagreeSet) {
+  var prefix = '  '.repeat(indent);
+
+  if (obj === null) {
+    lines.push(wrapLine(prefix + 'null', currentPath, disagreeSet));
+    return;
+  }
+
+  if (typeof obj !== 'object') {
+    var valStr = typeof obj === 'string' ? '"' + escapeHtml(obj) + '"' : escapeHtml(String(obj));
+    lines.push(wrapLine(prefix + valStr, currentPath, disagreeSet));
+    return;
+  }
+
+  if (Array.isArray(obj)) {
+    lines.push(wrapLine(prefix + '[', '', disagreeSet));
+    for (var i = 0; i < obj.length; i++) {
+      var childPath = currentPath ? currentPath + '[' + i + ']' : '[' + i + ']';
+      renderJsonLines(obj[i], childPath, indent + 1, lines, disagreeSet);
+    }
+    lines.push(wrapLine(prefix + ']', '', disagreeSet));
+    return;
+  }
+
+  var keys = Object.keys(obj);
+  lines.push(wrapLine(prefix + '{', '', disagreeSet));
+  for (var k = 0; k < keys.length; k++) {
+    var key = keys[k];
+    var childPath = currentPath ? currentPath + '.' + key : key;
+    var val = obj[key];
+
+    if (val !== null && typeof val === 'object') {
+      lines.push(wrapLine(prefix + '  <span style="color:var(--gray-500)">' + escapeHtml(key) + ':</span>', '', disagreeSet));
+      renderJsonLines(val, childPath, indent + 2, lines, disagreeSet);
+    } else {
+      var valStr = val === null ? 'null' : typeof val === 'string' ? '"' + escapeHtml(val) + '"' : escapeHtml(String(val));
+      lines.push(wrapLine(prefix + '  <span style="color:var(--gray-500)">' + escapeHtml(key) + ':</span> ' + valStr, childPath, disagreeSet));
+    }
+  }
+  lines.push(wrapLine(prefix + '}', '', disagreeSet));
+}
+
+function wrapLine(html, path, disagreeSet) {
+  if (path && disagreeSet.has(path)) {
+    return '<div class="line-disagree">' + html + '</div>';
+  }
+  return '<div class="line-agree">' + html + '</div>';
+}
+
+// --- Auto-Merge (0 disagreements) ---
+function autoMerge() {
+  if (!parsedA || !parsedB) return;
+  mergedResult = mergeExtractions(parsedA, parsedB, []);
+  renderOutput(mergedResult);
+  setStatus('success', 'Auto-merged with perfect agreement. witness_count = 2.');
+}
+
+// --- Merge & Certify ---
+function mergeAndCertify() {
+  if (!parsedA || !parsedB) return;
+
+  // Validate all resolutions present
+  var resolutionsList = [];
+  for (var i = 0; i < currentDisagreements.length; i++) {
+    if (!currentResolutions[i]) {
+      setStatus('error', 'Resolution missing for: ' + currentDisagreements[i].path);
+      return;
+    }
+    resolutionsList.push(currentResolutions[i]);
+  }
+
+  mergedResult = mergeExtractions(parsedA, parsedB, resolutionsList);
+  renderOutput(mergedResult);
+  setStatus('success', 'Merged with ' + resolutionsList.length + ' resolution(s) applied. witness_count = 2.');
+}
+
+// --- Render Merged Output ---
+function renderOutput(merged) {
+  document.getElementById('outputSection').classList.remove('hidden');
+  document.getElementById('mergedOutput').textContent = JSON.stringify(merged, null, 2);
+}
+
+// --- Copy Merged JSON ---
+function copyMerged() {
+  if (!mergedResult) return;
+  var jsonStr = JSON.stringify(mergedResult, null, 2);
+  navigator.clipboard.writeText(jsonStr).then(function() {
+    setStatus('success', 'Merged JSON copied to clipboard (' + jsonStr.length + ' bytes)');
+  }).catch(function() {
+    // Fallback
+    var ta = document.createElement('textarea');
+    ta.value = jsonStr;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    setStatus('success', 'Merged JSON copied to clipboard (' + jsonStr.length + ' bytes)');
+  });
+}
+
+// --- Download Merged JSON ---
+function downloadMerged() {
+  if (!mergedResult) return;
+  var jsonStr = JSON.stringify(mergedResult, null, 2);
+  var blob = new Blob([jsonStr], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = (mergedResult.nct || 'merged') + '_merged_extraction.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  setStatus('success', 'Downloaded merged JSON for ' + (mergedResult.nct || 'unknown'));
+}
+
+// --- Queue Management (localStorage) ---
+function getQueue() {
+  try {
+    var raw = localStorage.getItem(QUEUE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveQueue(queue) {
+  localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+  updateQueueBadge();
+}
+
+function updateQueueBadge() {
+  var queue = getQueue();
+  var pending = queue.filter(function(item) { return item.status === 'pending'; }).length;
+  document.getElementById('queueCount').textContent = pending;
+}
+
+function saveToQueue() {
+  if (!parsedA || !parsedB) {
+    setStatus('error', 'No comparison data to save.');
+    return;
+  }
+
+  var queue = getQueue();
+  var nct = parsedA.nct || parsedB.nct || 'unknown';
+  var status = mergedResult ? 'resolved' : 'pending';
+
+  // Check for existing entry with same NCT
+  var existing = queue.findIndex(function(item) { return item.nct === nct; });
+  var entry = {
+    nct: nct,
+    extractionA: parsedA,
+    extractionB: parsedB,
+    disagreements: currentDisagreements,
+    status: status,
+    merged: mergedResult || null,
+    savedAt: new Date().toISOString()
+  };
+
+  if (existing >= 0) {
+    queue[existing] = entry;
+  } else {
+    queue.push(entry);
+  }
+
+  saveQueue(queue);
+  setStatus('success', 'Saved to queue as "' + status + '" — ' + nct);
+}
+
+function openQueueModal() {
+  var queue = getQueue();
+  var list = document.getElementById('queueList');
+  list.innerHTML = '';
+
+  if (queue.length === 0) {
+    list.innerHTML = '<div class="queue-empty">No items in queue. Compare two extractions and save to build your queue.</div>';
+  } else {
+    for (var i = 0; i < queue.length; i++) {
+      var item = queue[i];
+      var statusCls = item.status === 'pending' ? 'qi-pending' : 'qi-resolved';
+      var disagreeCount = item.disagreements ? item.disagreements.length : 0;
+      var div = document.createElement('div');
+      div.className = 'queue-item';
+      div.innerHTML =
+        '<span class="qi-nct">' + escapeHtml(item.nct) + '</span>' +
+        '<span class="qi-status ' + statusCls + '">' + escapeHtml(item.status) + '</span>' +
+        '<span class="qi-info">' + disagreeCount + ' disagreement(s) &middot; ' + (item.savedAt ? item.savedAt.substring(0, 16) : '') + '</span>' +
+        '<div class="qi-actions">' +
+          '<button class="btn btn-primary btn-small" onclick="loadFromQueue(' + i + ')">Load</button>' +
+          '<button class="btn btn-danger btn-small" onclick="removeFromQueue(' + i + ')">Remove</button>' +
+        '</div>';
+      list.appendChild(div);
+    }
+  }
+
+  document.getElementById('queueOverlay').classList.add('active');
+}
+
+function closeQueueModal(event) {
+  if (event && event.target !== document.getElementById('queueOverlay')) return;
+  document.getElementById('queueOverlay').classList.remove('active');
+}
+
+function loadFromQueue(idx) {
+  var queue = getQueue();
+  if (idx < 0 || idx >= queue.length) return;
+  var item = queue[idx];
+
+  document.getElementById('inputA').value = JSON.stringify(item.extractionA, null, 2);
+  document.getElementById('inputB').value = JSON.stringify(item.extractionB, null, 2);
+
+  closeQueueModal();
+  setStatus('success', 'Loaded ' + item.nct + ' from queue. Press Compare to re-run comparison.');
+}
+
+function removeFromQueue(idx) {
+  var queue = getQueue();
+  queue.splice(idx, 1);
+  saveQueue(queue);
+  openQueueModal(); // Refresh
+}
+
+function clearQueue() {
+  if (!confirm('Clear all items from the disagreement queue?')) return;
+  saveQueue([]);
+  openQueueModal(); // Refresh
+}
+
+// --- Clear All ---
+function clearAll() {
+  document.getElementById('inputA').value = '';
+  document.getElementById('inputB').value = '';
+  document.getElementById('resultsArea').classList.add('hidden');
+  document.getElementById('outputSection').classList.add('hidden');
+  document.getElementById('autoMergeBtn').classList.add('hidden');
+  document.getElementById('mergeBtn').classList.add('hidden');
+  parsedA = null;
+  parsedB = null;
+  mergedResult = null;
+  currentDisagreements = [];
+  currentResolutions = {};
+  clearStatus();
+}
+
+// --- Init ---
+updateQueueBadge();
+</script>
+</body>
+</html>
