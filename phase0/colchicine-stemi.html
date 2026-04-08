@@ -488,6 +488,119 @@ tbody td { padding: 10px 14px; }
   color: var(--amber-600);
 }
 
+/* ========== TRANSPARENCY TAB ========== */
+.transparency-section {
+  margin-bottom: 24px;
+}
+.transparency-section h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--blue-100);
+}
+.prisma-flow {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0;
+  overflow-x: auto;
+}
+.prisma-flow svg text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+.incl-excl-status-included { color: var(--green-700); font-weight: 600; }
+.incl-excl-status-excluded { color: var(--red-700); font-weight: 600; }
+.prov-badge {
+  display: inline-block;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  width: 100%;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.prov-badge .prov-field {
+  font-weight: 700;
+  color: var(--blue-800);
+  font-size: 13px;
+}
+.prov-badge .prov-path {
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-size: 11px;
+  color: var(--gray-500);
+  word-break: break-all;
+}
+.prov-badge .prov-check {
+  color: var(--green-700);
+  font-weight: 600;
+}
+.webr-panel {
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  padding: 20px;
+}
+.webr-panel pre {
+  background: var(--gray-900);
+  color: #a5f3fc;
+  border-radius: 8px;
+  padding: 16px;
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-bottom: 12px;
+}
+.webr-output {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  padding: 16px;
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  min-height: 80px;
+  max-height: 300px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+.record-excerpt-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+.record-excerpt-grid .excerpt-col {
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  padding: 14px;
+}
+.record-excerpt-grid .excerpt-col h5 {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--blue-800);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+.excerpt-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--gray-100);
+  font-size: 12px;
+}
+.excerpt-row:last-child { border-bottom: none; }
+.excerpt-row .excerpt-label { color: var(--gray-500); font-weight: 500; }
+.excerpt-row .excerpt-value { color: var(--gray-800); font-weight: 600; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 11px; }
+@media (max-width: 900px) {
+  .record-excerpt-grid { grid-template-columns: 1fr; }
+}
+
 /* ========== PRINT STYLES ========== */
 @media print {
   .master-header, .nav-bar, .btn, .btn-group, .pipeline-panel,
@@ -535,6 +648,7 @@ tbody td { padding: 10px 14px; }
 <!-- ======================================================================= -->
 <nav class="nav-bar">
   <button class="nav-tab active" data-panel="panelPipeline" onclick="switchPanel(this)">Pipeline</button>
+  <button class="nav-tab" data-panel="panelTransparency" onclick="switchPanel(this)">Transparency</button>
   <button class="nav-tab" data-panel="panelEvidence" onclick="switchPanel(this)">Evidence Map</button>
   <button class="nav-tab" data-panel="panelPrimary" onclick="switchPanel(this)">Primary Synthesis</button>
   <button class="nav-tab" data-panel="panelSecondary" onclick="switchPanel(this)">Secondary Syntheses</button>
@@ -584,6 +698,87 @@ tbody td { padding: 10px 14px; }
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- ===== TRANSPARENCY PANEL ===== -->
+  <div class="panel" id="panelTransparency">
+
+    <!-- Search Strategy -->
+    <div class="card">
+      <div class="card-header">Search Strategy</div>
+      <div class="card-body">
+        <div id="searchStrategyContent">
+          <div class="empty-state"><div class="icon">&#128270;</div><p>Run the pipeline to see search strategy details.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRISMA Flow Diagram -->
+    <div class="card">
+      <div class="card-header">PRISMA 2020 Flow Diagram</div>
+      <div class="card-body">
+        <div id="prismaFlowContent" class="prisma-flow">
+          <div class="empty-state"><div class="icon">&#128200;</div><p>Run the pipeline to generate the PRISMA flow diagram.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inclusion/Exclusion Log -->
+    <div class="card">
+      <div class="card-header">Inclusion / Exclusion Log
+        <span style="margin-left:auto;font-size:12px;color:var(--gray-400)" id="inclExclCount"></span>
+      </div>
+      <div class="card-body no-pad">
+        <div class="table-scroll">
+          <table id="inclExclTable">
+            <thead>
+              <tr>
+                <th>NCT ID</th>
+                <th>Title</th>
+                <th>Status</th>
+                <th>Reason</th>
+                <th>TruthCert Verdict</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="inclExclBody"></tbody>
+          </table>
+        </div>
+        <div id="inclExclEmpty" class="empty-state" style="padding:24px"><p>Run the pipeline to see inclusion/exclusion decisions.</p></div>
+      </div>
+    </div>
+
+    <!-- WebR Validation (collapsed) -->
+    <div class="card">
+      <div class="card-header" style="cursor:pointer" onclick="toggleWebRSection()">
+        <span id="webrChevron" style="transition:transform 0.2s;font-size:12px;color:var(--gray-400)">&#9654;</span>
+        WebR Independent Validation
+        <span class="tag tag-info" style="margin-left:8px">Optional</span>
+      </div>
+      <div class="card-body" id="webrSection" style="display:none">
+        <div id="webrContent">
+          <div class="webr-panel">
+            <p style="font-size:13px;color:var(--gray-600);margin-bottom:12px">
+              Generate and optionally run R code (via WebR) that independently reproduces the primary meta-analysis.
+              WebR is loaded on-demand only when you click "Run in WebR".
+            </p>
+            <div id="webrCodeBlock">
+              <pre id="webrRCode">Run the pipeline first to generate R validation code.</pre>
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-secondary" id="btnCopyRCode" onclick="copyRCode()" disabled>Copy R Code</button>
+              <button class="btn btn-primary" id="btnRunWebR" onclick="runWebR()" disabled>Run in WebR</button>
+            </div>
+            <div id="webrOutputContainer" style="display:none;margin-top:16px">
+              <h4 style="font-size:13px;font-weight:600;margin-bottom:8px">R Output</h4>
+              <div class="webr-output" id="webrOutput">Loading WebR...</div>
+            </div>
+            <div id="webrComparison" style="display:none;margin-top:16px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- ===== EVIDENCE MAP PANEL ===== -->
@@ -1324,6 +1519,41 @@ function classifySponsorType(sponsorClass) {
   return 'OTHER';
 }
 
+function extractRawExcerpts(raw) {
+  var p = raw.protocolSection || {};
+  var r = raw.resultsSection || {};
+  var excerpts = {
+    title: { path: 'protocolSection.identificationModule.briefTitle', value: (p.identificationModule || {}).briefTitle || null },
+    nctId: { path: 'protocolSection.identificationModule.nctId', value: (p.identificationModule || {}).nctId || null },
+    enrollment: { path: 'protocolSection.designModule.enrollmentInfo.count', value: ((p.designModule || {}).enrollmentInfo || {}).count || null },
+    overallStatus: { path: 'protocolSection.statusModule.overallStatus', value: (p.statusModule || {}).overallStatus || null },
+    primaryCompletionDate: { path: 'protocolSection.statusModule.primaryCompletionDateStruct.date', value: ((p.statusModule || {}).primaryCompletionDateStruct || {}).date || null },
+    arms: {
+      path: 'protocolSection.armsInterventionsModule.armGroups',
+      value: ((p.armsInterventionsModule || {}).armGroups || []).map(function(a) { return { label: a.label, type: a.type }; })
+    },
+    primaryOutcome: {
+      path: 'resultsSection.outcomeMeasuresModule.outcomeMeasures[0]',
+      value: ((r.outcomeMeasuresModule || {}).outcomeMeasures || [])[0] ? ((r.outcomeMeasuresModule || {}).outcomeMeasures || [])[0].title : null
+    },
+    measurements: ((r.outcomeMeasuresModule || {}).outcomeMeasures || []).slice(0, 3).map(function(om) {
+      return {
+        title: om.title || '',
+        type: om.type || '',
+        groups: (om.groups || []).map(function(g) { return { id: g.id, title: g.title }; }),
+        rawValues: (om.classes || []).flatMap(function(c) {
+          return (c.categories || []).flatMap(function(cat) {
+            return (cat.measurements || []).map(function(m) {
+              return { groupId: m.groupId, value: m.value, spread: m.spread };
+            });
+          });
+        })
+      };
+    })
+  };
+  return excerpts;
+}
+
 async function extractResults(nctId) {
   pipeLog('Extracting results for ' + nctId);
   var result = await fetchStudyRaw(nctId);
@@ -1481,6 +1711,7 @@ async function extractResults(nctId) {
 
   // Provenance
   var extractionTimestamp = new Date().toISOString();
+  var rawExcerpts = extractRawExcerpts(raw);
   return {
     nct: nctId,
     extraction_timestamp: extractionTimestamp,
@@ -1491,6 +1722,7 @@ async function extractResults(nctId) {
     adverse_events: { groups: aeGroups },
     participant_flow: { groups: flowGroups.map(function(fg) { return { id: fg.id, title: fg.title }; }) },
     registered_outcomes: { primary: primaryRegistered, secondary: secondaryRegistered },
+    _rawExcerpts: rawExcerpts,
     provenance: {
       source_url: CTGOV_API_CONFIG.base_url + '/studies/' + nctId,
       api_version: 'v2',
@@ -2318,7 +2550,10 @@ var STATE = {
   provenanceBundle: null,
   e156Text: '',
   pipelineRunning: false,
-  lastUpdated: null
+  lastUpdated: null,
+  searchLog: [],
+  inclusionLog: [],
+  prismaFlowCounts: null
 };
 
 var evidenceSortCol = null;
@@ -2488,6 +2723,7 @@ async function runFullPipeline() {
 
     var allStudies = [];
     var seenNCTs = new Set();
+    STATE.searchLog = [];
 
     for (var qi = 0; qi < CARDIO_CONDITIONS.length; qi++) {
       if (pipelineAbort) break;
@@ -2495,6 +2731,10 @@ async function runFullPipeline() {
       pipeLog('Query ' + (qi+1) + '/' + CARDIO_CONDITIONS.length + ': condition=' + condQ);
       var pageToken = null;
       var page = 0;
+      var queryTotalCount = 0;
+      var queryStudiesReturned = 0;
+      var queryNewStudies = 0;
+      var queryString = '';
       try { // [P0-3 FIX] Per-query error handling — one failure doesn't abort entire pipeline
       do {
         var qs = buildQueryString({
@@ -2503,13 +2743,16 @@ async function runFullPipeline() {
           resultsOnly: true,
           pageToken: pageToken
         });
+        if (page === 0) queryString = qs;
         var data = await apiRequest('/studies?' + qs);
-        if (page === 0) { pipeLog('  ' + condQ + ': ' + (data.totalCount || 0) + ' total'); }
+        if (page === 0) { queryTotalCount = data.totalCount || 0; pipeLog('  ' + condQ + ': ' + queryTotalCount + ' total'); }
         var studies = (data.studies || []).map(parseStudyForTable);
+        queryStudiesReturned += studies.length;
         for (var si = 0; si < studies.length; si++) {
           if (!seenNCTs.has(studies[si].nctId)) {
             seenNCTs.add(studies[si].nctId);
             allStudies.push(studies[si]);
+            queryNewStudies++;
           }
         }
         pageToken = data.nextPageToken || null;
@@ -2518,6 +2761,16 @@ async function runFullPipeline() {
       } catch (queryErr) {
         pipeLog('ERROR querying "' + condQ + '": ' + queryErr.message + ' — skipping, continuing');
       }
+      STATE.searchLog.push({
+        database: 'ClinicalTrials.gov API v2',
+        query: queryString,
+        condition: condQ,
+        intervention: 'colchicine',
+        resultsCount: queryTotalCount,
+        studiesReturned: queryStudiesReturned,
+        newStudies: queryNewStudies,
+        timestamp: new Date().toISOString()
+      });
       setPipeProgress(Math.round(5 + 10 * ((qi + 1) / CARDIO_CONDITIONS.length)));
     }
 
@@ -2574,6 +2827,67 @@ async function runFullPipeline() {
     }
     STATE.clearedExtractions = cleared;
     pipeLog(cleared.length + ' studies cleared for synthesis (of ' + extractions.length + ')');
+
+    // Build inclusion/exclusion log
+    STATE.inclusionLog = [];
+    var extractedNCTs = new Set();
+    for (var ei = 0; ei < extractions.length; ei++) extractedNCTs.add(extractions[ei].nct);
+    // Studies without posted results
+    for (var hi = 0; hi < allStudies.length; hi++) {
+      if (!allStudies[hi].hasResults) {
+        STATE.inclusionLog.push({
+          nct: allStudies[hi].nctId,
+          title: allStudies[hi].briefTitle || '',
+          status: 'EXCLUDED',
+          reason: 'No posted results',
+          verdict: 'N/A'
+        });
+      }
+    }
+    // Studies with results: check TruthCert
+    for (var ei = 0; ei < extractions.length; ei++) {
+      var r = reports[ei];
+      var isCleared = r.cleared_for_synthesis;
+      var critFlags = r.flags.filter(function(f) { return f.severity === 'CRITICAL'; });
+      var warnFlags = r.flags.filter(function(f) { return f.severity === 'WARNING'; });
+      var reason = '';
+      if (isCleared && warnFlags.length > 0) {
+        reason = 'Cleared with warnings: ' + warnFlags.map(function(f) { return f.message; }).join('; ');
+      } else if (isCleared) {
+        reason = 'Cleared TruthCert';
+      } else {
+        reason = 'CRITICAL: ' + critFlags.map(function(f) { return f.message; }).join('; ');
+      }
+      STATE.inclusionLog.push({
+        nct: extractions[ei].nct,
+        title: (extractions[ei].study_metadata || {}).title || '',
+        status: isCleared ? 'INCLUDED' : 'EXCLUDED',
+        reason: reason,
+        verdict: r.verdict
+      });
+    }
+
+    // PRISMA flow counts
+    var totalIdentified = 0;
+    STATE.searchLog.forEach(function(sl) { totalIdentified += sl.resultsCount; });
+    var duplicatesRemoved = totalIdentified - allStudies.length;
+    var noResults = allStudies.filter(function(s) { return !s.hasResults; }).length;
+    var withResultsCount = allStudies.length - noResults;
+    var criticalExcluded = reports.filter(function(r) { return !r.cleared_for_synthesis; }).length;
+    var warnIncluded = reports.filter(function(r) { return r.cleared_for_synthesis && r.verdict === 'WARN'; }).length;
+    STATE.prismaFlowCounts = {
+      identified: totalIdentified,
+      perQuery: STATE.searchLog.map(function(sl) { return { condition: sl.condition, count: sl.resultsCount }; }),
+      duplicatesRemoved: duplicatesRemoved,
+      screened: allStudies.length,
+      noResults: noResults,
+      withResults: withResultsCount,
+      extracted: extractions.length,
+      criticalExcluded: criticalExcluded,
+      warnIncluded: warnIncluded,
+      inSynthesis: cleared.length
+    };
+
     setPipeStep('filter', 'done');
     setPipeProgress(60);
 
@@ -2753,6 +3067,7 @@ function refreshFromCtgov() {
 
 function renderAllPanels() {
   renderHeaderBadges();
+  renderTransparencyPanel();
   renderEvidenceMap();
   renderPrimarySynthesis();
   renderSecondaryPanel();
@@ -2871,6 +3186,516 @@ function showStudyModal(row) {
 
   openModal(ext.nct + ' Detail', html);
 }
+
+// ==============================
+// TRANSPARENCY PANEL RENDERERS
+// ==============================
+
+function renderTransparencyPanel() {
+  renderSearchStrategy();
+  renderPrismaFlow();
+  renderInclusionExclusionLog();
+  updateWebRCode();
+}
+
+function renderSearchStrategy() {
+  var container = document.getElementById('searchStrategyContent');
+  if (!STATE.searchLog || STATE.searchLog.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">&#128270;</div><p>Run the pipeline to see search strategy details.</p></div>';
+    return;
+  }
+  var html = '<div class="info-box" style="margin-bottom:16px">All searches executed against the ClinicalTrials.gov API v2 with filter <code>aggFilters=results:with</code> (posted results only) and intervention = colchicine.</div>';
+  html += '<div class="table-scroll"><table><thead><tr><th>Database</th><th>Condition Query</th><th>API Results</th><th>Returned</th><th>New (unique)</th><th>Date</th></tr></thead><tbody>';
+  var totalNew = 0;
+  for (var i = 0; i < STATE.searchLog.length; i++) {
+    var sl = STATE.searchLog[i];
+    totalNew += sl.newStudies;
+    html += '<tr>'
+      + '<td style="font-size:11px">' + escHtml(sl.database) + '</td>'
+      + '<td class="mono" style="font-size:11px">' + escHtml(sl.condition) + '</td>'
+      + '<td class="text-right">' + sl.resultsCount + '</td>'
+      + '<td class="text-right">' + sl.studiesReturned + '</td>'
+      + '<td class="text-right"><strong>' + sl.newStudies + '</strong></td>'
+      + '<td style="font-size:11px">' + escHtml((sl.timestamp || '').substring(0, 10)) + '</td>'
+      + '</tr>';
+  }
+  html += '</tbody></table></div>';
+  html += '<p style="font-size:12px;color:var(--gray-500);margin-top:8px">Total unique studies after deduplication: <strong>' + totalNew + '</strong></p>';
+  container.innerHTML = html;
+}
+
+function renderPrismaFlow() {
+  var container = document.getElementById('prismaFlowContent');
+  var fc = STATE.prismaFlowCounts;
+  if (!fc) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">&#128200;</div><p>Run the pipeline to generate the PRISMA flow diagram.</p></div>';
+    return;
+  }
+  container.innerHTML = buildPrismaSVG(fc);
+}
+
+function buildPrismaSVG(fc) {
+  var w = 600, boxW = 260, boxH = 38, gap = 52, arrowGap = 14;
+  var leftX = (w - boxW) / 2;
+  var sideBoxW = 180;
+  var sideX = w - sideBoxW - 10;
+
+  // Calculate rows
+  var rows = [];
+  // Row 0: Identified
+  rows.push({ label: 'Records identified (N=' + fc.identified + ')', sub: fc.perQuery.map(function(q) { return q.condition + ' (N=' + q.count + ')'; }) });
+  // Row 1: Duplicates removed (side)
+  rows.push({ label: 'Records after deduplication (N=' + fc.screened + ')' });
+  // Row 2: Screened
+  rows.push({ label: 'Records screened (N=' + fc.screened + ')' });
+  // Row 3: With results
+  rows.push({ label: 'Studies with posted results (N=' + fc.withResults + ')' });
+  // Row 4: Extracted
+  rows.push({ label: 'Studies extracted (N=' + fc.extracted + ')' });
+  // Row 5: In synthesis
+  rows.push({ label: 'Studies in synthesis (N=' + fc.inSynthesis + ')' });
+
+  var subLineH = 14;
+  var row0SubH = (rows[0].sub ? rows[0].sub.length * subLineH : 0);
+  var totalH = 6 * (boxH + gap) + row0SubH + 40;
+
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + totalH + '" font-family="-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif" font-size="11">';
+  svg += '<defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#6b7280"/></marker></defs>';
+
+  function drawBox(x, y, bw, bh, text, fill, textColor) {
+    svg += '<rect x="' + x + '" y="' + y + '" width="' + bw + '" height="' + bh + '" rx="6" fill="' + (fill || '#fff') + '" stroke="#d1d5db" stroke-width="1.5"/>';
+    svg += '<text x="' + (x + bw / 2) + '" y="' + (y + bh / 2 + 4) + '" text-anchor="middle" fill="' + (textColor || '#1f2937') + '" font-size="11" font-weight="600">' + escHtml(text) + '</text>';
+  }
+
+  function drawArrow(x1, y1, x2, y2) {
+    svg += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowhead)"/>';
+  }
+
+  function drawSideBox(x, y, bw, bh, text, fill) {
+    svg += '<rect x="' + x + '" y="' + y + '" width="' + bw + '" height="' + bh + '" rx="6" fill="' + (fill || '#fef2f2') + '" stroke="#fca5a5" stroke-width="1"/>';
+    svg += '<text x="' + (x + bw / 2) + '" y="' + (y + bh / 2 + 4) + '" text-anchor="middle" fill="#b91c1c" font-size="10" font-weight="500">' + escHtml(text) + '</text>';
+  }
+
+  var cy = 20;
+
+  // Row 0: Identified
+  drawBox(leftX, cy, boxW, boxH, rows[0].label, '#eff6ff', '#1e40af');
+  if (rows[0].sub) {
+    for (var si = 0; si < rows[0].sub.length; si++) {
+      svg += '<text x="' + (leftX + boxW / 2) + '" y="' + (cy + boxH + 12 + si * subLineH) + '" text-anchor="middle" fill="#6b7280" font-size="9">' + escHtml(rows[0].sub[si]) + '</text>';
+    }
+  }
+  var nextY = cy + boxH + row0SubH + arrowGap;
+  drawArrow(leftX + boxW / 2, cy + boxH + row0SubH + 2, leftX + boxW / 2, nextY);
+  cy = nextY;
+
+  // Row 1: After dedup
+  drawBox(leftX, cy, boxW, boxH, rows[1].label, '#fff');
+  // Side: duplicates removed
+  if (fc.duplicatesRemoved > 0) {
+    drawSideBox(sideX, cy, sideBoxW, boxH, 'Duplicates removed (N=' + fc.duplicatesRemoved + ')');
+    svg += '<line x1="' + (leftX + boxW) + '" y1="' + (cy + boxH / 2) + '" x2="' + sideX + '" y2="' + (cy + boxH / 2) + '" stroke="#fca5a5" stroke-width="1" stroke-dasharray="4,3"/>';
+  }
+  drawArrow(leftX + boxW / 2, cy + boxH, leftX + boxW / 2, cy + boxH + gap);
+  cy += boxH + gap;
+
+  // Row 2: Screened
+  drawBox(leftX, cy, boxW, boxH, rows[2].label, '#fff');
+  // Side: no results
+  if (fc.noResults > 0) {
+    drawSideBox(sideX, cy, sideBoxW, boxH, 'No posted results (N=' + fc.noResults + ')', '#fef3c7');
+    svg += '<line x1="' + (leftX + boxW) + '" y1="' + (cy + boxH / 2) + '" x2="' + sideX + '" y2="' + (cy + boxH / 2) + '" stroke="#fcd34d" stroke-width="1" stroke-dasharray="4,3"/>';
+  }
+  drawArrow(leftX + boxW / 2, cy + boxH, leftX + boxW / 2, cy + boxH + gap);
+  cy += boxH + gap;
+
+  // Row 3: With results
+  drawBox(leftX, cy, boxW, boxH, rows[3].label, '#fff');
+  drawArrow(leftX + boxW / 2, cy + boxH, leftX + boxW / 2, cy + boxH + gap);
+  cy += boxH + gap;
+
+  // Row 4: Extracted + validated
+  drawBox(leftX, cy, boxW, boxH, rows[4].label, '#fff');
+  // Side: CRITICAL excluded
+  if (fc.criticalExcluded > 0) {
+    drawSideBox(sideX, cy, sideBoxW, boxH, 'CRITICAL flags (N=' + fc.criticalExcluded + ')');
+    svg += '<line x1="' + (leftX + boxW) + '" y1="' + (cy + boxH / 2) + '" x2="' + sideX + '" y2="' + (cy + boxH / 2) + '" stroke="#fca5a5" stroke-width="1" stroke-dasharray="4,3"/>';
+  }
+  drawArrow(leftX + boxW / 2, cy + boxH, leftX + boxW / 2, cy + boxH + gap);
+  cy += boxH + gap;
+
+  // Row 5: In synthesis
+  drawBox(leftX, cy, boxW, boxH, rows[5].label, '#dcfce7', '#15803d');
+  if (fc.warnIncluded > 0) {
+    svg += '<text x="' + (leftX + boxW / 2) + '" y="' + (cy + boxH + 14) + '" text-anchor="middle" fill="#d97706" font-size="9">(' + fc.warnIncluded + ' with WARNING flags, included with note)</text>';
+  }
+
+  svg += '</svg>';
+  return svg;
+}
+
+function renderInclusionExclusionLog() {
+  var tbody = document.getElementById('inclExclBody');
+  var emptyEl = document.getElementById('inclExclEmpty');
+  if (!STATE.inclusionLog || STATE.inclusionLog.length === 0) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    document.getElementById('inclExclCount').textContent = '';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  tbody.innerHTML = '';
+  var included = 0, excluded = 0;
+  STATE.inclusionLog.forEach(function(entry) {
+    if (entry.status === 'INCLUDED') included++;
+    else excluded++;
+    var tr = document.createElement('tr');
+    var statusClass = entry.status === 'INCLUDED' ? 'incl-excl-status-included' : 'incl-excl-status-excluded';
+    var verdictTag = entry.verdict === 'PASS' ? 'tag-pass' : entry.verdict === 'WARN' ? 'tag-warn' : entry.verdict === 'CRITICAL' ? 'tag-fail' : 'tag-info';
+    tr.innerHTML =
+      '<td class="mono">' + escHtml(entry.nct) + '</td>' +
+      '<td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + escHtml(entry.title) + '">' + escHtml(entry.title) + '</td>' +
+      '<td class="' + statusClass + '">' + entry.status + '</td>' +
+      '<td style="font-size:11px;max-width:260px">' + escHtml(entry.reason) + '</td>' +
+      '<td><span class="tag ' + verdictTag + '">' + escHtml(entry.verdict) + '</span></td>' +
+      '<td><button class="btn btn-secondary" style="padding:4px 12px;font-size:11px" onclick="showRecordExcerpt(\'' + escHtml(entry.nct) + '\')">View Record</button></td>';
+    tbody.appendChild(tr);
+  });
+  document.getElementById('inclExclCount').textContent = included + ' included, ' + excluded + ' excluded';
+}
+
+function showRecordExcerpt(nct) {
+  var ext = null;
+  for (var i = 0; i < STATE.extractions.length; i++) {
+    if (STATE.extractions[i].nct === nct) { ext = STATE.extractions[i]; break; }
+  }
+  if (!ext) {
+    // Study without results — show minimal info
+    var harvested = null;
+    for (var i = 0; i < STATE.harvested.length; i++) {
+      if (STATE.harvested[i].nctId === nct) { harvested = STATE.harvested[i]; break; }
+    }
+    if (harvested) {
+      openModal(nct + ' Record', '<div class="info-box">This study has no posted results on ClinicalTrials.gov.</div>' +
+        '<div class="stat-grid" style="margin-top:12px">' +
+        '<div class="stat-item"><div class="stat-label">Title</div><div class="stat-value" style="font-size:13px">' + escHtml(harvested.briefTitle) + '</div></div>' +
+        '<div class="stat-item"><div class="stat-label">Status</div><div class="stat-value" style="font-size:13px">' + escHtml(harvested.overallStatus) + '</div></div>' +
+        '<div class="stat-item"><div class="stat-label">Enrollment</div><div class="stat-value" style="font-size:13px">' + (harvested.enrollment || '-') + '</div></div>' +
+        '</div>');
+    } else {
+      openModal(nct + ' Record', '<div class="info-box">No data available for this study.</div>');
+    }
+    return;
+  }
+
+  var report = null;
+  for (var i = 0; i < STATE.truthCertReports.length; i++) {
+    if (STATE.truthCertReports[i].nct === nct) { report = STATE.truthCertReports[i]; break; }
+  }
+
+  var html = '<h4 style="margin-bottom:12px;font-size:15px">' + escHtml(ext.study_metadata.title) + '</h4>';
+
+  // Raw API Excerpts vs Extracted Values side-by-side
+  var rawExc = ext._rawExcerpts;
+  if (rawExc) {
+    html += '<h4 style="margin:16px 0 8px;font-size:14px">Raw CT.gov API Excerpts vs Extracted Values</h4>';
+    html += '<div class="record-excerpt-grid">';
+    html += '<div class="excerpt-col"><h5>Raw API Response</h5>';
+    html += '<div class="excerpt-row"><span class="excerpt-label">briefTitle</span><span class="excerpt-value">' + escHtml(String(rawExc.title.value || '-')) + '</span></div>';
+    html += '<div class="excerpt-row"><span class="excerpt-label">enrollment.count</span><span class="excerpt-value">' + escHtml(String(rawExc.enrollment.value || '-')) + '</span></div>';
+    html += '<div class="excerpt-row"><span class="excerpt-label">overallStatus</span><span class="excerpt-value">' + escHtml(String(rawExc.overallStatus.value || '-')) + '</span></div>';
+    html += '<div class="excerpt-row"><span class="excerpt-label">primaryCompletionDate</span><span class="excerpt-value">' + escHtml(String(rawExc.primaryCompletionDate.value || '-')) + '</span></div>';
+    if (rawExc.arms && rawExc.arms.value) {
+      rawExc.arms.value.forEach(function(a) {
+        html += '<div class="excerpt-row"><span class="excerpt-label">arm: ' + escHtml(a.label || '') + '</span><span class="excerpt-value">' + escHtml(a.type || '') + '</span></div>';
+      });
+    }
+    html += '</div>';
+
+    html += '<div class="excerpt-col"><h5>CardioSynth Extracted</h5>';
+    html += '<div class="excerpt-row"><span class="excerpt-label">title</span><span class="excerpt-value">' + escHtml(ext.study_metadata.title || '-') + '</span></div>';
+    html += '<div class="excerpt-row"><span class="excerpt-label">enrollment_actual</span><span class="excerpt-value">' + escHtml(String(ext.study_metadata.enrollment_actual || '-')) + '</span></div>';
+    html += '<div class="excerpt-row"><span class="excerpt-label">sponsor_name</span><span class="excerpt-value">' + escHtml(ext.study_metadata.sponsor_name || '-') + '</span></div>';
+    html += '<div class="excerpt-row"><span class="excerpt-label">primary_completion_date</span><span class="excerpt-value">' + escHtml(ext.study_metadata.primary_completion_date || '-') + '</span></div>';
+    ext.arms.forEach(function(a) {
+      html += '<div class="excerpt-row"><span class="excerpt-label">arm: ' + escHtml(a.arm_label) + '</span><span class="excerpt-value">' + escHtml(a.arm_type) + ' (n=' + (a.n_analyzed || '?') + ')</span></div>';
+    });
+    html += '</div>';
+    html += '</div>';
+
+    // Outcome measurements raw detail
+    if (rawExc.measurements && rawExc.measurements.length > 0) {
+      html += '<h4 style="margin:16px 0 8px;font-size:14px">Outcome Measurements (Raw API)</h4>';
+      rawExc.measurements.forEach(function(om, idx) {
+        html += '<div class="accordion-item" style="margin-bottom:8px">';
+        html += '<div class="accordion-header" onclick="toggleAccordion(this)" style="padding:10px 14px;font-size:12px">';
+        html += '<span class="chevron">&#9654;</span>';
+        html += '<span>[' + escHtml(om.type || 'OTHER') + '] ' + escHtml(om.title) + '</span></div>';
+        html += '<div class="accordion-body" style="padding:10px 14px">';
+        html += '<p style="font-size:11px;color:var(--gray-500);margin-bottom:6px">Groups:</p>';
+        om.groups.forEach(function(g) {
+          html += '<span class="tag tag-info" style="margin-right:4px;margin-bottom:4px">' + escHtml(g.id) + ': ' + escHtml(g.title) + '</span>';
+        });
+        if (om.rawValues && om.rawValues.length > 0) {
+          html += '<table style="margin-top:8px"><thead><tr><th>Group ID</th><th>Value</th><th>Spread</th></tr></thead><tbody>';
+          om.rawValues.forEach(function(rv) {
+            html += '<tr><td class="mono">' + escHtml(rv.groupId || '-') + '</td><td class="mono">' + escHtml(String(rv.value !== null && rv.value !== undefined ? rv.value : '-')) + '</td><td class="mono">' + escHtml(String(rv.spread !== null && rv.spread !== undefined ? rv.spread : '-')) + '</td></tr>';
+          });
+          html += '</tbody></table>';
+        }
+        html += '</div></div>';
+      });
+    }
+  }
+
+  // Per-datapoint provenance badges
+  html += '<h4 style="margin:16px 0 8px;font-size:14px">Data Provenance Badges</h4>';
+  html += buildProvenanceBadges(ext, report);
+
+  // TruthCert flags
+  if (report && report.flags && report.flags.length > 0) {
+    html += '<h4 style="margin:16px 0 8px;font-size:14px">TruthCert Validation Flags</h4>';
+    html += '<table><thead><tr><th>Validator</th><th>Severity</th><th>Message</th></tr></thead><tbody>';
+    report.flags.forEach(function(f) {
+      var sevTag = f.severity === 'INFO' ? 'tag-info' : f.severity === 'WARNING' ? 'tag-warn' : 'tag-fail';
+      html += '<tr><td class="mono" style="font-size:11px">' + escHtml(f.validator) + '</td><td><span class="tag ' + sevTag + '">' + f.severity + '</span></td><td style="font-size:12px">' + escHtml(f.message) + '</td></tr>';
+    });
+    html += '</tbody></table>';
+  }
+
+  // Provenance hash
+  html += '<h4 style="margin:16px 0 8px;font-size:14px">Provenance</h4>';
+  html += '<div class="stat-grid">';
+  html += '<div class="stat-item"><div class="stat-label">Source URL</div><div class="stat-value" style="font-size:11px;word-break:break-all">' + escHtml(ext.provenance.source_url) + '</div></div>';
+  html += '<div class="stat-item"><div class="stat-label">Raw Hash (SHA-256)</div><div class="stat-value" style="font-size:11px;word-break:break-all">' + escHtml(ext.provenance.raw_hash) + '</div></div>';
+  html += '<div class="stat-item"><div class="stat-label">Extraction Timestamp</div><div class="stat-value" style="font-size:13px">' + escHtml(ext.provenance.extraction_timestamp) + '</div></div>';
+  html += '</div>';
+
+  openModal(nct + ' Record Excerpt', html);
+}
+
+function buildProvenanceBadges(ext, report) {
+  var html = '';
+  // For each arm, show provenance of extracted data
+  var expArm = null, ctrlArm = null;
+  for (var i = 0; i < ext.arms.length; i++) {
+    if (ext.arms[i].arm_type === 'EXPERIMENTAL') expArm = ext.arms[i];
+    else if (ext.arms[i].arm_type === 'PLACEBO' || ext.arms[i].arm_type === 'COMPARATOR') ctrlArm = ext.arms[i];
+  }
+
+  // Find the primary outcome data
+  var primaryOm = null;
+  for (var i = 0; i < ext.outcomes.length; i++) {
+    if (ext.outcomes[i].type === 'PRIMARY') { primaryOm = ext.outcomes[i]; break; }
+  }
+  if (!primaryOm && ext.outcomes.length > 0) primaryOm = ext.outcomes[0];
+
+  if (primaryOm && expArm) {
+    var expData = null, ctrlData = null;
+    (primaryOm.data || []).forEach(function(d) {
+      var lbl = (d.arm_label || '').toLowerCase();
+      if (expArm && lbl.indexOf(expArm.arm_label.toLowerCase()) !== -1) expData = d;
+      if (ctrlArm && lbl.indexOf(ctrlArm.arm_label.toLowerCase()) !== -1) ctrlData = d;
+    });
+
+    // Fallback positional match
+    if ((!expData || !ctrlData) && primaryOm.data.length >= 2) {
+      var nonTotal = primaryOm.data.filter(function(d) { return (d.arm_label || '').toLowerCase().indexOf('total') === -1; });
+      if (nonTotal.length >= 2) { expData = nonTotal[0]; ctrlData = nonTotal[1]; }
+    }
+
+    if (expData) {
+      var n1 = expData.participants || (expArm ? expArm.n_analyzed : null);
+      html += '<div class="prov-badge">';
+      html += '<div class="prov-field">EXPERIMENTAL arm: ' + escHtml(expData.arm_label || '?') + '</div>';
+      html += '<div>Events (ai) = <strong>' + escHtml(String(expData.value !== null ? expData.value : '?')) + '</strong></div>';
+      html += '<div class="prov-path">Source: resultsSection.outcomeMeasuresModule.outcomeMeasures[0].classes[0].categories[0].measurements[' + escHtml(expData.arm_id || '0') + '].value</div>';
+      if (n1 !== null) html += '<div>Participants (n1) = <strong>' + n1 + '</strong></div>';
+      // TruthCert check
+      var eventCheck = report ? report.flags.find(function(f) { return f.validator === 'EVENT_RATE_PLAUSIBILITY'; }) : null;
+      if (eventCheck) {
+        var checkIcon = eventCheck.severity === 'INFO' ? '<span class="prov-check">PASS</span>' : '<span style="color:var(--red-600);font-weight:600">' + escHtml(eventCheck.severity) + '</span>';
+        html += '<div>TruthCert: EVENT_RATE_PLAUSIBILITY ' + checkIcon + '</div>';
+      }
+      html += '<div style="font-size:11px;color:var(--gray-400)">Witness count: 1 (single-agent extraction)</div>';
+      html += '</div>';
+    }
+
+    if (ctrlData) {
+      var n2 = ctrlData.participants || (ctrlArm ? ctrlArm.n_analyzed : null);
+      html += '<div class="prov-badge">';
+      html += '<div class="prov-field">COMPARATOR arm: ' + escHtml(ctrlData.arm_label || '?') + '</div>';
+      html += '<div>Events (ci) = <strong>' + escHtml(String(ctrlData.value !== null ? ctrlData.value : '?')) + '</strong></div>';
+      html += '<div class="prov-path">Source: resultsSection.outcomeMeasuresModule.outcomeMeasures[0].classes[0].categories[0].measurements[' + escHtml(ctrlData.arm_id || '1') + '].value</div>';
+      if (n2 !== null) html += '<div>Participants (n2) = <strong>' + n2 + '</strong></div>';
+      var totalCheck = report ? report.flags.find(function(f) { return f.validator === 'TOTAL_CHECKER'; }) : null;
+      if (totalCheck) {
+        var checkIcon2 = totalCheck.severity === 'INFO' ? '<span class="prov-check">PASS</span>' : '<span style="color:var(--red-600);font-weight:600">' + escHtml(totalCheck.severity) + '</span>';
+        html += '<div>TruthCert: TOTAL_CHECKER ' + checkIcon2 + '</div>';
+      }
+      html += '<div style="font-size:11px;color:var(--gray-400)">Witness count: 1 (single-agent extraction)</div>';
+      html += '</div>';
+    }
+
+    // Effect size provenance
+    if (expData && ctrlData) {
+      var ai = safeFloat(expData.value);
+      var ci_val = safeFloat(ctrlData.value);
+      var n1 = expData.participants || (expArm ? expArm.n_analyzed : null);
+      var n2 = ctrlData.participants || (ctrlArm ? ctrlArm.n_analyzed : null);
+      if (ai !== null && ci_val !== null && n1 && n2) {
+        var bi = n1 - ai;
+        var di = n2 - ci_val;
+        var eff = escalcRR(ai, bi, ci_val, di);
+        if (eff.yi !== null) {
+          html += '<div class="prov-badge" style="background:var(--blue-50);border-color:var(--blue-100)">';
+          html += '<div class="prov-field">Effect Size Derivation</div>';
+          html += '<div>logRR = ln((' + ai + '/' + n1 + ') / (' + ci_val + '/' + n2 + ')) = <strong>' + eff.yi.toFixed(4) + '</strong></div>';
+          html += '<div>RR = exp(' + eff.yi.toFixed(4) + ') = <strong>' + Math.exp(eff.yi).toFixed(3) + '</strong></div>';
+          html += '<div>Var = 1/' + ai + ' - 1/' + n1 + ' + 1/' + ci_val + ' - 1/' + n2 + ' = <strong>' + eff.vi.toFixed(6) + '</strong></div>';
+          html += '</div>';
+        }
+      }
+    }
+  }
+
+  if (html === '') {
+    html = '<div class="info-box">No extractable binary outcome data for provenance badges.</div>';
+  }
+  return html;
+}
+
+// ==============================
+// WebR SECTION
+// ==============================
+
+var webrSectionOpen = false;
+
+function toggleWebRSection() {
+  webrSectionOpen = !webrSectionOpen;
+  document.getElementById('webrSection').style.display = webrSectionOpen ? 'block' : 'none';
+  document.getElementById('webrChevron').style.transform = webrSectionOpen ? 'rotate(90deg)' : '';
+}
+
+function generateRCode(synthesis) {
+  if (!synthesis || !synthesis.weights || synthesis.weights.length === 0) return '# No synthesis data available yet.\n# Run the pipeline first.';
+  var yiArr = synthesis.weights.map(function(w) { return w.yi.toFixed(6); });
+  var viArr = synthesis.weights.map(function(w) { return w.vi.toFixed(6); });
+  var ids = synthesis.weights.map(function(w) { return '"' + (w.id || 'Study') + '"'; });
+
+  var code = '# CardioSynth independent validation via metafor\n';
+  code += '# Generated: ' + new Date().toISOString().substring(0, 19) + '\n\n';
+  code += 'library(metafor)\n\n';
+  code += '# Study-level data (log Risk Ratio scale)\n';
+  code += 'dat <- data.frame(\n';
+  code += '  study = c(' + ids.join(', ') + '),\n';
+  code += '  yi = c(' + yiArr.join(', ') + '),\n';
+  code += '  vi = c(' + viArr.join(', ') + ')\n';
+  code += ')\n\n';
+  code += '# DerSimonian-Laird random-effects model\n';
+  code += 'res_dl <- rma(yi, vi, data=dat, method="DL")\n';
+  code += 'cat("=== DL (without HKSJ) ===\\n")\n';
+  code += 'print(res_dl)\n\n';
+  code += '# With HKSJ correction\n';
+  code += 'res_hksj <- rma(yi, vi, data=dat, method="DL", test="knha")\n';
+  code += 'cat("\\n=== DL + HKSJ ===\\n")\n';
+  code += 'print(res_hksj)\n\n';
+  code += '# Back-transform to RR\n';
+  code += 'cat("\\n=== Back-transformed RR (HKSJ) ===\\n")\n';
+  code += 'cat(sprintf("RR = %.4f [%.4f, %.4f]\\n",\n';
+  code += '    exp(coef(res_hksj)),\n';
+  code += '    exp(res_hksj$ci.lb),\n';
+  code += '    exp(res_hksj$ci.ub)))\n';
+  code += 'cat(sprintf("tau2 = %.6f, I2 = %.1f%%\\n", res_hksj$tau2, res_hksj$I2))\n';
+  return code;
+}
+
+function updateWebRCode() {
+  var code = generateRCode(STATE.primarySynthesis);
+  document.getElementById('webrRCode').textContent = code;
+  var hasData = STATE.primarySynthesis && STATE.primarySynthesis.weights && STATE.primarySynthesis.weights.length > 0;
+  document.getElementById('btnCopyRCode').disabled = !hasData;
+  document.getElementById('btnRunWebR').disabled = !hasData;
+}
+
+function copyRCode() {
+  var code = document.getElementById('webrRCode').textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code);
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = code;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+}
+
+var webrInstance = null;
+
+async function runWebR() {
+  document.getElementById('webrOutputContainer').style.display = 'block';
+  var outputEl = document.getElementById('webrOutput');
+  outputEl.textContent = 'Loading WebR runtime (this may take 30-60 seconds on first load)...\n';
+  document.getElementById('btnRunWebR').disabled = true;
+
+  try {
+    if (!webrInstance) {
+      var { WebR } = await import('https://webr.r-wasm.org/latest/webr.mjs');
+      webrInstance = new WebR();
+      await webrInstance.init();
+      outputEl.textContent += 'WebR loaded. Installing metafor...\n';
+      await webrInstance.installPackages(['metafor']);
+      outputEl.textContent += 'metafor installed. Running analysis...\n';
+    }
+
+    var code = document.getElementById('webrRCode').textContent;
+    var result = await webrInstance.evalRString(code);
+    var shelter = await new webrInstance.Shelter();
+    var capture = await shelter.captureR(code);
+    var output = '';
+    if (capture.output) {
+      capture.output.forEach(function(line) {
+        if (line.type === 'stdout') output += line.data + '\n';
+      });
+    }
+    outputEl.textContent = output || '(No output captured)';
+    shelter.purge();
+
+    // Show comparison
+    showWebRComparison(output);
+  } catch (err) {
+    outputEl.textContent += '\nError: ' + err.message + '\n\nNote: WebR requires a modern browser with SharedArrayBuffer support.\nYou can copy the R code and run it in RStudio instead.';
+  }
+  document.getElementById('btnRunWebR').disabled = false;
+}
+
+function showWebRComparison(rOutput) {
+  var container = document.getElementById('webrComparison');
+  if (!STATE.primarySynthesis) { container.style.display = 'none'; return; }
+
+  var syn = STATE.primarySynthesis;
+  var html = '<h4 style="font-size:13px;font-weight:600;margin-bottom:8px">JS vs R Comparison</h4>';
+  html += '<div class="record-excerpt-grid">';
+  html += '<div class="excerpt-col"><h5>CardioSynth (JavaScript)</h5>';
+  html += '<div class="excerpt-row"><span class="excerpt-label">theta (logRR)</span><span class="excerpt-value">' + syn.theta.toFixed(6) + '</span></div>';
+  html += '<div class="excerpt-row"><span class="excerpt-label">RR</span><span class="excerpt-value">' + Math.exp(syn.theta).toFixed(4) + '</span></div>';
+  html += '<div class="excerpt-row"><span class="excerpt-label">95% CI</span><span class="excerpt-value">[' + Math.exp(syn.ci_lower).toFixed(4) + ', ' + Math.exp(syn.ci_upper).toFixed(4) + ']</span></div>';
+  html += '<div class="excerpt-row"><span class="excerpt-label">tau2</span><span class="excerpt-value">' + syn.tau2.toFixed(6) + '</span></div>';
+  html += '<div class="excerpt-row"><span class="excerpt-label">I2</span><span class="excerpt-value">' + syn.I2.toFixed(1) + '%</span></div>';
+  html += '<div class="excerpt-row"><span class="excerpt-label">HKSJ</span><span class="excerpt-value">' + (syn.hksj ? 'Yes' : 'No') + '</span></div>';
+  html += '</div>';
+
+  html += '<div class="excerpt-col"><h5>metafor (R via WebR)</h5>';
+  html += '<pre style="font-size:11px;background:var(--gray-900);color:#a5f3fc;padding:10px;border-radius:6px;max-height:200px;overflow:auto;margin:0">' + escHtml(rOutput || 'Run the R code to see output') + '</pre>';
+  html += '</div>';
+  html += '</div>';
+
+  container.innerHTML = html;
+  container.style.display = 'block';
+}
+
 
 function renderPrimarySynthesis() {
   var syn = STATE.primarySynthesis;
@@ -3117,6 +3942,19 @@ function loadDemoData() {
     return { nctId: s.nctId, briefTitle: s.title, overallStatus: 'COMPLETED', hasResults: true, leadSponsorClass: 'OTHER', enrollment: s.n };
   });
 
+  // Add a couple non-results studies for transparency demo
+  STATE.harvested.push({ nctId: 'NCT04999999', briefTitle: 'Colchicine Dose-Finding in ACS (no results)', overallStatus: 'COMPLETED', hasResults: false, leadSponsorClass: 'OTHER', enrollment: 80 });
+  STATE.harvested.push({ nctId: 'NCT05111111', briefTitle: 'Colchicine Bioavailability in MI Patients (withdrawn)', overallStatus: 'WITHDRAWN', hasResults: false, leadSponsorClass: 'INDUSTRY', enrollment: 0 });
+
+  // Search log (demo)
+  STATE.searchLog = [
+    { database: 'ClinicalTrials.gov API v2', query: 'query.cond=myocardial+infarction&query.intr=colchicine&aggFilters=results:with', condition: 'myocardial infarction', intervention: 'colchicine', resultsCount: 4, studiesReturned: 4, newStudies: 4, timestamp: new Date().toISOString() },
+    { database: 'ClinicalTrials.gov API v2', query: 'query.cond=coronary+artery+disease&query.intr=colchicine&aggFilters=results:with', condition: 'coronary artery disease', intervention: 'colchicine', resultsCount: 2, studiesReturned: 2, newStudies: 1, timestamp: new Date().toISOString() },
+    { database: 'ClinicalTrials.gov API v2', query: 'query.cond=acute+coronary+syndrome&query.intr=colchicine&aggFilters=results:with', condition: 'acute coronary syndrome', intervention: 'colchicine', resultsCount: 1, studiesReturned: 1, newStudies: 0, timestamp: new Date().toISOString() },
+    { database: 'ClinicalTrials.gov API v2', query: 'query.cond=pericarditis&query.intr=colchicine&aggFilters=results:with', condition: 'pericarditis', intervention: 'colchicine', resultsCount: 0, studiesReturned: 0, newStudies: 0, timestamp: new Date().toISOString() },
+    { database: 'ClinicalTrials.gov API v2', query: 'query.cond=cardiovascular+diseases&query.intr=colchicine&aggFilters=results:with', condition: 'cardiovascular diseases', intervention: 'colchicine', resultsCount: 2, studiesReturned: 2, newStudies: 2, timestamp: new Date().toISOString() }
+  ];
+
   STATE.extractions = demoStudies.map(function(s) {
     return {
       nct: s.nctId,
@@ -3142,7 +3980,24 @@ function loadDemoData() {
       adverse_events: { groups: [] },
       participant_flow: { groups: [] },
       registered_outcomes: { primary: [{ measure: 'Major Adverse Cardiovascular Events at 12 Months', timeFrame: '12 months' }], secondary: [] },
-      provenance: { source_url: 'demo', raw_hash: 'demo-' + s.nctId, extraction_timestamp: new Date().toISOString(), extractor_id: 'demo' }
+      _rawExcerpts: {
+        title: { path: 'protocolSection.identificationModule.briefTitle', value: s.title },
+        nctId: { path: 'protocolSection.identificationModule.nctId', value: s.nctId },
+        enrollment: { path: 'protocolSection.designModule.enrollmentInfo.count', value: s.n },
+        overallStatus: { path: 'protocolSection.statusModule.overallStatus', value: 'COMPLETED' },
+        primaryCompletionDate: { path: 'protocolSection.statusModule.primaryCompletionDateStruct.date', value: s.year + '-06-01' },
+        arms: { path: 'protocolSection.armsInterventionsModule.armGroups', value: [{ label: 'Colchicine', type: 'EXPERIMENTAL' }, { label: 'Placebo', type: 'PLACEBO_COMPARATOR' }] },
+        primaryOutcome: { path: 'resultsSection.outcomeMeasuresModule.outcomeMeasures[0]', value: 'Major Adverse Cardiovascular Events (MACE)' },
+        measurements: [{
+          title: 'Major Adverse Cardiovascular Events (MACE)', type: 'PRIMARY',
+          groups: [{ id: 'OG000', title: 'Colchicine' }, { id: 'OG001', title: 'Placebo' }],
+          rawValues: [
+            { groupId: 'OG000', value: String(s.ai), spread: null },
+            { groupId: 'OG001', value: String(s.ci), spread: null }
+          ]
+        }]
+      },
+      provenance: { source_url: 'https://clinicaltrials.gov/api/v2/studies/' + s.nctId, raw_hash: 'demo-' + s.nctId + '-' + Date.now().toString(36), extraction_timestamp: new Date().toISOString(), extractor_id: 'demo' }
     };
   });
 
@@ -3156,6 +4011,44 @@ function loadDemoData() {
   });
 
   STATE.clearedExtractions = STATE.extractions.filter(function(_, i) { return STATE.truthCertReports[i].cleared_for_synthesis; });
+
+  // Inclusion/exclusion log (demo)
+  STATE.inclusionLog = [];
+  // Non-results studies
+  STATE.inclusionLog.push({ nct: 'NCT04999999', title: 'Colchicine Dose-Finding in ACS (no results)', status: 'EXCLUDED', reason: 'No posted results', verdict: 'N/A' });
+  STATE.inclusionLog.push({ nct: 'NCT05111111', title: 'Colchicine Bioavailability in MI Patients (withdrawn)', status: 'EXCLUDED', reason: 'No posted results', verdict: 'N/A' });
+  // Extracted studies
+  STATE.extractions.forEach(function(ext, i) {
+    var r = STATE.truthCertReports[i];
+    var warnFlags = r.flags.filter(function(f) { return f.severity === 'WARNING'; });
+    STATE.inclusionLog.push({
+      nct: ext.nct,
+      title: ext.study_metadata.title,
+      status: r.cleared_for_synthesis ? 'INCLUDED' : 'EXCLUDED',
+      reason: r.cleared_for_synthesis ? (warnFlags.length > 0 ? 'Cleared with warnings: ' + warnFlags.map(function(f) { return f.message; }).join('; ') : 'Cleared TruthCert') : 'CRITICAL: ' + r.flags.filter(function(f) { return f.severity === 'CRITICAL'; }).map(function(f) { return f.message; }).join('; '),
+      verdict: r.verdict
+    });
+  });
+
+  // PRISMA flow counts (demo)
+  STATE.prismaFlowCounts = {
+    identified: 9,
+    perQuery: [
+      { condition: 'myocardial infarction', count: 4 },
+      { condition: 'coronary artery disease', count: 2 },
+      { condition: 'acute coronary syndrome', count: 1 },
+      { condition: 'pericarditis', count: 0 },
+      { condition: 'cardiovascular diseases', count: 2 }
+    ],
+    duplicatesRemoved: 2,
+    screened: 7,
+    noResults: 2,
+    withResults: 5,
+    extracted: 5,
+    criticalExcluded: 0,
+    warnIncluded: 0,
+    inSynthesis: STATE.clearedExtractions.length
+  };
 
   // Primary synthesis
   STATE.primarySynthesis = derSimonianLaird(demoStudies);
@@ -3214,7 +4107,10 @@ function saveState() {
       biasData: STATE.biasData,
       provenanceBundle: STATE.provenanceBundle,
       e156Text: STATE.e156Text,
-      lastUpdated: STATE.lastUpdated
+      lastUpdated: STATE.lastUpdated,
+      searchLog: STATE.searchLog,
+      inclusionLog: STATE.inclusionLog,
+      prismaFlowCounts: STATE.prismaFlowCounts
     };
     localStorage.setItem('cardiosynth_dashboard_state', JSON.stringify(stateToSave));
   } catch (e) {
@@ -3231,7 +4127,8 @@ function loadState() {
     // [P1-4 FIX] Restore only known STATE keys — prevent localStorage injection
     var ALLOWED = ['harvested','extractions','truthCertReports','clearedExtractions',
       'primarySynthesis','secondarySyntheses','cumulativeData','biasData',
-      'provenanceBundle','e156Text','lastUpdated','pipelineRunning'];
+      'provenanceBundle','e156Text','lastUpdated','pipelineRunning',
+      'searchLog','inclusionLog','prismaFlowCounts'];
     ALLOWED.forEach(function(ak) { if (Object.prototype.hasOwnProperty.call(saved, ak)) STATE[ak] = saved[ak]; });
     return true;
   } catch (e) {
