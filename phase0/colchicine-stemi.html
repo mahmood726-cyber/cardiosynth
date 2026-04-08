@@ -1070,6 +1070,17 @@ a.ctgov-link:hover { text-decoration: underline; color: #60a5fa; }
 
   <!-- ===== PRIMARY SYNTHESIS PANEL ===== -->
   <div class="panel" id="panelPrimary">
+    <!-- Feature 7: Robustness Check Dashboard -->
+    <div class="card">
+      <div class="card-header">Robustness Check Dashboard
+        <span id="robustnessVerdict" style="margin-left:auto;font-size:12px;font-weight:700"></span>
+      </div>
+      <div class="card-body">
+        <div id="robustnessGrid">
+          <div class="empty-state"><p>Run the pipeline to see robustness checks.</p></div>
+        </div>
+      </div>
+    </div>
     <div class="card">
       <div class="card-header">Primary Synthesis: MACE (Major Adverse Cardiovascular Events)
         <span id="gradeContainer" style="margin-left:auto;"></span>
@@ -1085,6 +1096,29 @@ a.ctgov-link:hover { text-decoration: underline; color: #60a5fa; }
       <div class="card-body">
         <div class="stat-grid" id="primaryStats">
           <div class="empty-state"><p>No data yet.</p></div>
+        </div>
+      </div>
+    </div>
+    <!-- Feature 2: MCID Threshold Analysis -->
+    <div class="card">
+      <div class="card-header">MCID Threshold Analysis
+        <span style="margin-left:auto;display:flex;align-items:center;gap:6px">
+          <label style="font-size:11px;font-weight:400;color:var(--text-muted)">Threshold:</label>
+          <input type="number" id="mcidInput" value="0.85" step="0.05" min="0.01" max="2" style="width:70px;padding:3px 6px;font-size:12px;border-radius:4px;border:1px solid var(--border);background:var(--surface);color:var(--text)" onchange="renderMCIDAnalysis()">
+        </span>
+      </div>
+      <div class="card-body">
+        <div id="mcidResults">
+          <div class="empty-state"><p>Run the pipeline to see MCID analysis.</p></div>
+        </div>
+      </div>
+    </div>
+    <!-- Feature 5: Sensitivity Scenario Waterfall -->
+    <div class="card">
+      <div class="card-header">Sensitivity Scenario Analysis</div>
+      <div class="card-body">
+        <div id="sensitivityScenarios">
+          <div class="empty-state"><p>Run the pipeline to see sensitivity scenarios.</p></div>
         </div>
       </div>
     </div>
@@ -1120,6 +1154,15 @@ a.ctgov-link:hover { text-decoration: underline; color: #60a5fa; }
       <div class="card-body">
         <div id="cumulativeTable" class="table-scroll">
           <div class="empty-state"><p>No data yet.</p></div>
+        </div>
+      </div>
+    </div>
+    <!-- Feature 6: Evidence Velocity & Maturity -->
+    <div class="card">
+      <div class="card-header">Evidence Velocity &amp; Maturity</div>
+      <div class="card-body">
+        <div id="evidenceVelocity">
+          <div class="empty-state"><p>Run the pipeline to see evidence velocity metrics.</p></div>
         </div>
       </div>
     </div>
@@ -1190,6 +1233,7 @@ a.ctgov-link:hover { text-decoration: underline; color: #60a5fa; }
         <div class="btn-group">
           <button class="btn btn-success" id="btnDownloadBundle" onclick="downloadBundle()" disabled>Download Full Audit Trail (JSON)</button>
           <button class="btn btn-secondary" id="btnExportSVG" onclick="exportPrimaryForest()" disabled>Export Forest Plot (SVG)</button>
+          <button class="btn btn-secondary" id="btnDownloadCapsule" onclick="downloadReproducibilityCapsule()" disabled style="background:rgba(168,85,247,0.15);color:#a855f7;border-color:#a855f7">Download Reproducibility Capsule (ZIP)</button>
         </div>
       </div>
     </div>
@@ -1225,6 +1269,33 @@ a.ctgov-link:hover { text-decoration: underline; color: #60a5fa; }
 
   <!-- ===== NARRATIVE / SCIENTIFIC OUTPUT PANEL ===== -->
   <div class="panel" id="panelNarrative">
+    <!-- Feature 3: Auto Manuscript Methods + Results -->
+    <div class="card">
+      <div class="card-header" style="border-left:3px solid #059669">Manuscript: Methods &amp; Results Paragraphs
+        <span style="margin-left:auto;display:flex;gap:6px">
+          <button class="btn btn-secondary" style="padding:4px 12px;font-size:11px" onclick="copyManuscriptMethods()">Copy Methods</button>
+          <button class="btn btn-secondary" style="padding:4px 12px;font-size:11px" onclick="copyManuscriptResults()">Copy Results</button>
+        </span>
+      </div>
+      <div class="card-body">
+        <div id="manuscriptOutput">
+          <div class="empty-state"><div class="icon">&#128221;</div><p>Run the pipeline to generate manuscript text.</p></div>
+        </div>
+      </div>
+    </div>
+    <!-- Feature 4: GRADE Summary of Findings Table -->
+    <div class="card">
+      <div class="card-header" style="border-left:3px solid #d97706">GRADE Summary of Findings Table
+        <span style="margin-left:auto">
+          <button class="btn btn-secondary" style="padding:4px 12px;font-size:11px" onclick="exportGRADESoFWord()">Export as Word</button>
+        </span>
+      </div>
+      <div class="card-body">
+        <div id="gradeSofTable">
+          <div class="empty-state"><p>Run the pipeline to generate the GRADE SoF table.</p></div>
+        </div>
+      </div>
+    </div>
     <div class="card">
       <div class="card-header" style="border-left:3px solid #a855f7">Scientific Output: NYT-Style Narrative Report</div>
       <div class="card-body">
@@ -5084,6 +5155,12 @@ function reRenderAfterSettingsChange() {
   renderE156Panel();
   renderVisualAbstract();
   renderNarrativeReport();
+  renderRobustnessChecks();
+  renderMCIDAnalysis();
+  renderSensitivityScenarios();
+  renderEvidenceVelocity();
+  renderManuscriptOutput();
+  renderGRADESoFTable();
 }
 
 
@@ -5274,6 +5351,756 @@ function renderNarrativeReport() {
 
 
 // ==============================
+// FEATURE 1: REPRODUCIBILITY CAPSULE ZIP
+// ==============================
+
+function crc32Zip(data) {
+  var table = new Uint32Array(256);
+  for (var i = 0; i < 256; i++) {
+    var c = i;
+    for (var j = 0; j < 8; j++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+    table[i] = c;
+  }
+  var crc = 0xFFFFFFFF;
+  for (var i = 0; i < data.length; i++) crc = table[(crc ^ data[i]) & 0xFF] ^ (crc >>> 8);
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+
+function buildZip(files) {
+  var encoder = new TextEncoder();
+  var entries = files.map(function(f) {
+    var nameBytes = encoder.encode(f.name);
+    var contentBytes = encoder.encode(f.content);
+    var crc = crc32Zip(contentBytes);
+    return { nameBytes: nameBytes, contentBytes: contentBytes, crc: crc };
+  });
+  var offset = 0;
+  var localHeaders = [];
+  entries.forEach(function(e) {
+    var headerSize = 30 + e.nameBytes.length;
+    localHeaders.push({ offset: offset, headerSize: headerSize });
+    offset += headerSize + e.contentBytes.length;
+  });
+  var centralStart = offset;
+  var centralSize = 0;
+  entries.forEach(function(e) { centralSize += 46 + e.nameBytes.length; });
+  var totalSize = offset + centralSize + 22;
+  var buf = new Uint8Array(totalSize);
+  var view = new DataView(buf.buffer);
+  var pos = 0;
+  entries.forEach(function(e, i) {
+    view.setUint32(pos, 0x04034b50, true); pos += 4;
+    view.setUint16(pos, 20, true); pos += 2;
+    view.setUint16(pos, 0, true); pos += 2;
+    view.setUint16(pos, 0, true); pos += 2;
+    view.setUint16(pos, 0, true); pos += 2;
+    view.setUint16(pos, 0, true); pos += 2;
+    view.setUint32(pos, e.crc, true); pos += 4;
+    view.setUint32(pos, e.contentBytes.length, true); pos += 4;
+    view.setUint32(pos, e.contentBytes.length, true); pos += 4;
+    view.setUint16(pos, e.nameBytes.length, true); pos += 2;
+    view.setUint16(pos, 0, true); pos += 2;
+    buf.set(e.nameBytes, pos); pos += e.nameBytes.length;
+    buf.set(e.contentBytes, pos); pos += e.contentBytes.length;
+  });
+  entries.forEach(function(e, i) {
+    view.setUint32(pos, 0x02014b50, true); pos += 4;
+    view.setUint16(pos, 20, true); pos += 2;
+    view.setUint16(pos, 20, true); pos += 2;
+    view.setUint16(pos, 0, true); pos += 2;
+    view.setUint16(pos, 0, true); pos += 2;
+    view.setUint16(pos, 0, true); pos += 2;
+    view.setUint16(pos, 0, true); pos += 2;
+    view.setUint32(pos, e.crc, true); pos += 4;
+    view.setUint32(pos, e.contentBytes.length, true); pos += 4;
+    view.setUint32(pos, e.contentBytes.length, true); pos += 4;
+    view.setUint16(pos, e.nameBytes.length, true); pos += 2;
+    view.setUint16(pos, 0, true); pos += 2;
+    view.setUint16(pos, 0, true); pos += 2;
+    view.setUint16(pos, 0, true); pos += 2;
+    view.setUint16(pos, 0, true); pos += 2;
+    view.setUint32(pos, 0, true); pos += 4;
+    view.setUint32(pos, localHeaders[i].offset, true); pos += 4;
+    buf.set(e.nameBytes, pos); pos += e.nameBytes.length;
+  });
+  view.setUint32(pos, 0x06054b50, true); pos += 4;
+  view.setUint16(pos, 0, true); pos += 2;
+  view.setUint16(pos, 0, true); pos += 2;
+  view.setUint16(pos, entries.length, true); pos += 2;
+  view.setUint16(pos, entries.length, true); pos += 2;
+  view.setUint32(pos, centralSize, true); pos += 4;
+  view.setUint32(pos, centralStart, true); pos += 4;
+  view.setUint16(pos, 0, true); pos += 2;
+  return buf;
+}
+
+function downloadReproducibilityCapsule() {
+  var syn = STATE.primarySynthesis;
+  if (!syn || !syn._studies) return;
+
+  // data.csv
+  var csvHeader = 'study,nct,ai,bi,ci,di,n1,n2,yi,vi';
+  var csvRows = syn._studies.map(function(s) {
+    return [escHtml(s.title || s.id), s.nctId || s.id, s.ai, s.bi, s.ci, s.di,
+      (s.ai + s.bi), (s.ci + s.di), s.yi.toFixed(6), s.vi.toFixed(6)].join(',');
+  });
+  var dataCsv = csvHeader + '\n' + csvRows.join('\n');
+
+  // validate.R
+  var validateR = '# Reproducibility validation script\n'
+    + '# Generated by CardioSynth v0.8.0\n'
+    + 'library(metafor)\n\n'
+    + 'dat <- read.csv("data.csv", stringsAsFactors=FALSE)\n\n'
+    + '# Random-effects DerSimonian-Laird with HKSJ\n'
+    + 'res <- rma(yi=yi, vi=vi, data=dat, method="DL", test="knha")\n'
+    + 'summary(res)\n\n'
+    + '# Back-transform to RR\n'
+    + 'cat("Pooled RR:", exp(coef(res)), "\\n")\n'
+    + 'cat("CI:", exp(res$ci.lb), "to", exp(res$ci.ub), "\\n")\n'
+    + 'cat("I2:", res$I2, "\\n")\n'
+    + 'cat("tau2:", res$tau2, "\\n")\n\n'
+    + '# Leave-one-out\n'
+    + 'loo <- leave1out(res)\n'
+    + 'print(loo)\n\n'
+    + '# Forest plot\n'
+    + 'forest(res, atransf=exp, xlab="Risk Ratio",\n'
+    + '       header="Study", slab=dat$study)\n';
+
+  // provenance.json
+  var provEntries = [];
+  STATE.extractions.forEach(function(ext) {
+    provEntries.push({
+      nct: ext.nct,
+      source_url: ext.provenance ? ext.provenance.source_url : '',
+      extraction_timestamp: ext.extraction_timestamp,
+      raw_hash: ext.provenance ? ext.provenance.raw_hash : '',
+      field_mappings: ext._rawExcerpts ? Object.keys(ext._rawExcerpts).map(function(k) {
+        return { field: k, path: ext._rawExcerpts[k].path };
+      }) : []
+    });
+  });
+  var provenanceJson = JSON.stringify(provEntries, null, 2);
+
+  // seal.json (async for SHA-256)
+  sha256(dataCsv).then(function(hash) {
+    var sealObj = {
+      sha256_data_csv: hash,
+      timestamp: new Date().toISOString(),
+      k: syn.k,
+      pooled_estimate: { theta: syn.theta, rr: Math.exp(syn.theta), ci_lower: Math.exp(syn.ci_lower), ci_upper: Math.exp(syn.ci_upper) },
+      effect_measure: STATE.effectMeasure,
+      confidence_level: STATE.confLevel,
+      generator: 'CardioSynth v0.8.0'
+    };
+    var sealJson = JSON.stringify(sealObj, null, 2);
+
+    var readmeTxt = 'REPRODUCIBILITY CAPSULE\n'
+      + '======================\n\n'
+      + 'Generated by CardioSynth v0.8.0 on ' + new Date().toISOString().substring(0, 10) + '\n\n'
+      + 'Contents:\n'
+      + '  data.csv        - Study-level data (2x2 tables + effect sizes)\n'
+      + '  validate.R      - metafor script to reproduce the meta-analysis\n'
+      + '  provenance.json - Field-level source mappings from CT.gov\n'
+      + '  seal.json       - SHA-256 hash, timestamp, pooled estimate\n'
+      + '  README.txt      - This file\n\n'
+      + 'To verify:\n'
+      + '  1. Install R and metafor package\n'
+      + '  2. Run: Rscript validate.R\n'
+      + '  3. Compare output to seal.json pooled estimate\n'
+      + '  4. Verify SHA-256 of data.csv matches seal.json\n';
+
+    var zipData = buildZip([
+      { name: 'data.csv', content: dataCsv },
+      { name: 'validate.R', content: validateR },
+      { name: 'provenance.json', content: provenanceJson },
+      { name: 'seal.json', content: sealJson },
+      { name: 'README.txt', content: readmeTxt }
+    ]);
+
+    var blob = new Blob([zipData], { type: 'application/zip' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'cardiosynth-capsule-' + new Date().toISOString().slice(0, 10) + '.zip';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+}
+
+
+// ==============================
+// FEATURE 2: MCID THRESHOLD ANALYSIS
+// ==============================
+
+function renderMCIDAnalysis() {
+  var container = document.getElementById('mcidResults');
+  var syn = STATE.primarySynthesis;
+  if (!syn || !syn._studies) {
+    container.innerHTML = '<div class="empty-state"><p>Run the pipeline to see MCID analysis.</p></div>';
+    return;
+  }
+
+  var em = STATE.effectMeasure;
+  var useLog = isLogScale(em);
+  var mcidInput = parseFloat(document.getElementById('mcidInput').value);
+  if (!isFinite(mcidInput) || mcidInput <= 0) mcidInput = 0.85;
+  var mcidLog = useLog ? Math.log(mcidInput) : mcidInput;
+  var nullVal = useLog ? 0 : 0;
+
+  var crossCount = 0;
+  syn._studies.forEach(function(s) {
+    if (useLog ? s.yi < mcidLog : s.yi < mcidInput) crossCount++;
+  });
+
+  var pooledCrosses = syn.theta < mcidLog;
+  var ciFullyCrosses = syn.ci_upper < mcidLog;
+
+  var zMCID = (mcidLog - syn.theta) / syn.se;
+  var pBeyondMCID = normalCDF(zMCID);
+
+  var mcidDisplay = useLog ? mcidInput.toFixed(2) : mcidInput.toFixed(3);
+  var emLabel = getEffectLabel(em);
+
+  var html = '<div class="stat-grid">';
+  html += '<div class="stat-item"><div class="stat-label">MCID Threshold</div><div class="stat-value">' + emLabel + ' = ' + mcidDisplay + '</div></div>';
+  html += '<div class="stat-item"><div class="stat-label">Studies Crossing MCID</div><div class="stat-value">' + crossCount + ' / ' + syn.k + '</div></div>';
+  html += '<div class="stat-item"><div class="stat-label">Pooled Crosses MCID</div><div class="stat-value"><span class="tag ' + (pooledCrosses ? 'tag-pass' : 'tag-warn') + '">' + (pooledCrosses ? 'Yes' : 'No') + '</span></div></div>';
+  html += '<div class="stat-item"><div class="stat-label">Entire CI Beyond MCID</div><div class="stat-value"><span class="tag ' + (ciFullyCrosses ? 'tag-pass' : 'tag-warn') + '">' + (ciFullyCrosses ? 'Yes' : 'No') + '</span></div></div>';
+  html += '<div class="stat-item"><div class="stat-label">P(effect beyond MCID)</div><div class="stat-value">' + (pBeyondMCID * 100).toFixed(1) + '%</div></div>';
+  html += '</div>';
+
+  html += '<div class="info-box" style="margin-top:12px;font-size:12px">';
+  if (pooledCrosses && ciFullyCrosses) {
+    html += 'The pooled effect and its entire confidence interval exceed the MCID threshold of ' + mcidDisplay + ', suggesting a clinically meaningful effect.';
+  } else if (pooledCrosses) {
+    html += 'The pooled effect exceeds the MCID threshold, but the CI does not entirely cross it, indicating uncertainty about clinical significance.';
+  } else {
+    html += 'The pooled effect does not exceed the MCID threshold of ' + mcidDisplay + '. The evidence does not support a clinically important difference.';
+  }
+  html += '</div>';
+
+  container.innerHTML = html;
+}
+
+
+// ==============================
+// FEATURE 3: AUTO MANUSCRIPT METHODS + RESULTS
+// ==============================
+
+function generateManuscriptText() {
+  var syn = STATE.primarySynthesis;
+  if (!syn) return null;
+
+  var em = STATE.effectMeasure;
+  var useLog = isLogScale(em);
+  var emLabel = getEffectLabel(em).toLowerCase();
+  var emLabels = useLog ? (emLabel + 's') : (emLabel + 's');
+  var scaleDesc = useLog ? 'log' : 'linear';
+  var cl = Math.round(STATE.confLevel * 100);
+  var k = syn.k;
+  var nConditions = STATE.searchLog ? STATE.searchLog.length : 1;
+  var totalN = 0;
+  if (syn._studies) { for (var i = 0; i < syn._studies.length; i++) totalN += (syn._studies[i].n || 0); }
+
+  var effectVal = useLog ? Math.exp(syn.theta).toFixed(2) : syn.theta.toFixed(3);
+  var ciLo = useLog ? Math.exp(syn.ci_lower).toFixed(2) : syn.ci_lower.toFixed(3);
+  var ciHi = useLog ? Math.exp(syn.ci_upper).toFixed(2) : syn.ci_upper.toFixed(3);
+
+  var allFlags = [];
+  STATE.truthCertReports.forEach(function(r) { allFlags = allFlags.concat(r.flags); });
+  var grade = autoGRADE(syn, allFlags);
+
+  var hedging;
+  if (grade === 'HIGH') hedging = 'reduces';
+  else if (grade === 'MODERATE') hedging = 'probably reduces';
+  else if (grade === 'LOW') hedging = 'may reduce';
+  else hedging = 'may reduce but evidence is very uncertain';
+
+  var piText = '';
+  if (syn.pi_lower !== null) {
+    var piLo = useLog ? Math.exp(syn.pi_lower).toFixed(2) : syn.pi_lower.toFixed(3);
+    var piHi = useLog ? Math.exp(syn.pi_upper).toFixed(2) : syn.pi_upper.toFixed(3);
+    piText = 'The ' + cl + '% prediction interval was ' + piLo + ' to ' + piHi + '.';
+  } else {
+    piText = 'The prediction interval could not be computed (k<3).';
+  }
+
+  var looStable = true;
+  if (syn._studies && syn._studies.length >= 2) {
+    var loo = leaveOneOut(syn._studies);
+    for (var i = 0; i < loo.length; i++) {
+      if ((loo[i].theta < 0) !== (syn.theta < 0)) { looStable = false; break; }
+    }
+  }
+
+  var methods = 'We searched ClinicalTrials.gov API v2 for coronary artery disease trials of colchicine with posted results. '
+    + k + ' trials were identified across ' + nConditions + ' queries. '
+    + 'Data were extracted using automated parsing of structured results with TruthCert validation (10 validators). '
+    + 'Random-effects meta-analysis using the DerSimonian-Laird estimator with Hartung-Knapp-Sidik-Jonkman variance correction was performed. '
+    + 'Effect sizes were expressed as ' + emLabels + ' on the ' + scaleDesc + ' scale. '
+    + 'Heterogeneity was assessed using I\u00B2, \u03C4\u00B2, and Cochran\'s Q. '
+    + 'Confidence level was set at ' + cl + '%.';
+
+  var results = k + ' randomised controlled trials enrolling ' + totalN.toLocaleString() + ' participants met inclusion criteria. '
+    + 'The pooled ' + emLabel + ' was ' + effectVal + ' (' + cl + '% CI ' + ciLo + ' to ' + ciHi
+    + '; I\u00B2=' + syn.I2.toFixed(0) + '%, \u03C4\u00B2=' + syn.tau2.toFixed(4) + '; k=' + k + '). '
+    + 'The HKSJ adjustment ' + (syn.hksj ? 'was' : 'was not') + ' applied. '
+    + piText + ' '
+    + 'Leave-one-out analysis ' + (looStable ? 'confirmed' : 'did not confirm') + ' robustness. '
+    + 'Certainty of evidence was rated ' + grade + ' using automated GRADE assessment.';
+
+  return { methods: methods, results: results, grade: grade, hedging: hedging };
+}
+
+function renderManuscriptOutput() {
+  var container = document.getElementById('manuscriptOutput');
+  var text = generateManuscriptText();
+  if (!text) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">&#128221;</div><p>Run the pipeline to generate manuscript text.</p></div>';
+    return;
+  }
+
+  var html = '<div style="margin-bottom:16px">';
+  html += '<h4 style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em">Methods</h4>';
+  html += '<div id="manuscriptMethodsText" style="font-family:Georgia,serif;font-size:14px;line-height:1.8;color:var(--text-muted);padding:12px 16px;background:var(--surface-raised);border-radius:8px;border:1px solid var(--border)">' + escHtml(text.methods) + '</div>';
+  html += '</div>';
+  html += '<div>';
+  html += '<h4 style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em">Results</h4>';
+  html += '<div id="manuscriptResultsText" style="font-family:Georgia,serif;font-size:14px;line-height:1.8;color:var(--text-muted);padding:12px 16px;background:var(--surface-raised);border-radius:8px;border:1px solid var(--border)">' + escHtml(text.results) + '</div>';
+  html += '</div>';
+  html += '<div class="info-box" style="margin-top:12px;font-size:12px">GRADE-appropriate hedging: colchicine <strong>' + escHtml(text.hedging) + '</strong> MACE (' + escHtml(text.grade) + ' certainty).</div>';
+
+  container.innerHTML = html;
+}
+
+function copyManuscriptMethods() {
+  var text = generateManuscriptText();
+  if (text) navigator.clipboard.writeText(text.methods);
+}
+
+function copyManuscriptResults() {
+  var text = generateManuscriptText();
+  if (text) navigator.clipboard.writeText(text.results);
+}
+
+
+// ==============================
+// FEATURE 4: GRADE SUMMARY OF FINDINGS TABLE
+// ==============================
+
+function buildGRADEProfiles() {
+  var profiles = [];
+  var syn = STATE.primarySynthesis;
+  if (!syn) return profiles;
+
+  var em = STATE.effectMeasure;
+  var useLog = isLogScale(em);
+  var emLabel = getEffectLabel(em);
+  var allFlags = [];
+  STATE.truthCertReports.forEach(function(r) { allFlags = allFlags.concat(r.flags); });
+  var egger = STATE.biasData && STATE.biasData.egger ? STATE.biasData.egger : null;
+
+  function gradeOutcome(name, synthesis, flags) {
+    var downgrades = [];
+    var certainty = 4;
+
+    var criticalFlags = flags.filter(function(f) { return f.severity === 'CRITICAL'; });
+    if (criticalFlags.length > 0) { downgrades.push('Serious risk of bias'); certainty -= 1; }
+
+    if (synthesis.I2 > 75) { downgrades.push('Very serious inconsistency (I\u00B2=' + synthesis.I2.toFixed(0) + '%)'); certainty -= 2; }
+    else if (synthesis.I2 > 50) { downgrades.push('Serious inconsistency (I\u00B2=' + synthesis.I2.toFixed(0) + '%)'); certainty -= 1; }
+
+    var ciCrossesNull = useLog ? (Math.exp(synthesis.ci_lower) < 1 && Math.exp(synthesis.ci_upper) > 1) : (synthesis.ci_lower < 0 && synthesis.ci_upper > 0);
+    var ciCrossesOpposite = useLog ? (Math.exp(synthesis.ci_lower) < 1 && Math.exp(synthesis.ci_upper) > 1.25) : (synthesis.ci_lower < -0.1 && synthesis.ci_upper > 0.1);
+    if (ciCrossesOpposite) { downgrades.push('Very serious imprecision'); certainty -= 2; }
+    else if (ciCrossesNull) { downgrades.push('Serious imprecision (CI crosses null)'); certainty -= 1; }
+
+    if (egger && egger.pValue && egger.pValue < 0.1) { downgrades.push('Suspected publication bias'); certainty -= 1; }
+
+    certainty = Math.max(1, Math.min(4, certainty));
+    var grades = ['\u2295\u2296\u2296\u2296 VERY LOW', '\u2295\u2295\u2296\u2296 LOW', '\u2295\u2295\u2295\u2296 MODERATE', '\u2295\u2295\u2295\u2295 HIGH'];
+    var effectDisplay = useLog ? Math.exp(synthesis.theta).toFixed(2) : synthesis.theta.toFixed(3);
+    var ciLoDisplay = useLog ? Math.exp(synthesis.ci_lower).toFixed(2) : synthesis.ci_lower.toFixed(3);
+    var ciHiDisplay = useLog ? Math.exp(synthesis.ci_upper).toFixed(2) : synthesis.ci_upper.toFixed(3);
+
+    return {
+      outcome: name,
+      k: synthesis.k,
+      effect: emLabel + ' ' + effectDisplay + ' (' + ciLoDisplay + '\u2013' + ciHiDisplay + ')',
+      certainty: grades[certainty - 1],
+      certaintyLevel: certainty,
+      downgrades: downgrades.length > 0 ? downgrades.join('; ') : 'No downgrade'
+    };
+  }
+
+  profiles.push(gradeOutcome('MACE', syn, allFlags));
+
+  var secNames = Object.keys(STATE.secondarySyntheses);
+  secNames.forEach(function(name) {
+    profiles.push(gradeOutcome(name, STATE.secondarySyntheses[name], allFlags));
+  });
+
+  return profiles;
+}
+
+function renderGRADESoFTable() {
+  var container = document.getElementById('gradeSofTable');
+  var profiles = buildGRADEProfiles();
+  if (profiles.length === 0) {
+    container.innerHTML = '<div class="empty-state"><p>Run the pipeline to generate the GRADE SoF table.</p></div>';
+    return;
+  }
+
+  var html = '<table><thead><tr><th>Outcome</th><th class="text-right">k</th><th>Effect (CI)</th><th>Certainty</th><th>Reason for Downgrade</th></tr></thead><tbody>';
+  profiles.forEach(function(p) {
+    var certColor = p.certaintyLevel === 4 ? 'color:#059669' : p.certaintyLevel === 3 ? 'color:#2563eb' : p.certaintyLevel === 2 ? 'color:#d97706' : 'color:#dc2626';
+    html += '<tr>';
+    html += '<td style="font-weight:600">' + escHtml(p.outcome) + '</td>';
+    html += '<td class="text-right">' + p.k + '</td>';
+    html += '<td class="mono" style="font-size:12px">' + escHtml(p.effect) + '</td>';
+    html += '<td style="' + certColor + ';font-weight:700;font-size:12px">' + p.certainty + '</td>';
+    html += '<td style="font-size:12px;color:var(--text-muted)">' + escHtml(p.downgrades) + '</td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+
+  container.innerHTML = html;
+}
+
+function exportGRADESoFWord() {
+  var profiles = buildGRADEProfiles();
+  if (profiles.length === 0) return;
+
+  var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><style>table{border-collapse:collapse;width:100%}th,td{border:1px solid #333;padding:6px 10px;font-family:Calibri,sans-serif;font-size:11pt}th{background:#1e40af;color:white;font-weight:bold}</style></head><body>';
+  html += '<h2 style="font-family:Calibri">GRADE Summary of Findings: Colchicine in Cardiovascular Disease</h2>';
+  html += '<table><thead><tr><th>Outcome</th><th>k</th><th>Effect (CI)</th><th>Certainty</th><th>Reason for Downgrade</th></tr></thead><tbody>';
+  profiles.forEach(function(p) {
+    html += '<tr><td>' + escHtml(p.outcome) + '</td><td>' + p.k + '</td><td>' + escHtml(p.effect) + '</td><td>' + escHtml(p.certainty) + '</td><td>' + escHtml(p.downgrades) + '</td></tr>';
+  });
+  html += '</tbody></table>';
+  html += '<p style="font-family:Calibri;font-size:9pt;color:#666">Generated by CardioSynth v0.8.0 on ' + new Date().toISOString().substring(0, 10) + '</p>';
+  html += '</body></html>';
+
+  var blob = new Blob(['\ufeff' + html], { type: 'application/msword' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'GRADE-SoF-colchicine-' + new Date().toISOString().slice(0, 10) + '.doc';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+
+// ==============================
+// FEATURE 5: SENSITIVITY SCENARIO WATERFALL
+// ==============================
+
+function runSensitivityScenarios() {
+  var syn = STATE.primarySynthesis;
+  if (!syn || !syn._studies || syn._studies.length < 2) return null;
+
+  var studies = syn._studies;
+  var main = { theta: syn.theta, ci: [syn.ci_lower, syn.ci_upper], rr: Math.exp(syn.theta) };
+  var scenarios = [];
+  var confLevel = STATE.confLevel || 0.95;
+
+  var fe = fixedEffects(studies);
+  if (!fe.error) {
+    scenarios.push({ name: 'Fixed-Effect (IV)', theta: fe.theta, ci: [fe.ci_lower, fe.ci_upper] });
+  }
+
+  var noHKSJ = derSimonianLaird(studies, { hksj: false, confLevel: confLevel });
+  if (!noHKSJ.error) {
+    scenarios.push({ name: 'DL without HKSJ', theta: noHKSJ.theta, ci: [noHKSJ.ci_lower, noHKSJ.ci_upper] });
+  }
+
+  var sorted = studies.slice().sort(function(a, b) { return (1 / a.vi) - (1 / b.vi); });
+  if (sorted.length > 2) {
+    var excSmall = derSimonianLaird(sorted.slice(1), { hksj: true, confLevel: confLevel });
+    if (!excSmall.error) {
+      scenarios.push({ name: 'Exclude smallest', theta: excSmall.theta, ci: [excSmall.ci_lower, excSmall.ci_upper] });
+    }
+  }
+
+  if (sorted.length > 2) {
+    var excLarge = derSimonianLaird(sorted.slice(0, -1), { hksj: true, confLevel: confLevel });
+    if (!excLarge.error) {
+      scenarios.push({ name: 'Exclude largest', theta: excLarge.theta, ci: [excLarge.ci_lower, excLarge.ci_upper] });
+    }
+  }
+
+  if (studies.length >= 3) {
+    var subk = Math.max(2, Math.floor(studies.length * 0.75));
+    var keptStudies = studies.slice(0, subk);
+    var sub75 = derSimonianLaird(keptStudies, { hksj: true, confLevel: confLevel });
+    if (!sub75.error) {
+      scenarios.push({ name: 'First 75% of studies', theta: sub75.theta, ci: [sub75.ci_lower, sub75.ci_upper] });
+    }
+  }
+
+  var useLog = isLogScale(STATE.effectMeasure);
+  var nullVal = useLog ? 0 : 0;
+  scenarios.forEach(function(s) {
+    s.concordant = (s.theta < nullVal) === (main.theta < nullVal);
+    s.rr = Math.exp(s.theta);
+    s.ciRR = [Math.exp(s.ci[0]), Math.exp(s.ci[1])];
+  });
+
+  return { main: main, scenarios: scenarios };
+}
+
+function renderSensitivityScenarios() {
+  var container = document.getElementById('sensitivityScenarios');
+  var result = runSensitivityScenarios();
+  if (!result || result.scenarios.length === 0) {
+    container.innerHTML = '<div class="empty-state"><p>Run the pipeline to see sensitivity scenarios.</p></div>';
+    return;
+  }
+
+  var useLog = isLogScale(STATE.effectMeasure);
+  var emLabel = getEffectLabel(STATE.effectMeasure);
+  var allEntries = [{ name: 'Main analysis', theta: result.main.theta, ci: result.main.ci, concordant: true, isMain: true }].concat(result.scenarios.map(function(s) { s.isMain = false; return s; }));
+
+  var allVals = [];
+  allEntries.forEach(function(e) { allVals.push(e.ci[0], e.ci[1]); });
+  var minVal = Math.min.apply(null, allVals);
+  var maxVal = Math.max.apply(null, allVals);
+  var range = maxVal - minVal;
+  minVal -= range * 0.15;
+  maxVal += range * 0.15;
+
+  var chartW = 500, rowH = 32, labelW = 160, valueW = 100, marginT = 30, marginB = 30;
+  var totalH = marginT + allEntries.length * rowH + marginB;
+  var plotX = labelW;
+  var plotW = chartW - labelW - valueW;
+  var isDark = !document.body.classList.contains('light-mode');
+  var textCol = isDark ? '#f1f5f9' : '#1f2937';
+  var gridCol = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+
+  function sx(v) { return plotX + ((v - minVal) / (maxVal - minVal)) * plotW; }
+  var nullX = sx(0);
+
+  var svg = '<svg viewBox="0 0 ' + chartW + ' ' + totalH + '" style="width:100%;max-width:' + chartW + 'px;font-family:-apple-system,BlinkMacSystemFont,sans-serif">';
+  svg += '<rect x="0" y="0" width="' + chartW + '" height="' + totalH + '" fill="transparent"/>';
+  svg += '<line x1="' + nullX + '" y1="' + marginT + '" x2="' + nullX + '" y2="' + (totalH - marginB) + '" stroke="' + gridCol + '" stroke-width="2" stroke-dasharray="4,4"/>';
+
+  var nullLabel = useLog ? '1.0' : '0';
+  svg += '<text x="' + nullX + '" y="' + (marginT - 8) + '" text-anchor="middle" fill="' + textCol + '" font-size="10" opacity="0.6">' + emLabel + '=' + nullLabel + '</text>';
+
+  allEntries.forEach(function(e, i) {
+    var cy = marginT + i * rowH + rowH / 2;
+    var color = e.isMain ? '#3b82f6' : (e.concordant ? '#22c55e' : '#ef4444');
+    var x1 = sx(e.ci[0]), x2 = sx(e.ci[1]), xc = sx(e.theta);
+
+    svg += '<text x="' + (labelW - 8) + '" y="' + (cy + 4) + '" text-anchor="end" fill="' + textCol + '" font-size="11" font-weight="' + (e.isMain ? '700' : '400') + '">' + escHtml(e.name) + '</text>';
+    svg += '<line x1="' + x1 + '" y1="' + cy + '" x2="' + x2 + '" y2="' + cy + '" stroke="' + color + '" stroke-width="2"/>';
+    svg += '<circle cx="' + xc + '" cy="' + cy + '" r="' + (e.isMain ? 6 : 5) + '" fill="' + color + '"/>';
+
+    var dispVal = useLog ? Math.exp(e.theta).toFixed(2) : e.theta.toFixed(3);
+    svg += '<text x="' + (chartW - valueW + 8) + '" y="' + (cy + 4) + '" fill="' + textCol + '" font-size="11" font-weight="600">' + dispVal + '</text>';
+  });
+
+  svg += '</svg>';
+
+  var concordCount = result.scenarios.filter(function(s) { return s.concordant; }).length;
+  var html = svg;
+  html += '<div style="display:flex;gap:16px;margin-top:12px;font-size:12px;color:var(--text-muted)">';
+  html += '<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#22c55e"></span> Concordant</span>';
+  html += '<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#ef4444"></span> Discordant</span>';
+  html += '<span style="margin-left:auto;font-weight:600">' + concordCount + '/' + result.scenarios.length + ' concordant</span>';
+  html += '</div>';
+
+  container.innerHTML = html;
+}
+
+
+// ==============================
+// FEATURE 6: EVIDENCE VELOCITY & MATURITY
+// ==============================
+
+function computeEvidenceVelocity() {
+  var syn = STATE.primarySynthesis;
+  if (!syn || !syn._studies || syn._studies.length < 2) return null;
+
+  var studies = syn._studies;
+
+  var byYear = {};
+  studies.forEach(function(s) {
+    var yr = s.year || '2020';
+    if (!byYear[yr]) byYear[yr] = 0;
+    byYear[yr]++;
+  });
+
+  var cumResults = cumulativeMeta(studies, 'order');
+  var ciNarrowingRate = 0;
+  if (cumResults.length >= 2) {
+    var firstHalf = cumResults[Math.floor(cumResults.length / 2)];
+    var lastResult = cumResults[cumResults.length - 1];
+    var firstWidth = firstHalf.ci_upper - firstHalf.ci_lower;
+    var lastWidth = lastResult.ci_upper - lastResult.ci_lower;
+    if (firstWidth > 0) ciNarrowingRate = 1 - (lastWidth / firstWidth);
+  }
+
+  var flips = 0;
+  for (var i = 1; i < cumResults.length; i++) {
+    if ((cumResults[i].theta < 0) !== (cumResults[i - 1].theta < 0)) flips++;
+  }
+
+  var stability = flips === 0 ? 'STABLE' : flips === 1 ? 'CONVERGING' : flips <= 2 ? 'EVOLVING' : 'VOLATILE';
+
+  var lastResult = cumResults[cumResults.length - 1];
+  var maturity = Math.min(100, Math.round(
+    (studies.length >= 5 ? 30 : studies.length * 6) +
+    (ciNarrowingRate > 0.3 ? 25 : Math.max(0, ciNarrowingRate * 80)) +
+    (flips === 0 ? 25 : Math.max(0, 25 - flips * 10)) +
+    (lastResult.I2 < 50 ? 20 : Math.max(0, 20 - (lastResult.I2 - 50) * 0.4))
+  ));
+
+  return { byYear: byYear, ciNarrowingRate: ciNarrowingRate, flips: flips, stability: stability, maturity: maturity };
+}
+
+function renderEvidenceVelocity() {
+  var container = document.getElementById('evidenceVelocity');
+  var ev = computeEvidenceVelocity();
+  if (!ev) {
+    container.innerHTML = '<div class="empty-state"><p>Run the pipeline to see evidence velocity metrics.</p></div>';
+    return;
+  }
+
+  var stabColor = ev.stability === 'STABLE' ? '#22c55e' : ev.stability === 'CONVERGING' ? '#3b82f6' : ev.stability === 'EVOLVING' ? '#d97706' : '#ef4444';
+  var matColor = ev.maturity >= 70 ? '#22c55e' : ev.maturity >= 40 ? '#d97706' : '#ef4444';
+
+  var html = '<div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:20px">';
+  html += '<div style="text-align:center;padding:16px 24px;background:var(--surface-raised);border-radius:12px;border:1px solid var(--border);min-width:120px">';
+  html += '<div style="font-size:2.5rem;font-weight:800;color:' + matColor + ';line-height:1">' + ev.maturity + '</div>';
+  html += '<div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:var(--text-muted);margin-top:6px">Maturity Score</div>';
+  html += '</div>';
+  html += '<div style="text-align:center;padding:16px 24px;background:var(--surface-raised);border-radius:12px;border:1px solid var(--border);min-width:120px">';
+  html += '<div style="font-size:1.2rem;font-weight:800;color:' + stabColor + ';padding:8px 16px;border-radius:8px;background:' + stabColor + '22">' + ev.stability + '</div>';
+  html += '<div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:var(--text-muted);margin-top:6px">Direction Stability</div>';
+  html += '</div>';
+  html += '</div>';
+
+  html += '<div class="stat-grid">';
+  html += '<div class="stat-item"><div class="stat-label">CI Narrowing Rate</div><div class="stat-value">' + (ev.ciNarrowingRate * 100).toFixed(1) + '%</div><div class="stat-sub">First half vs full set</div></div>';
+  html += '<div class="stat-item"><div class="stat-label">Direction Flips</div><div class="stat-value">' + ev.flips + '</div><div class="stat-sub">In cumulative analysis</div></div>';
+  html += '</div>';
+
+  var years = Object.keys(ev.byYear).sort();
+  if (years.length > 0) {
+    var maxCount = Math.max.apply(null, years.map(function(y) { return ev.byYear[y]; }));
+    var barW = 40, barMaxH = 60, barGap = 8;
+    var chartW = years.length * (barW + barGap) + 40;
+    var chartH = barMaxH + 40;
+    var svgBarChart = '<svg viewBox="0 0 ' + chartW + ' ' + chartH + '" style="width:100%;max-width:' + chartW + 'px;margin-top:12px">';
+    years.forEach(function(yr, i) {
+      var cnt = ev.byYear[yr];
+      var bh = maxCount > 0 ? (cnt / maxCount) * barMaxH : 0;
+      var bx = 20 + i * (barW + barGap);
+      var by = barMaxH - bh;
+      svgBarChart += '<rect x="' + bx + '" y="' + by + '" width="' + barW + '" height="' + bh + '" rx="4" fill="var(--accent)" opacity="0.7"/>';
+      svgBarChart += '<text x="' + (bx + barW / 2) + '" y="' + (by - 4) + '" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="600">' + cnt + '</text>';
+      svgBarChart += '<text x="' + (bx + barW / 2) + '" y="' + (barMaxH + 14) + '" text-anchor="middle" fill="var(--text-muted)" font-size="10">' + yr + '</text>';
+    });
+    svgBarChart += '</svg>';
+    html += '<div style="margin-top:8px"><div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px">Trials by Completion Year</div>' + svgBarChart + '</div>';
+  }
+
+  container.innerHTML = html;
+}
+
+
+// ==============================
+// FEATURE 7: ROBUSTNESS CHECK DASHBOARD
+// ==============================
+
+function computeRobustnessChecks() {
+  var syn = STATE.primarySynthesis;
+  if (!syn) return [];
+
+  var checks = [];
+
+  if (syn._studies && syn._studies.length >= 2) {
+    var loo = leaveOneOut(syn._studies);
+    var looThetas = loo.map(function(l) { return Math.exp(l.theta); });
+    var looRange = Math.max.apply(null, looThetas) - Math.min.apply(null, looThetas);
+    checks.push({ name: 'Leave-One-Out Stability', value: 'Range: ' + looRange.toFixed(3),
+      status: looRange < 0.1 ? 'pass' : looRange < 0.2 ? 'warn' : 'fail' });
+  } else {
+    checks.push({ name: 'Leave-One-Out Stability', value: 'k < 2', status: 'warn' });
+  }
+
+  checks.push({ name: 'Heterogeneity (I\u00B2)', value: syn.I2.toFixed(1) + '%',
+    status: syn.I2 < 50 ? 'pass' : syn.I2 < 75 ? 'warn' : 'fail' });
+
+  var piIncludesNull = syn.pi_lower !== null && syn.pi_lower < 0 && syn.pi_upper > 0;
+  checks.push({ name: 'Prediction Interval', value: syn.pi_lower !== null ? (piIncludesNull ? 'Includes null' : 'Excludes null') : 'k < 3',
+    status: syn.pi_lower === null ? 'warn' : (piIncludesNull ? 'warn' : 'pass') });
+
+  var ciCrossesNull = syn.ci_lower < 0 && syn.ci_upper > 0;
+  checks.push({ name: 'Confidence Interval', value: ciCrossesNull ? 'Crosses null' : 'Excludes null',
+    status: ciCrossesNull ? 'warn' : 'pass' });
+
+  checks.push({ name: 'Number of Studies', value: 'k = ' + syn.k,
+    status: syn.k >= 5 ? 'pass' : syn.k >= 3 ? 'warn' : 'fail' });
+
+  var egger = STATE.biasData && STATE.biasData.egger ? STATE.biasData.egger : null;
+  checks.push({ name: 'Egger\'s Asymmetry', value: egger && egger.pValue ? 'p = ' + egger.pValue.toFixed(3) : 'k < 10',
+    status: !egger || !egger.pValue ? 'warn' : egger.pValue > 0.1 ? 'pass' : 'fail' });
+
+  checks.push({ name: 'HKSJ Correction', value: syn.hksj ? 'Applied' : 'Not applied',
+    status: syn.hksj ? 'pass' : 'warn' });
+
+  var criticalCount = 0;
+  STATE.truthCertReports.forEach(function(r) {
+    r.flags.forEach(function(f) { if (f.severity === 'CRITICAL') criticalCount++; });
+  });
+  checks.push({ name: 'TruthCert Validation', value: criticalCount + ' critical flags',
+    status: criticalCount === 0 ? 'pass' : 'fail' });
+
+  return checks;
+}
+
+function renderRobustnessChecks() {
+  var container = document.getElementById('robustnessGrid');
+  var checks = computeRobustnessChecks();
+  if (checks.length === 0) {
+    container.innerHTML = '<div class="empty-state"><p>Run the pipeline to see robustness checks.</p></div>';
+    return;
+  }
+
+  var passCount = checks.filter(function(c) { return c.status === 'pass'; }).length;
+  var verdictEl = document.getElementById('robustnessVerdict');
+  var verdictColor = passCount >= 6 ? '#22c55e' : passCount >= 4 ? '#d97706' : '#ef4444';
+  verdictEl.innerHTML = '<span style="color:' + verdictColor + '">' + passCount + '/' + checks.length + ' pass</span>';
+
+  var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">';
+  checks.forEach(function(c) {
+    var icon, bgCol, borderCol;
+    if (c.status === 'pass') { icon = '\u2713'; bgCol = 'rgba(34,197,94,0.08)'; borderCol = 'rgba(34,197,94,0.3)'; }
+    else if (c.status === 'warn') { icon = '\u26A0'; bgCol = 'rgba(234,179,8,0.08)'; borderCol = 'rgba(234,179,8,0.3)'; }
+    else { icon = '\u2717'; bgCol = 'rgba(239,68,68,0.08)'; borderCol = 'rgba(239,68,68,0.3)'; }
+
+    var iconColor = c.status === 'pass' ? '#22c55e' : c.status === 'warn' ? '#eab308' : '#ef4444';
+    html += '<div style="padding:12px;border-radius:8px;background:' + bgCol + ';border:1px solid ' + borderCol + '">';
+    html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">';
+    html += '<span style="font-size:16px;color:' + iconColor + '">' + icon + '</span>';
+    html += '<span style="font-size:12px;font-weight:600;color:var(--text)">' + escHtml(c.name) + '</span>';
+    html += '</div>';
+    html += '<div style="font-size:12px;color:var(--text-muted)">' + escHtml(c.value) + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  container.innerHTML = html;
+}
+
+
+// ==============================
 // UPDATE renderAllPanels TO INCLUDE NEW PANELS
 // ==============================
 
@@ -5282,6 +6109,15 @@ renderAllPanels = function() {
   _originalRenderAllPanels();
   renderVisualAbstract();
   renderNarrativeReport();
+  renderRobustnessChecks();
+  renderMCIDAnalysis();
+  renderSensitivityScenarios();
+  renderEvidenceVelocity();
+  renderManuscriptOutput();
+  renderGRADESoFTable();
+  if (STATE.primarySynthesis) {
+    document.getElementById('btnDownloadCapsule').disabled = false;
+  }
 };
 
 
