@@ -3313,7 +3313,8 @@ function buildPrismaSVG(fc) {
   var row0SubH = (rows[0].sub ? rows[0].sub.length * subLineH : 0);
   var totalH = 6 * (boxH + gap) + row0SubH + 40;
 
-  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + totalH + '" font-family="-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif" font-size="11">';
+  // [P0-3 FIX] Add role="img" and aria-label for screen readers
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + totalH + '" font-family="-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif" font-size="11" role="img" aria-label="PRISMA 2020 flow diagram showing study selection from identification through synthesis"><title>PRISMA 2020 Flow Diagram</title>';
   svg += '<defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#6b7280"/></marker></defs>';
 
   function drawBox(x, y, bw, bh, text, fill, textColor) {
@@ -3409,7 +3410,7 @@ function renderInclusionExclusionLog() {
     tr.innerHTML =
       '<td class="mono">' + nctLinkHtml(entry.nct) + '</td>' +
       '<td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + escHtml(entry.title) + '">' + escHtml(entry.title) + '</td>' +
-      '<td class="' + statusClass + '">' + entry.status + '</td>' +
+      '<td class="' + statusClass + '">' + escHtml(entry.status) + '</td>' + // [P0-1 FIX]
       '<td style="font-size:11px;max-width:260px">' + escHtml(entry.reason) + '</td>' +
       '<td><span class="tag ' + verdictTag + '">' + escHtml(entry.verdict) + '</span></td>' +
       '<td><button class="btn btn-secondary" style="padding:4px 12px;font-size:11px" onclick="showRecordExcerpt(\'' + escHtml(entry.nct) + '\')">View Record</button></td>';
@@ -3513,7 +3514,7 @@ function buildCrossValidation(extraction) {
           var regNum = parseFloat(regVal);
           var extNum = parseFloat(extVal);
           if (isFinite(regNum) && isFinite(extNum)) {
-            isMatch = regNum === 0 && extNum === 0 ? true : Math.abs(regNum - extNum) / Math.max(Math.abs(regNum), 1e-10) <= 0.01;
+            isMatch = regNum === 0 && extNum === 0 ? true : Math.abs(regNum - extNum) / Math.max(Math.abs(regNum), Math.abs(extNum), 1e-10) <= 0.01; // [P1-1 FIX] symmetric denominator
           } else {
             isMatch = regVal === extVal;
           }
@@ -3597,6 +3598,7 @@ function recordVersionHistory() {
     gradeRating = autoGRADE(syn, allFlags);
   }
   STATE.versionHistory = STATE.versionHistory || [];
+  if (STATE.versionHistory.length >= 50) STATE.versionHistory.shift(); // [P1-2 FIX] Cap at 50 entries
   STATE.versionHistory.push({
     version: 'v' + (STATE.versionHistory.length + 1),
     timestamp: new Date().toISOString(),
@@ -3700,11 +3702,12 @@ function showRecordExcerpt(nct) {
   if (rawExc) {
     html += '<h4 style="margin:16px 0 8px;font-size:14px">Raw CT.gov API Excerpts vs Extracted Values</h4>';
     html += '<div class="record-excerpt-grid">';
+    // [P0-4 FIX] Null guards on rawExc sub-fields — API may omit any field
     html += '<div class="excerpt-col"><h5>Raw API Response</h5>';
-    html += '<div class="excerpt-row"><span class="excerpt-label">briefTitle</span><span class="excerpt-value">' + escHtml(String(rawExc.title.value || '-')) + '</span></div>';
-    html += '<div class="excerpt-row"><span class="excerpt-label">enrollment.count</span><span class="excerpt-value">' + escHtml(String(rawExc.enrollment.value || '-')) + '</span></div>';
-    html += '<div class="excerpt-row"><span class="excerpt-label">overallStatus</span><span class="excerpt-value">' + escHtml(String(rawExc.overallStatus.value || '-')) + '</span></div>';
-    html += '<div class="excerpt-row"><span class="excerpt-label">primaryCompletionDate</span><span class="excerpt-value">' + escHtml(String(rawExc.primaryCompletionDate.value || '-')) + '</span></div>';
+    html += '<div class="excerpt-row"><span class="excerpt-label">briefTitle</span><span class="excerpt-value">' + escHtml(String((rawExc.title && rawExc.title.value) || '-')) + '</span></div>';
+    html += '<div class="excerpt-row"><span class="excerpt-label">enrollment.count</span><span class="excerpt-value">' + escHtml(String((rawExc.enrollment && rawExc.enrollment.value) || '-')) + '</span></div>';
+    html += '<div class="excerpt-row"><span class="excerpt-label">overallStatus</span><span class="excerpt-value">' + escHtml(String((rawExc.overallStatus && rawExc.overallStatus.value) || '-')) + '</span></div>';
+    html += '<div class="excerpt-row"><span class="excerpt-label">primaryCompletionDate</span><span class="excerpt-value">' + escHtml(String((rawExc.primaryCompletionDate && rawExc.primaryCompletionDate.value) || '-')) + '</span></div>';
     if (rawExc.arms && rawExc.arms.value) {
       rawExc.arms.value.forEach(function(a) {
         html += '<div class="excerpt-row"><span class="excerpt-label">arm: ' + escHtml(a.label || '') + '</span><span class="excerpt-value">' + escHtml(a.type || '') + '</span></div>';
@@ -3892,12 +3895,14 @@ function generateRCode(synthesis) {
   code += '  yi = c(' + yiArr.join(', ') + '),\n';
   code += '  vi = c(' + viArr.join(', ') + ')\n';
   code += ')\n\n';
-  code += '# DerSimonian-Laird random-effects model\n';
-  code += 'res_dl <- rma(yi, vi, data=dat, method="DL")\n';
-  code += 'cat("=== DL (without HKSJ) ===\\n")\n';
+  // [P0-2 FIX] Use REML for k<10 per advanced-stats.md; DL biased at small k
+  var rMethod = synthesis.k < 10 ? 'REML' : 'DL';
+  code += '# Random-effects model (' + rMethod + (synthesis.k < 10 ? ' — preferred over DL for k<10' : '') + ')\n';
+  code += 'res_dl <- rma(yi, vi, data=dat, method="' + rMethod + '")\n';
+  code += 'cat("=== ' + rMethod + ' (without HKSJ) ===\\n")\n';
   code += 'print(res_dl)\n\n';
   code += '# With HKSJ correction\n';
-  code += 'res_hksj <- rma(yi, vi, data=dat, method="DL", test="knha")\n';
+  code += 'res_hksj <- rma(yi, vi, data=dat, method="' + rMethod + '", test="knha")\n';
   code += 'cat("\\n=== DL + HKSJ ===\\n")\n';
   code += 'print(res_hksj)\n\n';
   code += '# Back-transform to RR\n';
@@ -3942,7 +3947,8 @@ async function runWebR() {
 
   try {
     if (!webrInstance) {
-      var { WebR } = await import('https://webr.r-wasm.org/latest/webr.mjs');
+      // [P1-4 FIX] Pin WebR to specific version to prevent supply-chain drift
+      var { WebR } = await import('https://webr.r-wasm.org/v0.4.4/webr.mjs');
       webrInstance = new WebR();
       await webrInstance.init();
       outputEl.textContent += 'WebR loaded. Installing metafor...\n';
@@ -3951,7 +3957,7 @@ async function runWebR() {
     }
 
     var code = document.getElementById('webrRCode').textContent;
-    var result = await webrInstance.evalRString(code);
+    // [P1-3 FIX] Removed redundant evalRString — captureR is sufficient and captures output
     var shelter = await new webrInstance.Shelter();
     var capture = await shelter.captureR(code);
     var output = '';
