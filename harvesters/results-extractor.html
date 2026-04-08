@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CardioSynth Results Extractor</title>
+<meta name="description" content="CardioSynth Phase 0.2 — CT.gov structured results extractor producing standardized ExtractionObject JSON">
+<meta property="og:title" content="CardioSynth Results Extractor">
+<meta property="og:description" content="Browser-native CT.gov results parser with provenance hashing">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue-900: #1e3a5f;
+    --blue-800: #1e40af;
+    --blue-700: #1d4ed8;
+    --blue-600: #2563eb;
+    --blue-500: #3b82f6;
+    --blue-100: #dbeafe;
+    --blue-50: #eff6ff;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    --green-700: #15803d;
+    --green-600: #16a34a;
+    --green-100: #dcfce7;
+    --red-600: #dc2626;
+    --red-100: #fee2e2;
+    --amber-600: #d97706;
+    --amber-100: #fef3c7;
+    --purple-600: #9333ea;
+    --purple-100: #f3e8ff;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: #fff;
+    color: var(--gray-800);
+    line-height: 1.6;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, var(--blue-900) 0%, var(--blue-800) 100%);
+    color: #fff;
+    padding: 24px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .header-icon {
+    width: 48px; height: 48px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+  }
+  .header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+  .header .subtitle { font-size: 13px; opacity: 0.8; margin-top: 2px; }
+
+  /* Main layout */
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px 32px; }
+
+  /* Query panel */
+  .query-panel {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .query-panel h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: 16px;
+  }
+  .input-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+  }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .form-group input[type="text"] {
+    padding: 8px 12px;
+    border: 1px solid var(--gray-300);
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--gray-800);
+    background: #fff;
+    transition: border-color 0.15s;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+    width: 220px;
+  }
+  .form-group input:focus {
+    outline: none;
+    border-color: var(--blue-500);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+  }
+
+  .btn {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: var(--blue-600); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: var(--blue-700); }
+  .btn-secondary { background: var(--gray-100); color: var(--gray-700); border: 1px solid var(--gray-300); }
+  .btn-secondary:hover:not(:disabled) { background: var(--gray-200); }
+  .btn-export { background: var(--green-600); color: #fff; }
+  .btn-export:hover:not(:disabled) { background: var(--green-700); }
+  .btn-small { padding: 6px 14px; font-size: 12px; }
+
+  /* Status bar */
+  .status-bar {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    border-radius: 8px;
+  }
+  .status-bar.active { display: flex; }
+  .status-bar.info { background: var(--blue-50); border: 1px solid var(--blue-100); color: var(--blue-800); }
+  .status-bar.error { background: var(--red-100); border: 1px solid #fecaca; color: var(--red-600); }
+  .status-bar.success { background: var(--green-100); border: 1px solid #bbf7d0; color: var(--green-600); }
+
+  /* Spinner */
+  .spinner {
+    display: inline-block;
+    width: 18px; height: 18px;
+    border: 2px solid var(--blue-100);
+    border-top-color: var(--blue-600);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Collapsible sections */
+  .section {
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px;
+    background: var(--gray-50);
+    cursor: pointer;
+    user-select: none;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gray-700);
+    border-bottom: 1px solid transparent;
+  }
+  .section-header:hover { background: var(--gray-100); }
+  .section-header .chevron {
+    transition: transform 0.2s;
+    font-size: 12px;
+    color: var(--gray-400);
+  }
+  .section.open .section-header { border-bottom-color: var(--gray-200); }
+  .section.open .section-header .chevron { transform: rotate(90deg); }
+  .section-body {
+    display: none;
+    padding: 16px 20px;
+  }
+  .section.open .section-body { display: block; }
+  .section-header .badge-count {
+    background: var(--blue-100);
+    color: var(--blue-800);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-left: auto;
+  }
+
+  /* Metadata grid */
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 12px;
+  }
+  .meta-item {
+    padding: 10px 14px;
+    background: var(--gray-50);
+    border-radius: 8px;
+    border: 1px solid var(--gray-100);
+  }
+  .meta-item .meta-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+  }
+  .meta-item .meta-value {
+    font-size: 14px;
+    color: var(--gray-800);
+    font-weight: 500;
+  }
+
+  /* Arm cards */
+  .arm-cards { display: flex; flex-wrap: wrap; gap: 12px; }
+  .arm-card {
+    flex: 1 1 220px;
+    padding: 14px 18px;
+    border-radius: 10px;
+    border: 2px solid var(--gray-200);
+    background: #fff;
+  }
+  .arm-card.arm-experimental { border-color: var(--green-600); background: #f0fdf4; }
+  .arm-card.arm-placebo { border-color: var(--gray-400); background: var(--gray-50); }
+  .arm-card.arm-comparator { border-color: var(--blue-600); background: var(--blue-50); }
+  .arm-card .arm-type-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .arm-experimental .arm-type-tag { background: var(--green-100); color: var(--green-600); }
+  .arm-placebo .arm-type-tag { background: var(--gray-200); color: var(--gray-600); }
+  .arm-comparator .arm-type-tag { background: var(--blue-100); color: var(--blue-800); }
+  .arm-card .arm-label { font-size: 15px; font-weight: 600; color: var(--gray-800); margin-bottom: 4px; }
+  .arm-card .arm-detail { font-size: 12px; color: var(--gray-500); }
+
+  /* Tables */
+  .table-container {
+    overflow-x: auto;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    margin-top: 12px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead th {
+    background: var(--gray-50);
+    border-bottom: 2px solid var(--gray-200);
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--gray-600);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  tbody tr { border-bottom: 1px solid var(--gray-100); }
+  tbody tr:hover { background: var(--blue-50); }
+  tbody td { padding: 8px 12px; }
+  .mono {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+    font-size: 12px;
+  }
+
+  /* Outcome card */
+  .outcome-card {
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  .outcome-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: var(--gray-50);
+    border-bottom: 1px solid var(--gray-200);
+    cursor: pointer;
+    user-select: none;
+  }
+  .outcome-header:hover { background: var(--gray-100); }
+  .outcome-type-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .outcome-type-primary { background: var(--blue-100); color: var(--blue-800); }
+  .outcome-type-secondary { background: var(--purple-100); color: var(--purple-600); }
+  .outcome-type-other { background: var(--gray-100); color: var(--gray-600); }
+  .outcome-type-post_hoc { background: var(--amber-100); color: var(--amber-600); }
+  .outcome-title { font-size: 13px; font-weight: 600; color: var(--gray-800); flex: 1; }
+  .outcome-body { display: none; padding: 12px 16px; }
+  .outcome-card.open .outcome-body { display: block; }
+  .outcome-meta { font-size: 12px; color: var(--gray-500); margin-bottom: 8px; }
+  .outcome-meta span { margin-right: 16px; }
+
+  /* JSON viewer */
+  .json-viewer {
+    background: var(--gray-900);
+    color: #a5f3fc;
+    padding: 16px;
+    border-radius: 8px;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    max-height: 500px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* Log panel */
+  .log-panel {
+    margin-top: 24px;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .log-panel summary {
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-600);
+    background: var(--gray-50);
+    cursor: pointer;
+  }
+  .log-panel .log-content {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 12px 16px;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-size: 11px;
+    background: var(--gray-900);
+    color: #a5f3fc;
+    line-height: 1.8;
+  }
+
+  /* Action bar */
+  .action-bar {
+    display: none;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .action-bar.active { display: flex; }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 64px 32px;
+    color: var(--gray-400);
+  }
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+  .empty-state p { font-size: 15px; }
+
+  /* Results container */
+  #resultsContainer { display: none; }
+  #resultsContainer.active { display: block; }
+
+  @media (max-width: 700px) {
+    .container { padding: 16px; }
+    .input-row { flex-direction: column; align-items: stretch; }
+    .form-group input[type="text"] { width: 100%; }
+    .meta-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">&#x1f9ea;</div>
+  <div>
+    <h1>CardioSynth Results Extractor</h1>
+    <div class="subtitle">Phase 0.2 &mdash; CT.gov Structured Results &rarr; ExtractionObject JSON</div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="query-panel">
+    <h2>Extract Study Results</h2>
+    <div class="input-row">
+      <div class="form-group">
+        <label for="nctInput">NCT ID</label>
+        <input type="text" id="nctInput" placeholder="NCT02551094" spellcheck="false">
+      </div>
+      <button class="btn btn-primary" id="extractBtn" onclick="handleExtract()">Extract</button>
+    </div>
+  </div>
+
+  <div class="status-bar" id="statusBar">
+    <span id="statusIcon"></span>
+    <span id="statusText"></span>
+  </div>
+
+  <div class="action-bar" id="actionBar">
+    <button class="btn btn-export btn-small" onclick="copyJSON()">Copy ExtractionObject</button>
+    <button class="btn btn-secondary btn-small" onclick="downloadJSON()">Download .json</button>
+  </div>
+
+  <div id="resultsContainer">
+    <!-- Study Info -->
+    <div class="section open" id="sectionStudyInfo">
+      <div class="section-header" onclick="toggleSection('sectionStudyInfo')">
+        <span class="chevron">&#9654;</span>
+        Study Information
+      </div>
+      <div class="section-body" id="studyInfoBody"></div>
+    </div>
+
+    <!-- Arms -->
+    <div class="section open" id="sectionArms">
+      <div class="section-header" onclick="toggleSection('sectionArms')">
+        <span class="chevron">&#9654;</span>
+        Arms
+        <span class="badge-count" id="armsCount">0</span>
+      </div>
+      <div class="section-body" id="armsBody"></div>
+    </div>
+
+    <!-- Outcomes -->
+    <div class="section open" id="sectionOutcomes">
+      <div class="section-header" onclick="toggleSection('sectionOutcomes')">
+        <span class="chevron">&#9654;</span>
+        Outcome Measures
+        <span class="badge-count" id="outcomesCount">0</span>
+      </div>
+      <div class="section-body" id="outcomesBody"></div>
+    </div>
+
+    <!-- Adverse Events -->
+    <div class="section" id="sectionAE">
+      <div class="section-header" onclick="toggleSection('sectionAE')">
+        <span class="chevron">&#9654;</span>
+        Adverse Events
+        <span class="badge-count" id="aeCount">0</span>
+      </div>
+      <div class="section-body" id="aeBody"></div>
+    </div>
+
+    <!-- Participant Flow -->
+    <div class="section" id="sectionFlow">
+      <div class="section-header" onclick="toggleSection('sectionFlow')">
+        <span class="chevron">&#9654;</span>
+        Participant Flow
+        <span class="badge-count" id="flowCount">0</span>
+      </div>
+      <div class="section-body" id="flowBody"></div>
+    </div>
+
+    <!-- Registered Outcomes -->
+    <div class="section" id="sectionRegistered">
+      <div class="section-header" onclick="toggleSection('sectionRegistered')">
+        <span class="chevron">&#9654;</span>
+        Registered Outcomes (Protocol)
+      </div>
+      <div class="section-body" id="registeredBody"></div>
+    </div>
+
+    <!-- Raw JSON -->
+    <div class="section" id="sectionJSON">
+      <div class="section-header" onclick="toggleSection('sectionJSON')">
+        <span class="chevron">&#9654;</span>
+        Raw ExtractionObject JSON
+      </div>
+      <div class="section-body" id="jsonBody"></div>
+    </div>
+  </div>
+
+  <div class="empty-state" id="emptyState">
+    <div class="icon">&#x1f50d;</div>
+    <p>Enter an NCT ID to extract structured results</p>
+  </div>
+
+  <details class="log-panel">
+    <summary>Activity Log</summary>
+    <div class="log-content" id="logContent"></div>
+  </details>
+</div>
+
+<script>
+// --- Utilities ---
+function sleep(ms) { return new Promise(function(resolve) { setTimeout(resolve, ms); }); }
+
+async function retry(fn, config) {
+  var lastError;
+  for (var attempt = 0; attempt < config.max_attempts; attempt++) {
+    try { return await fn(); } catch (err) {
+      lastError = err;
+      if (attempt < config.max_attempts - 1) {
+        var delay = Math.min(
+          config.initial_delay_ms * Math.pow(config.backoff_multiplier, attempt),
+          config.max_delay_ms
+        );
+        log('Retry attempt ' + (attempt + 1) + ', waiting ' + delay + 'ms...');
+        await sleep(delay);
+      }
+    }
+  }
+  throw lastError;
+}
+
+function log(msg) {
+  var el = document.getElementById('logContent');
+  var ts = new Date().toISOString().substr(11, 12);
+  el.textContent += '[' + ts + '] ' + msg + '\n';
+  el.scrollTop = el.scrollHeight;
+}
+
+function escapeHtml(str) {
+  var div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function safeFloat(val) {
+  if (val === null || val === undefined || val === '' || val === 'NA' || val === 'N/A') return null;
+  var parsed = parseFloat(val);
+  return isFinite(parsed) ? parsed : null;
+}
+
+function safeInt(val) {
+  if (val === null || val === undefined || val === '' || val === 'NA' || val === 'N/A') return null;
+  var parsed = parseInt(val, 10);
+  return isFinite(parsed) ? parsed : null;
+}
+
+// --- CT.gov API v2 Client ---
+var CTGOV_API_CONFIG = {
+  base_url: 'https://clinicaltrials.gov/api/v2',
+  rate_limit: {
+    requests_per_minute: 10,
+    burst_limit: 3
+  },
+  retry: {
+    max_attempts: 3,
+    initial_delay_ms: 1000,
+    backoff_multiplier: 2,
+    max_delay_ms: 30000
+  },
+  timeout_ms: 30000
+};
+
+// Token bucket rate limiter
+var rateLimiter = {
+  tokens: CTGOV_API_CONFIG.rate_limit.burst_limit,
+  lastRefill: Date.now()
+};
+
+async function acquireToken() {
+  var now = Date.now();
+  var elapsed = now - rateLimiter.lastRefill;
+  var refillAmount = (elapsed / 60000) * CTGOV_API_CONFIG.rate_limit.requests_per_minute;
+
+  rateLimiter.tokens = Math.min(
+    CTGOV_API_CONFIG.rate_limit.burst_limit,
+    rateLimiter.tokens + refillAmount
+  );
+  rateLimiter.lastRefill = now;
+
+  if (rateLimiter.tokens >= 1) {
+    rateLimiter.tokens--;
+    return;
+  }
+
+  var waitTime = ((1 - rateLimiter.tokens) / CTGOV_API_CONFIG.rate_limit.requests_per_minute) * 60000;
+  log('Rate limit: waiting ' + Math.round(waitTime) + 'ms for token');
+  await sleep(waitTime);
+  rateLimiter.tokens = 0;
+}
+
+async function fetchStudy(nctId) {
+  await acquireToken();
+
+  var endpoint = '/studies/' + nctId;
+  var url = CTGOV_API_CONFIG.base_url + endpoint;
+  log('GET ' + endpoint);
+
+  var controller = new AbortController();
+  var timeoutId = setTimeout(function() { controller.abort(); }, CTGOV_API_CONFIG.timeout_ms);
+
+  try {
+    var response = await retry(
+      async function() {
+        var res = await fetch(url, {
+          signal: controller.signal,
+          headers: { 'Accept': 'application/json' }
+        });
+
+        if (!res.ok) {
+          if (res.status === 429) {
+            var retryAfter = parseInt(res.headers.get('Retry-After') || '60', 10);
+            log('Rate limited by server, waiting ' + retryAfter + 's');
+            await sleep(retryAfter * 1000);
+            throw new Error('Rate limited');
+          }
+          if (res.status === 404) {
+            throw new Error('Study not found: ' + nctId);
+          }
+          var body = await res.text().catch(function() { return ''; });
+          throw new Error('API error: ' + res.status + ' ' + res.statusText + ' ' + body.substring(0, 200));
+        }
+
+        return res;
+      },
+      CTGOV_API_CONFIG.retry
+    );
+
+    clearTimeout(timeoutId);
+    var rawText = await response.text();
+    var data = JSON.parse(rawText);
+    return { data: data, rawText: rawText };
+
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      throw new Error('Request timeout after ' + CTGOV_API_CONFIG.timeout_ms + 'ms');
+    }
+    throw err;
+  }
+}
+
+// --- SHA-256 using SubtleCrypto ---
+async function sha256(text) {
+  var encoder = new TextEncoder();
+  var data = encoder.encode(text);
+  var hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  var hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+}
+
+// --- Arm Type Classification ---
+function classifyArmType(armGroup, allArmGroups) {
+  var type = (armGroup.type || '').toUpperCase();
+  var label = (armGroup.label || '').toLowerCase();
+
+  // Explicit EXPERIMENTAL type or label keywords
+  if (type === 'EXPERIMENTAL' || label.indexOf('experimental') !== -1 || label.indexOf('treatment') !== -1) {
+    return 'EXPERIMENTAL';
+  }
+
+  // Explicit placebo
+  if (type === 'PLACEBO_COMPARATOR' || label.indexOf('placebo') !== -1) return 'PLACEBO';
+
+  // ACTIVE_COMPARATOR: in 2-arm trials with a placebo arm, the active arm is effectively EXPERIMENTAL
+  if (type === 'ACTIVE_COMPARATOR') {
+    var hasPlaceboArm = allArmGroups.some(function(ag) {
+      return ag !== armGroup && ((ag.type || '').toUpperCase() === 'PLACEBO_COMPARATOR' || (ag.label || '').toLowerCase().indexOf('placebo') !== -1);
+    });
+    if (hasPlaceboArm) return 'EXPERIMENTAL';
+    return 'COMPARATOR';
+  }
+
+  if (label.indexOf('comparator') !== -1 || label.indexOf('control') !== -1) return 'COMPARATOR';
+  if (type === 'NO_INTERVENTION') return 'COMPARATOR';
+
+  // If label contains 'active' but type is not set, could be experimental
+  if (label.indexOf('active') !== -1) return 'EXPERIMENTAL';
+
+  return 'OTHER';
+}
+
+function sanitizeArmId(label) {
+  return label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+}
+
+// Match a group title to the best arm by label (exact first, then longest substring match)
+function matchArmByLabel(titleLower, arms) {
+  // Exact match
+  for (var i = 0; i < arms.length; i++) {
+    if (titleLower === arms[i].arm_label.toLowerCase()) return arms[i];
+  }
+  // Longest label substring match (sort by label length descending to prefer specific matches)
+  var sorted = arms.slice().sort(function(a, b) { return b.arm_label.length - a.arm_label.length; });
+  for (var j = 0; j < sorted.length; j++) {
+    var armLower = sorted[j].arm_label.toLowerCase();
+    if (titleLower.indexOf(armLower) !== -1 || armLower.indexOf(titleLower) !== -1) {
+      return sorted[j];
+    }
+  }
+  return null;
+}
+
+// --- Measure Type Inference ---
+function inferMeasureType(paramType) {
+  if (!paramType) return 'OTHER';
+  var pt = paramType.toLowerCase();
+  if (pt.indexOf('count') !== -1 || pt.indexOf('number') !== -1) return 'COUNT';
+  if (pt.indexOf('mean') !== -1 || pt.indexOf('least') !== -1) return 'MEAN';
+  if (pt.indexOf('median') !== -1) return 'MEDIAN';
+  return 'OTHER';
+}
+
+// --- Sponsor Type Classification ---
+function classifySponsorType(sponsorClass) {
+  if (!sponsorClass) return 'OTHER';
+  var sc = sponsorClass.toUpperCase();
+  if (sc === 'INDUSTRY') return 'INDUSTRY';
+  if (sc === 'NIH') return 'NIH';
+  return 'OTHER';
+}
+
+// --- Main Extraction ---
+async function extractResults(nctId) {
+  log('Starting extraction for ' + nctId);
+  var result = await fetchStudy(nctId);
+  var raw = result.data;
+  var rawText = result.rawText;
+
+  log('Computing SHA-256 of raw response (' + rawText.length + ' bytes)');
+  var rawHash = await sha256(rawText);
+  log('Hash: ' + rawHash.substring(0, 16) + '...');
+
+  var protocol = raw.protocolSection || {};
+  var results = raw.resultsSection || {};
+
+  var identification = protocol.identificationModule || {};
+  var status = protocol.statusModule || {};
+  var sponsor = protocol.sponsorCollaboratorsModule || {};
+  var design = protocol.designModule || {};
+  var armsModule = protocol.armsInterventionsModule || {};
+  var outcomesModule = protocol.outcomesModule || {};
+
+  var outcomeMeasures = results.outcomeMeasuresModule || {};
+  var adverseEvents = results.adverseEventsModule || {};
+  var participantFlow = results.participantFlowModule || {};
+
+  // --- Study Metadata ---
+  var enrollmentActual = safeInt((design.enrollmentInfo || {}).count);
+  var phases = (design.phases || []).join(', ');
+
+  var studyMetadata = {
+    title: identification.briefTitle || identification.officialTitle || '',
+    phase: phases,
+    sponsor_type: classifySponsorType((sponsor.leadSponsor || {}).class),
+    enrollment_actual: enrollmentActual,
+    primary_completion_date: (status.primaryCompletionDateStruct || {}).date || '',
+    study_first_submit_date: status.studyFirstSubmitDate || ''
+  };
+  log('Study: ' + studyMetadata.title);
+  log('Phase: ' + studyMetadata.phase + ', Enrollment: ' + (enrollmentActual !== null ? enrollmentActual : 'N/A'));
+
+  // --- Arms ---
+  var armGroups = armsModule.armGroups || [];
+  var arms = armGroups.map(function(ag) {
+    return {
+      arm_id: sanitizeArmId(ag.label || ''),
+      arm_label: ag.label || '',
+      arm_type: classifyArmType(ag, armGroups),
+      n_randomized: null,
+      n_analyzed: null
+    };
+  });
+
+  // Try to get n_randomized from participant flow
+  var flowGroups = participantFlow.groups || participantFlow.flowGroups || [];
+  if (flowGroups.length > 0 && arms.length > 0) {
+    // Build flow group -> started count map
+    var flowStartedMap = {};
+    var periods = participantFlow.periods || participantFlow.flowPeriods || [];
+    if (periods.length > 0) {
+      var firstPeriod = periods[0];
+      var milestones = firstPeriod.milestones || firstPeriod.flowMilestones || [];
+      milestones.forEach(function(ms) {
+        if ((ms.type || '').toUpperCase() === 'STARTED') {
+          var achievements = ms.achievements || ms.flowAchievements || [];
+          achievements.forEach(function(ach) {
+            flowStartedMap[ach.groupId] = safeInt(ach.numSubjects);
+          });
+        }
+      });
+    }
+
+    // Match flow groups to arms using bestMatch (exact first, then longest substring)
+    flowGroups.forEach(function(fg) {
+      var fgTitle = (fg.title || '').toLowerCase();
+      var bestArm = matchArmByLabel(fgTitle, arms);
+      if (bestArm && flowStartedMap[fg.id] !== undefined) {
+        bestArm.n_randomized = flowStartedMap[fg.id];
+      }
+    });
+  }
+
+  // Fallback: if 2 arms and enrollment known, approximate
+  if (arms.length === 2 && enrollmentActual !== null) {
+    arms.forEach(function(arm) {
+      if (arm.n_randomized === null) {
+        // Can't split evenly without more info, leave null
+      }
+    });
+  }
+
+  // Get n_analyzed from outcome measures (use first primary outcome if available)
+  var allOutcomeMeasures = outcomeMeasures.outcomeMeasures || [];
+  if (allOutcomeMeasures.length > 0) {
+    var refOutcome = allOutcomeMeasures.find(function(om) { return (om.type || '').toUpperCase() === 'PRIMARY'; }) || allOutcomeMeasures[0];
+    var omGroups = refOutcome.groups || [];
+
+    // Build group ID to label map
+    var groupIdToLabel = {};
+    omGroups.forEach(function(g) {
+      groupIdToLabel[g.id] = g.title || '';
+    });
+
+    // Try to get participants from denoms
+    var denoms = refOutcome.denoms || [];
+    denoms.forEach(function(denom) {
+      var denomCounts = denom.counts || [];
+      denomCounts.forEach(function(dc) {
+        var gLabel = (groupIdToLabel[dc.groupId] || '').toLowerCase();
+        var cnt = safeInt(dc.value);
+        if (cnt === null) return;
+        var matchedArm = matchArmByLabel(gLabel, arms);
+        if (matchedArm) matchedArm.n_analyzed = cnt;
+      });
+    });
+  }
+
+  log('Arms: ' + arms.length + ' (' + arms.map(function(a) { return a.arm_label + '=' + a.arm_type; }).join(', ') + ')');
+
+  // --- Outcomes ---
+  // Build master group ID to label map from all outcomes
+  var masterGroupMap = {};
+  allOutcomeMeasures.forEach(function(om) {
+    (om.groups || []).forEach(function(g) {
+      masterGroupMap[g.id] = g.title || '';
+    });
+  });
+
+  var outcomes = allOutcomeMeasures.map(function(om, idx) {
+    var outcomeGroups = om.groups || [];
+    var localGroupMap = {};
+    outcomeGroups.forEach(function(g) {
+      localGroupMap[g.id] = g.title || '';
+    });
+
+    // Get per-group participant counts from denoms
+    var denomMap = {};
+    (om.denoms || []).forEach(function(denom) {
+      (denom.counts || []).forEach(function(dc) {
+        denomMap[dc.groupId] = safeInt(dc.value);
+      });
+    });
+
+    // Parse measurement data
+    var data = [];
+    var classes = om.classes || [];
+    classes.forEach(function(cls) {
+      var categories = cls.categories || [];
+      categories.forEach(function(cat) {
+        var measurements = cat.measurements || [];
+        measurements.forEach(function(m) {
+          var armLabel = localGroupMap[m.groupId] || masterGroupMap[m.groupId] || m.groupId;
+          data.push({
+            arm_id: m.groupId,
+            arm_label: armLabel,
+            value: safeFloat(m.value),
+            spread: safeFloat(m.spread),
+            lower_limit: safeFloat(m.lowerLimit),
+            upper_limit: safeFloat(m.upperLimit),
+            spread_type: om.dispersionType || '',
+            participants: denomMap[m.groupId] !== undefined ? denomMap[m.groupId] : null,
+            class_title: cls.title || null,
+            category_title: cat.title || null
+          });
+        });
+      });
+    });
+
+    return {
+      outcome_id: 'OM_' + (idx + 1),
+      title: om.title || '',
+      type: (om.type || 'OTHER').toUpperCase(),
+      timeframe: om.timeFrame || '',
+      measure_type: inferMeasureType(om.paramType),
+      unit: om.unitOfMeasure || '',
+      dispersion_type: om.dispersionType || '',
+      data: data
+    };
+  });
+
+  log('Outcomes: ' + outcomes.length + ' (' + outcomes.filter(function(o) { return o.type === 'PRIMARY'; }).length + ' primary)');
+
+  // --- Adverse Events ---
+  var aeGroups = (adverseEvents.eventGroups || []).map(function(g) {
+    return {
+      id: g.id || '',
+      title: g.title || '',
+      seriousNumAffected: safeInt(g.seriousNumAffected),
+      seriousNumAtRisk: safeInt(g.seriousNumAtRisk),
+      otherNumAffected: safeInt(g.otherNumAffected),
+      otherNumAtRisk: safeInt(g.otherNumAtRisk),
+      deathsNumAffected: safeInt(g.deathsNumAffected)
+    };
+  });
+
+  var adverseEventsObj = {
+    frequency_threshold: safeFloat(adverseEvents.frequencyThreshold) !== null ? safeFloat(adverseEvents.frequencyThreshold) : 0,
+    groups: aeGroups
+  };
+
+  log('Adverse event groups: ' + aeGroups.length);
+
+  // --- Participant Flow ---
+  var flowGroupsOut = flowGroups.map(function(fg) {
+    var started = null;
+    var completed = null;
+    var discontinued = null;
+
+    var periods = participantFlow.periods || participantFlow.flowPeriods || [];
+    periods.forEach(function(period) {
+      var milestones = period.milestones || period.flowMilestones || [];
+      milestones.forEach(function(ms) {
+        var msType = (ms.type || '').toUpperCase();
+        var achievements = ms.achievements || ms.flowAchievements || [];
+        achievements.forEach(function(ach) {
+          if (ach.groupId === fg.id) {
+            var count = safeInt(ach.numSubjects);
+            if (msType === 'STARTED') started = count;
+            if (msType === 'COMPLETED') completed = count;
+            if (msType === 'NOT COMPLETED') discontinued = count;
+          }
+        });
+      });
+
+      // Also check dropWithdraws if present
+      var dropWithdraws = period.dropWithdraws || period.flowDropWithdraws || [];
+      dropWithdraws.forEach(function(dw) {
+        var reasons = dw.reasons || dw.flowReasons || [];
+        // Sum all reasons for this group
+        reasons.forEach(function(r) {
+          if (r.groupId === fg.id) {
+            var cnt = safeInt(r.numSubjects);
+            if (cnt !== null) {
+              discontinued = (discontinued || 0) + cnt;
+            }
+          }
+        });
+      });
+    });
+
+    return {
+      id: fg.id || '',
+      title: fg.title || '',
+      started: started,
+      completed: completed,
+      discontinued: discontinued
+    };
+  });
+
+  log('Flow groups: ' + flowGroupsOut.length);
+
+  // --- Registered Outcomes ---
+  var primaryRegistered = (outcomesModule.primaryOutcomes || []).map(function(o) {
+    return { measure: o.measure || '', description: o.description || '', timeFrame: o.timeFrame || '' };
+  });
+  var secondaryRegistered = (outcomesModule.secondaryOutcomes || []).map(function(o) {
+    return { measure: o.measure || '', description: o.description || '', timeFrame: o.timeFrame || '' };
+  });
+
+  log('Registered outcomes: ' + primaryRegistered.length + ' primary, ' + secondaryRegistered.length + ' secondary');
+
+  // --- Provenance ---
+  var extractionTimestamp = new Date().toISOString();
+  var provenance = {
+    source_url: CTGOV_API_CONFIG.base_url + '/studies/' + nctId,
+    api_version: 'v2',
+    raw_hash: rawHash,
+    extraction_timestamp: extractionTimestamp,
+    extractor_id: 'agent-browser-1'
+  };
+
+  // --- Assemble ExtractionObject ---
+  var extractionObject = {
+    nct: nctId,
+    extraction_timestamp: extractionTimestamp,
+    extractor_id: 'agent-browser-1',
+    study_metadata: studyMetadata,
+    arms: arms,
+    outcomes: outcomes,
+    adverse_events: adverseEventsObj,
+    participant_flow: { groups: flowGroupsOut },
+    registered_outcomes: { primary: primaryRegistered, secondary: secondaryRegistered },
+    provenance: provenance
+  };
+
+  log('Extraction complete. Object has ' + JSON.stringify(extractionObject).length + ' bytes');
+  return extractionObject;
+}
+
+// --- UI ---
+var currentExtractionObject = null;
+
+function setStatus(type, message) {
+  var bar = document.getElementById('statusBar');
+  var icon = document.getElementById('statusIcon');
+  var text = document.getElementById('statusText');
+
+  bar.className = 'status-bar active ' + type;
+
+  if (type === 'info') {
+    icon.innerHTML = '<span class="spinner"></span>';
+  } else if (type === 'error') {
+    icon.textContent = '\u2716';
+  } else if (type === 'success') {
+    icon.textContent = '\u2714';
+  }
+
+  text.textContent = message;
+}
+
+function clearStatus() {
+  document.getElementById('statusBar').className = 'status-bar';
+}
+
+function toggleSection(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+function toggleOutcome(el) {
+  el.closest('.outcome-card').classList.toggle('open');
+}
+
+async function handleExtract() {
+  var input = document.getElementById('nctInput').value.trim().toUpperCase();
+  if (!input) {
+    setStatus('error', 'Please enter an NCT ID');
+    return;
+  }
+
+  // Normalize: accept with or without NCT prefix
+  if (!/^NCT\d+$/.test(input)) {
+    if (/^\d+$/.test(input)) {
+      input = 'NCT' + input;
+    } else {
+      setStatus('error', 'Invalid NCT ID format. Expected NCTxxxxxxxx');
+      return;
+    }
+  }
+
+  var btn = document.getElementById('extractBtn');
+  btn.disabled = true;
+  setStatus('info', 'Fetching ' + input + ' from CT.gov API v2...');
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('resultsContainer').className = '';
+  document.getElementById('actionBar').className = 'action-bar';
+  currentExtractionObject = null;
+
+  try {
+    currentExtractionObject = await extractResults(input);
+    renderResults(currentExtractionObject);
+    setStatus('success', 'Successfully extracted results for ' + input);
+    document.getElementById('resultsContainer').className = 'active';
+    document.getElementById('actionBar').className = 'action-bar active';
+  } catch (err) {
+    log('ERROR: ' + err.message);
+    setStatus('error', err.message);
+    document.getElementById('emptyState').style.display = 'block';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function renderResults(obj) {
+  renderStudyInfo(obj);
+  renderArms(obj);
+  renderOutcomes(obj);
+  renderAdverseEvents(obj);
+  renderParticipantFlow(obj);
+  renderRegisteredOutcomes(obj);
+  renderJSON(obj);
+}
+
+function renderStudyInfo(obj) {
+  var m = obj.study_metadata;
+  var html = '<div class="meta-grid">';
+  html += metaItem('NCT ID', obj.nct);
+  html += metaItem('Title', m.title);
+  html += metaItem('Phase', m.phase || 'N/A');
+  html += metaItem('Sponsor Type', m.sponsor_type);
+  html += metaItem('Enrollment (Actual)', m.enrollment_actual !== null ? m.enrollment_actual.toLocaleString() : 'N/A');
+  html += metaItem('Primary Completion', m.primary_completion_date || 'N/A');
+  html += metaItem('First Submitted', m.study_first_submit_date || 'N/A');
+  html += metaItem('Extraction Time', obj.extraction_timestamp);
+  html += '</div>';
+  document.getElementById('studyInfoBody').innerHTML = html;
+}
+
+function metaItem(label, value) {
+  return '<div class="meta-item"><div class="meta-label">' + escapeHtml(label) + '</div><div class="meta-value">' + escapeHtml(String(value)) + '</div></div>';
+}
+
+function renderArms(obj) {
+  document.getElementById('armsCount').textContent = obj.arms.length;
+  var html = '<div class="arm-cards">';
+  obj.arms.forEach(function(arm) {
+    var typeClass = 'arm-' + arm.arm_type.toLowerCase();
+    html += '<div class="arm-card ' + typeClass + '">';
+    html += '<div class="arm-type-tag">' + escapeHtml(arm.arm_type) + '</div>';
+    html += '<div class="arm-label">' + escapeHtml(arm.arm_label) + '</div>';
+    html += '<div class="arm-detail">ID: <span class="mono">' + escapeHtml(arm.arm_id) + '</span></div>';
+    html += '<div class="arm-detail">Randomized: ' + (arm.n_randomized !== null ? arm.n_randomized.toLocaleString() : 'N/A') + '</div>';
+    html += '<div class="arm-detail">Analyzed: ' + (arm.n_analyzed !== null ? arm.n_analyzed.toLocaleString() : 'N/A') + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  document.getElementById('armsBody').innerHTML = html;
+}
+
+function renderOutcomes(obj) {
+  document.getElementById('outcomesCount').textContent = obj.outcomes.length;
+  var html = '';
+
+  if (obj.outcomes.length === 0) {
+    html = '<p style="color: var(--gray-400); font-style: italic;">No outcome measures with results posted.</p>';
+    document.getElementById('outcomesBody').innerHTML = html;
+    return;
+  }
+
+  obj.outcomes.forEach(function(om, idx) {
+    var typeClass = 'outcome-type-' + om.type.toLowerCase();
+    var isOpen = om.type === 'PRIMARY' ? ' open' : '';
+    html += '<div class="outcome-card' + isOpen + '">';
+    html += '<div class="outcome-header" onclick="toggleOutcome(this)">';
+    html += '<span class="outcome-type-tag ' + typeClass + '">' + escapeHtml(om.type) + '</span>';
+    html += '<span class="outcome-title">' + escapeHtml(om.outcome_id + ': ' + om.title) + '</span>';
+    html += '</div>';
+    html += '<div class="outcome-body">';
+    html += '<div class="outcome-meta">';
+    html += '<span><strong>Timeframe:</strong> ' + escapeHtml(om.timeframe) + '</span>';
+    html += '<span><strong>Measure:</strong> ' + escapeHtml(om.measure_type) + '</span>';
+    html += '<span><strong>Unit:</strong> ' + escapeHtml(om.unit) + '</span>';
+    if (om.dispersion_type) {
+      html += '<span><strong>Dispersion:</strong> ' + escapeHtml(om.dispersion_type) + '</span>';
+    }
+    html += '</div>';
+
+    if (om.data.length > 0) {
+      html += '<div class="table-container"><table>';
+      html += '<thead><tr>';
+      html += '<th>Arm</th><th>Value</th><th>Spread</th><th>Lower</th><th>Upper</th><th>N</th>';
+      if (om.data[0].class_title) html += '<th>Class</th>';
+      html += '</tr></thead><tbody>';
+      om.data.forEach(function(d) {
+        html += '<tr>';
+        html += '<td>' + escapeHtml(d.arm_label) + '</td>';
+        html += '<td class="mono">' + (d.value !== null ? d.value : 'NA') + '</td>';
+        html += '<td class="mono">' + (d.spread !== null ? d.spread : '-') + '</td>';
+        html += '<td class="mono">' + (d.lower_limit !== null ? d.lower_limit : '-') + '</td>';
+        html += '<td class="mono">' + (d.upper_limit !== null ? d.upper_limit : '-') + '</td>';
+        html += '<td class="mono">' + (d.participants !== null ? d.participants : '-') + '</td>';
+        if (om.data[0].class_title) {
+          html += '<td>' + escapeHtml(d.class_title || '') + '</td>';
+        }
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+    } else {
+      html += '<p style="color: var(--gray-400); font-style: italic;">No measurement data available.</p>';
+    }
+
+    html += '</div></div>';
+  });
+
+  document.getElementById('outcomesBody').innerHTML = html;
+}
+
+function renderAdverseEvents(obj) {
+  var ae = obj.adverse_events;
+  document.getElementById('aeCount').textContent = ae.groups.length;
+
+  if (ae.groups.length === 0) {
+    document.getElementById('aeBody').innerHTML = '<p style="color: var(--gray-400); font-style: italic;">No adverse event data posted.</p>';
+    return;
+  }
+
+  var html = '<p style="font-size: 12px; color: var(--gray-500); margin-bottom: 10px;">Frequency threshold: ' + ae.frequency_threshold + '%</p>';
+  html += '<div class="table-container"><table>';
+  html += '<thead><tr><th>Group</th><th>Serious Affected</th><th>Serious At Risk</th><th>Other Affected</th><th>Other At Risk</th><th>Deaths</th></tr></thead>';
+  html += '<tbody>';
+  ae.groups.forEach(function(g) {
+    html += '<tr>';
+    html += '<td><strong>' + escapeHtml(g.title) + '</strong><br><span class="mono" style="color: var(--gray-400);">' + escapeHtml(g.id) + '</span></td>';
+    html += '<td class="mono">' + (g.seriousNumAffected !== null ? g.seriousNumAffected : '-') + '</td>';
+    html += '<td class="mono">' + (g.seriousNumAtRisk !== null ? g.seriousNumAtRisk : '-') + '</td>';
+    html += '<td class="mono">' + (g.otherNumAffected !== null ? g.otherNumAffected : '-') + '</td>';
+    html += '<td class="mono">' + (g.otherNumAtRisk !== null ? g.otherNumAtRisk : '-') + '</td>';
+    html += '<td class="mono">' + (g.deathsNumAffected !== null ? g.deathsNumAffected : '-') + '</td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  document.getElementById('aeBody').innerHTML = html;
+}
+
+function renderParticipantFlow(obj) {
+  var flow = obj.participant_flow;
+  document.getElementById('flowCount').textContent = flow.groups.length;
+
+  if (flow.groups.length === 0) {
+    document.getElementById('flowBody').innerHTML = '<p style="color: var(--gray-400); font-style: italic;">No participant flow data posted.</p>';
+    return;
+  }
+
+  var html = '<div class="table-container"><table>';
+  html += '<thead><tr><th>Group</th><th>Started</th><th>Completed</th><th>Discontinued</th></tr></thead>';
+  html += '<tbody>';
+  flow.groups.forEach(function(g) {
+    html += '<tr>';
+    html += '<td><strong>' + escapeHtml(g.title) + '</strong></td>';
+    html += '<td class="mono">' + (g.started !== null ? g.started.toLocaleString() : '-') + '</td>';
+    html += '<td class="mono">' + (g.completed !== null ? g.completed.toLocaleString() : '-') + '</td>';
+    html += '<td class="mono">' + (g.discontinued !== null ? g.discontinued.toLocaleString() : '-') + '</td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  document.getElementById('flowBody').innerHTML = html;
+}
+
+function renderRegisteredOutcomes(obj) {
+  var reg = obj.registered_outcomes;
+  var html = '';
+
+  if (reg.primary.length > 0) {
+    html += '<h4 style="font-size: 13px; font-weight: 600; color: var(--gray-700); margin-bottom: 8px;">Primary Outcomes (Protocol)</h4>';
+    html += '<div class="table-container"><table>';
+    html += '<thead><tr><th>Measure</th><th>Time Frame</th></tr></thead><tbody>';
+    reg.primary.forEach(function(o) {
+      html += '<tr><td>' + escapeHtml(o.measure) + '</td><td>' + escapeHtml(o.timeFrame) + '</td></tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+
+  if (reg.secondary.length > 0) {
+    html += '<h4 style="font-size: 13px; font-weight: 600; color: var(--gray-700); margin: 16px 0 8px 0;">Secondary Outcomes (Protocol)</h4>';
+    html += '<div class="table-container"><table>';
+    html += '<thead><tr><th>Measure</th><th>Time Frame</th></tr></thead><tbody>';
+    reg.secondary.forEach(function(o) {
+      html += '<tr><td>' + escapeHtml(o.measure) + '</td><td>' + escapeHtml(o.timeFrame) + '</td></tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+
+  if (reg.primary.length === 0 && reg.secondary.length === 0) {
+    html = '<p style="color: var(--gray-400); font-style: italic;">No registered outcomes in protocol.</p>';
+  }
+
+  document.getElementById('registeredBody').innerHTML = html;
+}
+
+function renderJSON(obj) {
+  var jsonStr = JSON.stringify(obj, null, 2);
+  document.getElementById('jsonBody').innerHTML = '<div class="json-viewer">' + escapeHtml(jsonStr) + '</div>';
+}
+
+function copyJSON() {
+  if (!currentExtractionObject) return;
+  var jsonStr = JSON.stringify(currentExtractionObject, null, 2);
+  navigator.clipboard.writeText(jsonStr).then(function() {
+    setStatus('success', 'ExtractionObject copied to clipboard (' + jsonStr.length + ' bytes)');
+  }).catch(function(err) {
+    setStatus('error', 'Copy failed: ' + err.message);
+  });
+}
+
+function downloadJSON() {
+  if (!currentExtractionObject) return;
+  var jsonStr = JSON.stringify(currentExtractionObject, null, 2);
+  var blob = new Blob([jsonStr], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = currentExtractionObject.nct + '_extraction.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  log('Downloaded ' + a.download);
+}
+
+// Allow Enter key to trigger extraction
+document.getElementById('nctInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') handleExtract();
+});
+</script>
+</body>
+</html>
