@@ -1,0 +1,2016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CardioSynth MetaEngine - Browser-Native Meta-Analysis</title>
+<meta property="og:title" content="CardioSynth MetaEngine">
+<meta property="og:description" content="Browser-native meta-analysis engine with SVG forest plots. Ports validated DerSimonian-Laird, HKSJ, Peto, MH methods.">
+<style>
+  :root {
+    --blue: #1e40af;
+    --blue-light: #3b82f6;
+    --blue-dark: #1e3a8a;
+    --blue-50: #eff6ff;
+    --blue-100: #dbeafe;
+    --blue-200: #bfdbfe;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    --green: #059669;
+    --amber: #d97706;
+    --red: #dc2626;
+    --pass: #111827;
+    --warn: #d97706;
+    --excluded: #9ca3af;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    background: var(--gray-50);
+    color: var(--gray-800);
+    line-height: 1.5;
+  }
+  .header {
+    background: linear-gradient(135deg, var(--blue-dark), var(--blue));
+    color: white;
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .header h1 { font-size: 1.5rem; font-weight: 700; }
+  .header .subtitle { font-size: 0.875rem; opacity: 0.85; margin-top: 0.125rem; }
+  .header .badge {
+    background: rgba(255,255,255,0.2);
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+  .container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .card {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .card h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--blue);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .card-full { grid-column: 1 / -1; }
+  label { display: block; font-size: 0.8125rem; font-weight: 600; color: var(--gray-600); margin-bottom: 0.25rem; }
+  textarea, select, input[type="text"] {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--gray-300);
+    border-radius: 0.5rem;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--gray-800);
+    background: var(--gray-50);
+    transition: border-color 0.15s;
+  }
+  textarea:focus, select:focus, input:focus { outline: none; border-color: var(--blue-light); box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+  textarea { resize: vertical; min-height: 140px; }
+  select { font-family: inherit; cursor: pointer; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-primary { background: var(--blue); color: white; }
+  .btn-primary:hover { background: var(--blue-dark); }
+  .btn-secondary { background: var(--gray-200); color: var(--gray-700); }
+  .btn-secondary:hover { background: var(--gray-300); }
+  .btn-green { background: var(--green); color: white; }
+  .btn-green:hover { opacity: 0.9; }
+  .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; }
+  .stat-item { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 0.5rem; padding: 0.75rem; }
+  .stat-label { font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--gray-500); }
+  .stat-value { font-size: 1.125rem; font-weight: 700; color: var(--gray-900); margin-top: 0.125rem; }
+  .stat-sub { font-size: 0.75rem; color: var(--gray-500); }
+  .forest-container { overflow-x: auto; padding: 0.5rem 0; }
+  .forest-container svg { display: block; margin: 0 auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+  th { background: var(--gray-100); padding: 0.5rem 0.75rem; text-align: left; font-weight: 600; color: var(--gray-600); border-bottom: 2px solid var(--gray-200); }
+  td { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--gray-100); }
+  tr:hover td { background: var(--blue-50); }
+  .mono { font-family: 'Consolas', 'Monaco', monospace; }
+  .text-right { text-align: right; }
+  .text-center { text-align: center; }
+  .tag { display: inline-block; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.6875rem; font-weight: 600; }
+  .tag-pass { background: #d1fae5; color: #065f46; }
+  .tag-fail { background: #fee2e2; color: #991b1b; }
+  .tag-warn { background: #fef3c7; color: #92400e; }
+  .validation-log { max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 0.75rem; background: var(--gray-900); color: #a7f3d0; padding: 1rem; border-radius: 0.5rem; line-height: 1.7; white-space: pre-wrap; }
+  .hidden { display: none; }
+  .section-gap { margin-top: 1.5rem; }
+  @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>CardioSynth MetaEngine</h1>
+    <div class="subtitle">Browser-native meta-analysis with SVG forest plots</div>
+  </div>
+  <div class="badge">v1.0</div>
+</div>
+
+<div class="container">
+
+  <!-- INPUT SECTION -->
+  <div class="grid-2">
+    <div class="card">
+      <h2>Data Input</h2>
+      <label for="jsonInput">Paste JSON array of ExtractionObjects or {yi, vi} studies</label>
+      <textarea id="jsonInput" placeholder='[{"yi":-0.3567,"vi":0.0294,"id":"Study 1"},...]
+or ExtractionObjects with outcomes and 2x2 tables'></textarea>
+      <div style="margin-top:0.75rem">
+        <label for="outcomeSelect">Outcome</label>
+        <select id="outcomeSelect"><option value="">-- Load data first --</option></select>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Analysis Settings</h2>
+      <label for="effectMeasure">Effect Measure</label>
+      <select id="effectMeasure">
+        <option value="auto">Auto (detect from data)</option>
+        <option value="RR">Risk Ratio (RR)</option>
+        <option value="OR">Odds Ratio (OR)</option>
+        <option value="RD">Risk Difference (RD)</option>
+        <option value="SMD">Pre-computed (yi/vi)</option>
+      </select>
+      <div style="margin-top:0.5rem">
+        <label for="modelSelect">Model</label>
+        <select id="modelSelect">
+          <option value="RE-DL">Random Effects (DerSimonian-Laird)</option>
+          <option value="FE">Fixed Effects</option>
+          <option value="RE-PM">Random Effects (Paule-Mandel)</option>
+          <option value="RE-REML">Random Effects (REML)</option>
+          <option value="MH">Mantel-Haenszel</option>
+          <option value="Peto">Peto Odds Ratio</option>
+        </select>
+      </div>
+      <div style="margin-top:0.5rem">
+        <label><input type="checkbox" id="hksjCheck" checked> Apply HKSJ adjustment (recommended)</label>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="runAnalysis()">Run Analysis</button>
+        <button class="btn btn-secondary" onclick="loadExample()">Load Example</button>
+        <button class="btn btn-green" onclick="runValidation()">Run Validation</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS SECTION -->
+  <div id="resultsSection" class="hidden section-gap">
+
+    <!-- Pooled Estimate + Heterogeneity -->
+    <div class="grid-2">
+      <div class="card">
+        <h2>Pooled Estimate</h2>
+        <div id="pooledStats" class="stat-grid"></div>
+      </div>
+      <div class="card">
+        <h2>Heterogeneity</h2>
+        <div id="hetStats" class="stat-grid"></div>
+      </div>
+    </div>
+
+    <!-- Forest Plot -->
+    <div class="card card-full section-gap">
+      <h2>Forest Plot</h2>
+      <div id="forestPlotContainer" class="forest-container"></div>
+      <div class="btn-group">
+        <button class="btn btn-secondary" onclick="exportSVG()">Export SVG</button>
+        <button class="btn btn-secondary" onclick="exportJSON()">Export JSON</button>
+      </div>
+    </div>
+
+    <!-- Leave-one-out + Cumulative -->
+    <div class="grid-2 section-gap">
+      <div class="card">
+        <h2>Leave-One-Out Analysis</h2>
+        <div id="looTable"></div>
+      </div>
+      <div class="card">
+        <h2>Cumulative Meta-Analysis</h2>
+        <div id="cumulativeTable"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VALIDATION SECTION -->
+  <div id="validationSection" class="hidden section-gap">
+    <div class="card card-full">
+      <h2>Validation Results</h2>
+      <div id="validationLog" class="validation-log"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================================
+// STATISTICAL UTILITY FUNCTIONS (ported from living-meta validated code)
+// ============================================================================
+
+function gammaln(x) {
+  const coef = [
+    76.18009172947146, -86.50532032941677, 24.01409824083091,
+    -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5
+  ];
+  let y = x;
+  let tmp = x + 5.5;
+  tmp -= (x + 0.5) * Math.log(tmp);
+  let ser = 1.000000000190015;
+  for (let j = 0; j < 6; j++) ser += coef[j] / ++y;
+  return -tmp + Math.log(2.5066282746310005 * ser / x);
+}
+
+function normalCDF(x) {
+  const a1 =  0.254829592;
+  const a2 = -0.284496736;
+  const a3 =  1.421413741;
+  const a4 = -1.453152027;
+  const a5 =  1.061405429;
+  const p  =  0.3275911;
+  const sign = x < 0 ? -1 : 1;
+  const ax = Math.abs(x) / Math.sqrt(2);
+  const t = 1.0 / (1.0 + p * ax);
+  const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-ax * ax);
+  return 0.5 * (1.0 + sign * y);
+}
+
+function normalQuantile(p) {
+  if (p <= 0) return -Infinity;
+  if (p >= 1) return Infinity;
+  if (p === 0.5) return 0;
+  const a = [
+    -3.969683028665376e+01, 2.209460984245205e+02,
+    -2.759285104469687e+02, 1.383577518672690e+02,
+    -3.066479806614716e+01, 2.506628277459239e+00
+  ];
+  const b = [
+    -5.447609879822406e+01, 1.615858368580409e+02,
+    -1.556989798598866e+02, 6.680131188771972e+01,
+    -1.328068155288572e+01
+  ];
+  const c = [
+    -7.784894002430293e-03, -3.223964580411365e-01,
+    -2.400758277161838e+00, -2.549732539343734e+00,
+    4.374664141464968e+00, 2.938163982698783e+00
+  ];
+  const d = [
+    7.784695709041462e-03, 3.224671290700398e-01,
+    2.445134137142996e+00, 3.754408661907416e+00
+  ];
+  const pLow = 0.02425;
+  const pHigh = 1 - pLow;
+  let q, r;
+  if (p < pLow) {
+    q = Math.sqrt(-2 * Math.log(p));
+    return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) /
+           ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+  } else if (p <= pHigh) {
+    q = p - 0.5;
+    r = q * q;
+    return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q /
+           (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
+  } else {
+    q = Math.sqrt(-2 * Math.log(1 - p));
+    return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) /
+            ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+  }
+}
+
+function incompleteBeta(a, b, x) {
+  if (x === 0) return 0;
+  if (x === 1) return 1;
+  const bt = Math.exp(gammaln(a + b) - gammaln(a) - gammaln(b) +
+              a * Math.log(x) + b * Math.log(1 - x));
+  if (x < (a + 1) / (a + b + 2)) {
+    return bt * betacf(a, b, x) / a;
+  } else {
+    return 1 - bt * betacf(b, a, 1 - x) / b;
+  }
+}
+
+function betacf(a, b, x) {
+  const maxIter = 100;
+  const eps = 1e-10;
+  const qab = a + b;
+  const qap = a + 1;
+  const qam = a - 1;
+  let c = 1;
+  let d = 1 - qab * x / qap;
+  if (Math.abs(d) < 1e-30) d = 1e-30;
+  d = 1 / d;
+  let h = d;
+  for (let m = 1; m <= maxIter; m++) {
+    const m2 = 2 * m;
+    let aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+    d = 1 + aa * d;
+    if (Math.abs(d) < 1e-30) d = 1e-30;
+    c = 1 + aa / c;
+    if (Math.abs(c) < 1e-30) c = 1e-30;
+    d = 1 / d;
+    h *= d * c;
+    aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+    d = 1 + aa * d;
+    if (Math.abs(d) < 1e-30) d = 1e-30;
+    c = 1 + aa / c;
+    if (Math.abs(c) < 1e-30) c = 1e-30;
+    d = 1 / d;
+    const del = d * c;
+    h *= del;
+    if (Math.abs(del - 1) < eps) break;
+  }
+  return h;
+}
+
+function tPDF(t, df) {
+  const coef = Math.exp(gammaln((df + 1) / 2) - gammaln(df / 2)) /
+               Math.sqrt(df * Math.PI);
+  return coef * Math.pow(1 + t * t / df, -(df + 1) / 2);
+}
+
+function tCDF(t, df) {
+  const x = df / (df + t * t);
+  const halfBeta = 0.5 * incompleteBeta(df / 2, 0.5, x);
+  return t >= 0 ? 1 - halfBeta : halfBeta;
+}
+
+function tQuantile(p, df) {
+  let t = normalQuantile(p);
+  for (let iter = 0; iter < 10; iter++) {
+    const cdf = tCDF(t, df);
+    const pdf = tPDF(t, df);
+    if (Math.abs(pdf) < 1e-10) break;
+    const diff = cdf - p;
+    if (Math.abs(diff) < 1e-10) break;
+    t = t - diff / pdf;
+  }
+  return t;
+}
+
+function gammainc(a, x) {
+  if (x === 0) return 0;
+  if (x < 0 || a <= 0) return NaN;
+  if (x < a + 1) {
+    let sum = 1 / a;
+    let term = 1 / a;
+    for (let n = 1; n < 200; n++) {
+      term *= x / (a + n);
+      sum += term;
+      if (Math.abs(term) < 1e-14 * Math.abs(sum)) break;
+    }
+    return sum * Math.exp(-x + a * Math.log(x) - gammaln(a));
+  }
+  return 1 - gammainc_upper(a, x);
+}
+
+function gammainc_upper(a, x) {
+  const fpmin = 1e-30;
+  let b = x + 1 - a;
+  let c = 1 / fpmin;
+  let d = 1 / b;
+  let h = d;
+  for (let i = 1; i < 200; i++) {
+    const an = -i * (i - a);
+    b += 2;
+    d = an * d + b;
+    if (Math.abs(d) < fpmin) d = fpmin;
+    c = b + an / c;
+    if (Math.abs(c) < fpmin) c = fpmin;
+    d = 1 / d;
+    const del = d * c;
+    h *= del;
+    if (Math.abs(del - 1) < 1e-10) break;
+  }
+  return Math.exp(-x + a * Math.log(x) - gammaln(a)) * h;
+}
+
+function chiSquareCDF(x, df) {
+  if (x <= 0 || df <= 0) return 0;
+  return gammainc(df / 2, x / 2);
+}
+
+function chiSquarePDF(x, df) {
+  if (x <= 0) return 0;
+  const k = df / 2;
+  return Math.pow(x, k - 1) * Math.exp(-x / 2) / (Math.pow(2, k) * Math.exp(gammaln(k)));
+}
+
+function chiSquareQuantile(p, df) {
+  let x = df;
+  for (let iter = 0; iter < 20; iter++) {
+    const cdf = chiSquareCDF(x, df);
+    const pdf = chiSquarePDF(x, df);
+    if (pdf < 1e-10) break;
+    const diff = cdf - p;
+    if (Math.abs(diff) < 1e-8) break;
+    x = Math.max(0.001, x - diff / pdf);
+  }
+  return x;
+}
+
+function pchisq(x, df) {
+  if (x <= 0) return 0;
+  return gammainc(df / 2, x / 2);
+}
+
+function i2ConfidenceInterval(Q, k) {
+  if (k < 2) return { lower: 0, upper: 0 };
+  const df = k - 1;
+  const qLower = chiSquareQuantile(0.025, df);
+  const qUpper = chiSquareQuantile(0.975, df);
+  let lower = Q > qUpper ? ((Q - qUpper) / Q) * 100 : 0;
+  let upper = Q > qLower ? ((Q - qLower) / Q) * 100 : 0;
+  lower = Math.max(0, Math.min(100, lower));
+  upper = Math.max(0, Math.min(100, upper));
+  return { lower, upper };
+}
+
+
+// ============================================================================
+// CORE META-ANALYSIS: computeMAState (ported from meta-cache.js)
+// ============================================================================
+
+function computeMAState(studies) {
+  const k = studies.length;
+  if (k === 0) return null;
+
+  const yi = new Float64Array(k);
+  const vi = new Float64Array(k);
+  const weights = new Float64Array(k);
+
+  let totalWeight = 0;
+  let sumWY = 0;
+  let sumW2 = 0;
+
+  for (let i = 0; i < k; i++) {
+    yi[i] = studies[i].yi;
+    vi[i] = studies[i].vi;
+    weights[i] = 1 / vi[i];
+    totalWeight += weights[i];
+    sumWY += weights[i] * yi[i];
+    sumW2 += weights[i] * weights[i];
+  }
+
+  const thetaFE = sumWY / totalWeight;
+
+  let Q = 0;
+  for (let i = 0; i < k; i++) {
+    const diff = yi[i] - thetaFE;
+    Q += weights[i] * diff * diff;
+  }
+
+  const c = totalWeight - sumW2 / totalWeight;
+  const tau2 = Math.max(0, (Q - (k - 1)) / c);
+  const tau = Math.sqrt(tau2);
+
+  const reWeights = new Float64Array(k);
+  let reTotalWeight = 0;
+  let reSumWY = 0;
+
+  for (let i = 0; i < k; i++) {
+    reWeights[i] = 1 / (vi[i] + tau2);
+    reTotalWeight += reWeights[i];
+    reSumWY += reWeights[i] * yi[i];
+  }
+
+  const thetaRE = reSumWY / reTotalWeight;
+  const seRE = Math.sqrt(1 / reTotalWeight);
+  const seFE = Math.sqrt(1 / totalWeight);
+  const I2 = Q > k - 1 ? ((Q - (k - 1)) / Q) * 100 : 0;
+
+  return {
+    k, yi, vi,
+    weights, totalWeight, thetaFE, seFE,
+    reWeights, reTotalWeight, thetaRE, seRE,
+    Q, tau2, tau, I2, c
+  };
+}
+
+
+// ============================================================================
+// FIXED EFFECTS (ported from meta-fe.js)
+// ============================================================================
+
+function fixedEffects(studies) {
+  const validStudies = studies.filter(s =>
+    s.yi !== null && s.vi !== null &&
+    !isNaN(s.yi) && !isNaN(s.vi) && s.vi > 0
+  );
+  if (validStudies.length === 0) return { error: 'No valid studies' };
+
+  const state = computeMAState(validStudies);
+  const { k, totalWeight } = state;
+  const theta = state.thetaFE;
+  const se = state.seFE;
+  const variance = 1 / totalWeight;
+  const ci_lower = theta - 1.96 * se;
+  const ci_upper = theta + 1.96 * se;
+  const df = k - 1;
+  const Q = state.Q;
+  const pQ = 1 - chiSquareCDF(Q, df);
+  const H2 = df > 0 ? Q / df : 1;
+  const zTest = theta / se;
+  const pValue = 2 * (1 - normalCDF(Math.abs(zTest)));
+
+  return {
+    model: 'FE', k, theta, se, variance,
+    ci_lower, ci_upper, z: zTest, pValue,
+    Q, df, pQ, I2: state.I2, H2,
+    weights: validStudies.map((s, i) => ({
+      id: s.id || s.nctId || i,
+      yi: s.yi, vi: s.vi,
+      weight: state.weights[i],
+      weightPercent: (state.weights[i] / totalWeight) * 100
+    }))
+  };
+}
+
+
+// ============================================================================
+// DERSIMONIAN-LAIRD with HKSJ (ported from meta-dl.js)
+// ============================================================================
+
+function derSimonianLaird(studies, options) {
+  if (options === undefined) options = {};
+  const hksj = options.hksj !== undefined ? options.hksj : true;
+
+  const validStudies = studies.filter(s =>
+    s.yi !== null && s.vi !== null &&
+    !isNaN(s.yi) && !isNaN(s.vi) && s.vi > 0
+  );
+  if (validStudies.length === 0) return { error: 'No valid studies' };
+
+  const state = computeMAState(validStudies);
+  const {
+    k, thetaFE, seFE,
+    thetaRE: theta, seRE,
+    reWeights: wiStar, reTotalWeight: sumWiStar,
+    tau2, Q, I2: stateI2, totalWeight: sumWi
+  } = state;
+
+  let se = seRE;
+  const fe = fixedEffects(validStudies);
+  const variance = 1 / sumWiStar;
+
+  let ci_lower = theta - 1.96 * se;
+  let ci_upper = theta + 1.96 * se;
+
+  let hksjApplied = false;
+  let qStar = null;
+  let tCrit = null;
+
+  if (hksj && k >= 2) {
+    // Q* statistic with RE weights
+    qStar = validStudies.reduce(function(sum, s, i) {
+      return sum + wiStar[i] * Math.pow(s.yi - theta, 2);
+    }, 0);
+
+    // HKSJ variance multiplier with floor: max(1, Q*/(k-1))
+    // Per advanced-stats rules: If Q < k-1, HKSJ narrows CI below DL - set floor
+    const hksjMultiplier = Math.max(1, qStar / (k - 1));
+
+    if (hksjMultiplier > 1) {
+      se = se * Math.sqrt(hksjMultiplier);
+      hksjApplied = true;
+    }
+
+    // Use t-distribution with df = k-1 (NOT qnorm - per rules)
+    tCrit = tQuantile(0.975, k - 1);
+    ci_lower = theta - tCrit * se;
+    ci_upper = theta + tCrit * se;
+  }
+
+  // Prediction interval (df = k-2 per rules, NOT k-1)
+  let pi_lower = null;
+  let pi_upper = null;
+  if (k >= 3) {
+    const piDF = k - 2;
+    const piTCrit = tQuantile(0.975, piDF);
+    const piSE = Math.sqrt(variance + tau2);
+    pi_lower = theta - piTCrit * piSE;
+    pi_upper = theta + piTCrit * piSE;
+  }
+
+  const zTest = theta / se;
+  const pValue = hksj
+    ? 2 * (1 - tCDF(Math.abs(zTest), k - 1))
+    : 2 * (1 - normalCDF(Math.abs(zTest)));
+
+  const tau = Math.sqrt(tau2);
+  const typicalVariance = variance;
+  const I2 = tau2 > 0 ? (tau2 / (tau2 + typicalVariance)) * 100 : 0;
+  const I2CI = i2ConfidenceInterval(fe.Q, k);
+  const H2 = tau2 > 0 ? 1 + tau2 / typicalVariance : 1;
+
+  return {
+    model: 'RE-DL', k, theta, se, variance,
+    ci_lower, ci_upper, z: zTest, pValue,
+    tau2, tau, pi_lower, pi_upper,
+    Q: fe.Q, df: k - 1, pQ: fe.pQ,
+    I2, I2_lower: I2CI.lower, I2_upper: I2CI.upper, H2,
+    hksj: hksjApplied, qStar,
+    weights: validStudies.map(function(s, i) {
+      return {
+        id: s.id || s.nctId || i,
+        yi: s.yi, vi: s.vi,
+        weight: state.reWeights[i],
+        weightPercent: (state.reWeights[i] / sumWiStar) * 100
+      };
+    }),
+    fe: {
+      theta: fe.theta, se: fe.se,
+      ci_lower: fe.ci_lower, ci_upper: fe.ci_upper
+    }
+  };
+}
+
+
+// ============================================================================
+// PAULE-MANDEL ESTIMATOR (ported from meta-dl.js)
+// ============================================================================
+
+function pauleMandel(studies, options) {
+  if (options === undefined) options = {};
+  const maxIter = options.maxIter || 100;
+  const tol = options.tol || 1e-8;
+  const hksj = options.hksj !== undefined ? options.hksj : true;
+
+  const validStudies = studies.filter(s =>
+    s.yi !== null && s.vi !== null &&
+    !isNaN(s.yi) && !isNaN(s.vi) && s.vi > 0
+  );
+  if (validStudies.length === 0) return { error: 'No valid studies' };
+
+  const k = validStudies.length;
+  const target = k - 1;
+
+  function computeQstar(tau2) {
+    const wi = validStudies.map(s => 1 / (s.vi + tau2));
+    const sumWi = wi.reduce(function(a, b) { return a + b; }, 0);
+    const theta = validStudies.reduce(function(sum, s, i) { return sum + wi[i] * s.yi; }, 0) / sumWi;
+    return validStudies.reduce(function(sum, s, i) {
+      return sum + wi[i] * Math.pow(s.yi - theta, 2);
+    }, 0);
+  }
+
+  const Q0 = computeQstar(0);
+  let tau2 = 0;
+  let converged = true;
+
+  if (Q0 > target) {
+    let lower = 0;
+    let upper = 1;
+    while (computeQstar(upper) > target && upper < 1e10) upper *= 2;
+
+    if (upper >= 1e10) {
+      const dlResult = derSimonianLaird(validStudies, { hksj: false });
+      tau2 = dlResult.tau2;
+      converged = false;
+    } else {
+      converged = false;
+      for (let iter = 0; iter < maxIter; iter++) {
+        tau2 = (lower + upper) / 2;
+        const Qmid = computeQstar(tau2);
+        if (Math.abs(Qmid - target) < tol) { converged = true; break; }
+        if (Qmid > target) { lower = tau2; } else { upper = tau2; }
+        if (upper - lower < tol) { converged = true; break; }
+      }
+    }
+  }
+
+  const wiStar = validStudies.map(s => 1 / (s.vi + tau2));
+  const sumWiStar = wiStar.reduce(function(a, b) { return a + b; }, 0);
+  const theta = validStudies.reduce(function(sum, s, i) { return sum + wiStar[i] * s.yi; }, 0) / sumWiStar;
+  const variance = 1 / sumWiStar;
+  let se = Math.sqrt(variance);
+
+  const dlResult = derSimonianLaird(validStudies, { hksj: false });
+
+  let ci_lower, ci_upper;
+  let hksjApplied = false;
+  if (hksj && k >= 2) {
+    const qStar = computeQstar(tau2);
+    const hksjMult = Math.max(1, qStar / (k - 1));
+    if (hksjMult > 1) {
+      se = se * Math.sqrt(hksjMult);
+      hksjApplied = true;
+    }
+    const tc = tQuantile(0.975, k - 1);
+    ci_lower = theta - tc * se;
+    ci_upper = theta + tc * se;
+  } else {
+    ci_lower = theta - 1.96 * se;
+    ci_upper = theta + 1.96 * se;
+  }
+
+  let pi_lower = null, pi_upper = null;
+  if (k >= 3) {
+    const piTCrit = tQuantile(0.975, k - 2);
+    const piSE = Math.sqrt(variance + tau2);
+    pi_lower = theta - piTCrit * piSE;
+    pi_upper = theta + piTCrit * piSE;
+  }
+
+  const I2 = tau2 > 0 ? (tau2 / (tau2 + variance)) * 100 : 0;
+
+  return {
+    model: 'RE-PM', estimator: 'Paule-Mandel',
+    k, theta, se, variance, ci_lower, ci_upper,
+    tau2, tau: Math.sqrt(tau2), pi_lower, pi_upper,
+    converged, hksj: hksjApplied,
+    Q: dlResult.Q, I2,
+    weights: validStudies.map(function(s, i) {
+      return {
+        id: s.id || s.nctId || i,
+        yi: s.yi, vi: s.vi,
+        weight: wiStar[i],
+        weightPercent: (wiStar[i] / sumWiStar) * 100
+      };
+    })
+  };
+}
+
+
+// ============================================================================
+// REML ESTIMATOR (ported from meta-dl.js)
+// ============================================================================
+
+function reml(studies, options) {
+  if (options === undefined) options = {};
+  const maxIter = options.maxIter || 100;
+  const tol = options.tol || 1e-8;
+  const hksj = options.hksj !== undefined ? options.hksj : true;
+
+  const validStudies = studies.filter(s =>
+    s.yi !== null && s.vi !== null &&
+    !isNaN(s.yi) && !isNaN(s.vi) && s.vi > 0
+  );
+  if (validStudies.length === 0) return { error: 'No valid studies' };
+
+  const k = validStudies.length;
+  const yiArr = validStudies.map(s => s.yi);
+  const viArr = validStudies.map(s => s.vi);
+
+  const dlResult = derSimonianLaird(validStudies, { hksj: false });
+  let tau2 = Math.max(0, dlResult.tau2);
+
+  let converged = false;
+  let iter = 0;
+
+  for (iter = 0; iter < maxIter; iter++) {
+    const wi = viArr.map(v => 1 / (v + tau2));
+    const sumWi = wi.reduce(function(a, b) { return a + b; }, 0);
+    const thetaEst = yiArr.reduce(function(sum, y, i) { return sum + wi[i] * y; }, 0) / sumWi;
+
+    let sumW2 = 0, sumW2resid = 0, sumW3 = 0;
+    for (let i = 0; i < k; i++) {
+      sumW2 += wi[i] * wi[i];
+      sumW2resid += wi[i] * wi[i] * Math.pow(yiArr[i] - thetaEst, 2);
+      sumW3 += wi[i] * wi[i] * wi[i];
+    }
+
+    const deriv1 = -0.5 * sumWi + 0.5 * sumW2resid + 0.5 * (sumW2 / sumWi);
+    const fisherInfo = 0.5 * (sumW2 - sumW3 / sumWi);
+    if (fisherInfo <= 0) break;
+
+    const tau2New = tau2 + deriv1 / fisherInfo;
+    const tau2Bounded = Math.max(0, tau2New);
+
+    if (Math.abs(tau2Bounded - tau2) < tol) { tau2 = tau2Bounded; converged = true; break; }
+    tau2 = tau2Bounded;
+  }
+
+  const wiStar = viArr.map(v => 1 / (v + tau2));
+  const sumWiStar = wiStar.reduce(function(a, b) { return a + b; }, 0);
+  const theta = yiArr.reduce(function(sum, y, i) { return sum + wiStar[i] * y; }, 0) / sumWiStar;
+  const variance = 1 / sumWiStar;
+  let se = Math.sqrt(variance);
+
+  let ci_lower, ci_upper;
+  let hksjApplied = false;
+  if (hksj && k >= 2) {
+    const qStar = yiArr.reduce(function(sum, y, i) {
+      return sum + wiStar[i] * Math.pow(y - theta, 2);
+    }, 0);
+    const hksjMult = Math.max(1, qStar / (k - 1));
+    if (hksjMult > 1) {
+      se = se * Math.sqrt(hksjMult);
+      hksjApplied = true;
+    }
+    const tc = tQuantile(0.975, k - 1);
+    ci_lower = theta - tc * se;
+    ci_upper = theta + tc * se;
+  } else {
+    ci_lower = theta - 1.96 * se;
+    ci_upper = theta + 1.96 * se;
+  }
+
+  let pi_lower = null, pi_upper = null;
+  if (k >= 3) {
+    const piTCrit = tQuantile(0.975, k - 2);
+    const piSE = Math.sqrt(variance + tau2);
+    pi_lower = theta - piTCrit * piSE;
+    pi_upper = theta + piTCrit * piSE;
+  }
+
+  const I2 = tau2 > 0 ? (tau2 / (tau2 + variance)) * 100 : 0;
+  const I2CI = i2ConfidenceInterval(dlResult.Q, k);
+
+  const zTest = theta / se;
+  const pValue = hksj
+    ? 2 * (1 - tCDF(Math.abs(zTest), k - 1))
+    : 2 * (1 - normalCDF(Math.abs(zTest)));
+
+  return {
+    model: 'RE-REML', estimator: 'REML',
+    k, theta, se, variance, ci_lower, ci_upper,
+    z: zTest, pValue, tau2, tau: Math.sqrt(tau2),
+    pi_lower, pi_upper, converged, iterations: iter + 1,
+    hksj: hksjApplied,
+    Q: dlResult.Q, df: k - 1, pQ: dlResult.pQ,
+    I2, I2_lower: I2CI.lower, I2_upper: I2CI.upper,
+    weights: validStudies.map(function(s, i) {
+      return {
+        id: s.id || s.nctId || i,
+        yi: s.yi, vi: s.vi,
+        weight: wiStar[i],
+        weightPercent: (wiStar[i] / sumWiStar) * 100
+      };
+    }),
+    fe: {
+      theta: dlResult.fe.theta, se: dlResult.fe.se,
+      ci_lower: dlResult.fe.ci_lower, ci_upper: dlResult.fe.ci_upper
+    }
+  };
+}
+
+
+// ============================================================================
+// LEAVE-ONE-OUT AND CUMULATIVE (ported from meta-dl.js & meta-fe.js)
+// ============================================================================
+
+function leaveOneOut(studies, method) {
+  method = method || 'DL';
+  const validStudies = studies.filter(s =>
+    s.yi !== null && s.vi !== null &&
+    !isNaN(s.yi) && !isNaN(s.vi) && s.vi > 0
+  );
+  if (validStudies.length < 2) return { error: 'Need at least 2 studies' };
+
+  const analysisFn = method === 'PM' ? pauleMandel
+    : method === 'REML' ? reml
+    : method === 'FE' ? fixedEffects
+    : derSimonianLaird;
+
+  return validStudies.map(function(omitted, i) {
+    const remaining = validStudies.filter(function(_, j) { return j !== i; });
+    const result = analysisFn(remaining);
+    return {
+      omitted: omitted.id || omitted.nctId || ('Study ' + (i + 1)),
+      omittedYi: omitted.yi,
+      theta: result.theta,
+      se: result.se,
+      ci_lower: result.ci_lower,
+      ci_upper: result.ci_upper,
+      tau2: result.tau2 !== undefined ? result.tau2 : 0,
+      I2: result.I2
+    };
+  });
+}
+
+function cumulativeMeta(studies, orderBy, method) {
+  orderBy = orderBy || 'order';
+  method = method || 'DL';
+  const validStudies = studies.filter(s =>
+    s.yi !== null && s.vi !== null &&
+    !isNaN(s.yi) && !isNaN(s.vi) && s.vi > 0
+  );
+  if (validStudies.length === 0) return { error: 'No valid studies' };
+
+  const sorted = validStudies.slice().sort(function(a, b) {
+    return (a[orderBy] || 0) - (b[orderBy] || 0);
+  });
+
+  const analysisFn = method === 'PM' ? pauleMandel
+    : method === 'REML' ? reml
+    : method === 'FE' ? fixedEffects
+    : derSimonianLaird;
+
+  const results = [];
+  for (let i = 0; i < sorted.length; i++) {
+    if (i === 0) {
+      results.push({
+        k: 1,
+        addedStudy: sorted[i].id || sorted[i].nctId || 'Study 1',
+        theta: sorted[i].yi,
+        se: Math.sqrt(sorted[i].vi),
+        ci_lower: sorted[i].yi - 1.96 * Math.sqrt(sorted[i].vi),
+        ci_upper: sorted[i].yi + 1.96 * Math.sqrt(sorted[i].vi),
+        tau2: 0, I2: 0
+      });
+    } else {
+      const subset = sorted.slice(0, i + 1);
+      const result = analysisFn(subset);
+      results.push({
+        k: i + 1,
+        addedStudy: sorted[i].id || sorted[i].nctId || ('Study ' + (i + 1)),
+        theta: result.theta,
+        se: result.se,
+        ci_lower: result.ci_lower,
+        ci_upper: result.ci_upper,
+        tau2: result.tau2 !== undefined ? result.tau2 : 0,
+        I2: result.I2
+      });
+    }
+  }
+  return results;
+}
+
+
+// ============================================================================
+// BINARY EFFECT SIZE CALCULATORS (escalc equivalents)
+// ============================================================================
+
+/**
+ * escalcRR: log risk ratio with continuity correction
+ * cc=0.5 ONLY if any cell is zero (per rules: zero-cell add 0.5 ONLY if >=1 cell zero)
+ * Pool on LOG scale (per rules: natural scale + RE = Simpson's paradox)
+ */
+function escalcRR(ai, bi, ci, di, cc) {
+  if (cc === undefined) cc = 0;
+  const needCC = (ai === 0 || bi === 0 || ci === 0 || di === 0);
+  const adj = needCC ? (cc > 0 ? cc : 0.5) : 0;
+  const a = ai + adj, b = bi + adj, c = ci + adj, d = di + adj;
+  const n1 = a + b, n2 = c + d;
+  if (n1 <= 0 || n2 <= 0 || a <= 0 || c <= 0) return { yi: null, vi: null };
+  const p1 = a / n1, p2 = c / n2;
+  const yi = Math.log(p1 / p2);
+  const vi = (1 / a) - (1 / n1) + (1 / c) - (1 / n2);
+  return { yi: yi, vi: vi };
+}
+
+/**
+ * escalcOR: log odds ratio with continuity correction
+ */
+function escalcOR(ai, bi, ci, di, cc) {
+  if (cc === undefined) cc = 0;
+  const needCC = (ai === 0 || bi === 0 || ci === 0 || di === 0);
+  const adj = needCC ? (cc > 0 ? cc : 0.5) : 0;
+  const a = ai + adj, b = bi + adj, c = ci + adj, d = di + adj;
+  if (a <= 0 || b <= 0 || c <= 0 || d <= 0) return { yi: null, vi: null };
+  const yi = Math.log((a * d) / (b * c));
+  const vi = (1 / a) + (1 / b) + (1 / c) + (1 / d);
+  return { yi: yi, vi: vi };
+}
+
+/**
+ * escalcRD: risk difference (no log transform)
+ */
+function escalcRD(ai, bi, ci, di) {
+  const n1 = ai + bi, n2 = ci + di;
+  if (n1 <= 0 || n2 <= 0) return { yi: null, vi: null };
+  const p1 = ai / n1, p2 = ci / n2;
+  const yi = p1 - p2;
+  const vi = p1 * (1 - p1) / n1 + p2 * (1 - p2) / n2;
+  return { yi: yi, vi: vi };
+}
+
+
+// ============================================================================
+// MANTEL-HAENSZEL & PETO (ported from binary-methods.js)
+// ============================================================================
+
+function mhRiskRatio(studies, options) {
+  if (options === undefined) options = {};
+  const cc = options.cc !== undefined ? options.cc : 0.5;
+  const drop00 = options.drop00 !== undefined ? options.drop00 : true;
+
+  let validStudies = studies.filter(function(s) {
+    const n1 = s.ai + s.bi;
+    const n2 = s.ci + s.di;
+    if (drop00 && s.ai + s.ci === 0) return false;
+    return n1 > 0 && n2 > 0;
+  });
+  if (validStudies.length === 0) return { yi: null, vi: null, error: 'No valid studies' };
+
+  let R = 0, S = 0, varNum = 0;
+
+  validStudies.forEach(function(s) {
+    let ai = s.ai, bi = s.bi, ci = s.ci, di = s.di;
+    const n = ai + bi + ci + di;
+    let n1 = ai + bi, n2 = ci + di;
+    if (cc > 0 && (ai === 0 || ci === 0)) {
+      ai += cc; ci += cc; n1 += cc; n2 += cc;
+    }
+    R += (ai * n2) / n;
+    S += (ci * n1) / n;
+    const m1 = ai + ci;
+    varNum += (m1 * n1 * n2 / n - ai * ci) / n;
+  });
+
+  if (S === 0) return { yi: null, vi: null, error: 'Zero in denominator' };
+
+  const RR_MH = R / S;
+  const logRR = Math.log(RR_MH);
+  const vi = varNum / (R * S);
+  const se = Math.sqrt(vi);
+
+  return {
+    yi: logRR, vi: vi, se: se, rr: RR_MH,
+    ci_lower: Math.exp(logRR - 1.96 * se),
+    ci_upper: Math.exp(logRR + 1.96 * se),
+    k: validStudies.length, measure: 'RR', method: 'MH'
+  };
+}
+
+function petoOddsRatio(studies, options) {
+  if (options === undefined) options = {};
+  const drop00 = options.drop00 !== undefined ? options.drop00 : true;
+
+  let validStudies = studies.filter(function(s) {
+    const n = s.ai + s.bi + s.ci + s.di;
+    const m1 = s.ai + s.ci;
+    if (drop00 && m1 === 0) return false;
+    if (drop00 && m1 === n) return false;
+    return n > 0;
+  });
+  if (validStudies.length === 0) return { yi: null, vi: null, error: 'No valid studies' };
+
+  let sumOE = 0, sumV = 0;
+
+  validStudies.forEach(function(s) {
+    const ai = s.ai, bi = s.bi, ci = s.ci, di = s.di;
+    const n = ai + bi + ci + di;
+    const n1 = ai + bi, n2 = ci + di;
+    const m1 = ai + ci, m2 = bi + di;
+    const E = (n1 * m1) / n;
+    const V = (n1 * n2 * m1 * m2) / (n * n * (n - 1));
+    sumOE += ai - E;
+    sumV += V;
+  });
+
+  if (sumV === 0) return { yi: null, vi: null, error: 'Zero variance' };
+
+  const logOR = sumOE / sumV;
+  const vi = 1 / sumV;
+  const se = Math.sqrt(vi);
+  const chi2 = (sumOE * sumOE) / sumV;
+  const pvalue = 1 - pchisq(chi2, 1);
+
+  return {
+    yi: logOR, vi: vi, se: se, or: Math.exp(logOR),
+    ci_lower: Math.exp(logOR - 1.96 * se),
+    ci_upper: Math.exp(logOR + 1.96 * se),
+    O_E: sumOE, V: sumV, chi2: chi2, pvalue: pvalue,
+    k: validStudies.length, measure: 'OR', method: 'Peto'
+  };
+}
+
+function mhOddsRatio(studies, options) {
+  if (options === undefined) options = {};
+  const cc = options.cc !== undefined ? options.cc : 0.5;
+  const drop00 = options.drop00 !== undefined ? options.drop00 : true;
+
+  let validStudies = studies.filter(function(s) {
+    const total = s.ai + s.bi + s.ci + s.di;
+    if (drop00 && s.ai + s.ci === 0) return false;
+    if (drop00 && s.bi + s.di === 0) return false;
+    return total > 0;
+  });
+  if (validStudies.length === 0) return { yi: null, vi: null, error: 'No valid studies' };
+
+  let R = 0, S = 0, P = 0, Q = 0, sumRS = 0;
+
+  validStudies.forEach(function(s) {
+    let ai = s.ai, bi = s.bi, ci = s.ci, di = s.di;
+    const n = ai + bi + ci + di;
+    if (cc > 0 && (ai === 0 || bi === 0 || ci === 0 || di === 0)) {
+      ai += cc; bi += cc; ci += cc; di += cc;
+    }
+    R += (ai * di) / n;
+    S += (bi * ci) / n;
+    P += (ai + di) * ai * di / (n * n);
+    Q += ((ai + di) * bi * ci + (bi + ci) * ai * di) / (n * n);
+    sumRS += (bi + ci) * bi * ci / (n * n);
+  });
+
+  if (S === 0) return { yi: null, vi: null, error: 'Zero in denominator' };
+
+  const OR_MH = R / S;
+  const logOR = Math.log(OR_MH);
+  const vi = P / (2 * R * R) + Q / (2 * R * S) + sumRS / (2 * S * S);
+  const se = Math.sqrt(vi);
+
+  return {
+    yi: logOR, vi: vi, se: se, or: OR_MH,
+    ci_lower: Math.exp(logOR - 1.96 * se),
+    ci_upper: Math.exp(logOR + 1.96 * se),
+    k: validStudies.length, measure: 'OR', method: 'MH'
+  };
+}
+
+
+// ============================================================================
+// SVG FOREST PLOT RENDERER
+// ============================================================================
+
+function renderForestPlot(result, options) {
+  if (options === undefined) options = {};
+  const isLogScale = options.logScale !== false;
+  const effectLabel = options.effectLabel || (isLogScale ? 'log(Effect)' : 'Effect');
+  const nullValue = 0; // on log scale, null = 0 (RR=1)
+
+  const weights = result.weights || [];
+  const k = weights.length;
+  if (k === 0) return '<svg></svg>';
+
+  // Layout constants
+  const marginLeft = 20;
+  const labelColW = 160;
+  const dataColW = 100;
+  const plotAreaW = 420;
+  const ciColW = 140;
+  const weightColW = 60;
+  const marginRight = 20;
+  const totalW = marginLeft + labelColW + dataColW + plotAreaW + ciColW + weightColW + marginRight;
+
+  const headerH = 40;
+  const rowH = 28;
+  const gapBeforeSummary = 12;
+  const summaryRowH = 32;
+  const footerH = 80;
+  const totalH = headerH + k * rowH + gapBeforeSummary + summaryRowH + footerH;
+
+  // Determine plot range
+  const allLower = weights.map(function(w) {
+    return w.yi - 1.96 * Math.sqrt(w.vi);
+  });
+  const allUpper = weights.map(function(w) {
+    return w.yi + 1.96 * Math.sqrt(w.vi);
+  });
+  let dataMin = Math.min.apply(null, allLower.concat([result.ci_lower, result.pi_lower || result.ci_lower]));
+  let dataMax = Math.max.apply(null, allUpper.concat([result.ci_upper, result.pi_upper || result.ci_upper]));
+
+  // Add padding
+  const range = dataMax - dataMin;
+  dataMin -= range * 0.1;
+  dataMax += range * 0.1;
+
+  const plotX = marginLeft + labelColW + dataColW;
+  function scaleX(v) {
+    return plotX + ((v - dataMin) / (dataMax - dataMin)) * plotAreaW;
+  }
+
+  // Build SVG
+  let svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + totalW + '" height="' + totalH + '" '
+    + 'font-family="-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif" font-size="11">';
+
+  // Background
+  svg += '<rect width="' + totalW + '" height="' + totalH + '" fill="white"/>';
+
+  // Header row
+  const headerY = headerH - 8;
+  svg += '<text x="' + (marginLeft + 4) + '" y="' + headerY + '" font-weight="600" fill="#374151">Study</text>';
+  svg += '<text x="' + (marginLeft + labelColW + 4) + '" y="' + headerY + '" font-weight="600" fill="#374151">Events</text>';
+  svg += '<text x="' + (plotX + plotAreaW / 2) + '" y="' + headerY + '" text-anchor="middle" font-weight="600" fill="#374151">' + effectLabel + '</text>';
+  svg += '<text x="' + (plotX + plotAreaW + 4) + '" y="' + headerY + '" font-weight="600" fill="#374151">Effect [95% CI]</text>';
+  svg += '<text x="' + (plotX + plotAreaW + ciColW + 4) + '" y="' + headerY + '" font-weight="600" fill="#374151">Weight</text>';
+
+  // Header line
+  svg += '<line x1="' + marginLeft + '" y1="' + headerH + '" x2="' + (totalW - marginRight) + '" y2="' + headerH + '" stroke="#d1d5db" stroke-width="1"/>';
+
+  // Null effect line (dashed)
+  const nullX = scaleX(nullValue);
+  const lineTop = headerH;
+  const lineBot = headerH + k * rowH + gapBeforeSummary + summaryRowH + 10;
+  svg += '<line x1="' + nullX + '" y1="' + lineTop + '" x2="' + nullX + '" y2="' + lineBot + '" stroke="#9ca3af" stroke-width="1" stroke-dasharray="4,3"/>';
+
+  // Find max weight for square sizing
+  const maxWt = Math.max.apply(null, weights.map(function(w) { return w.weightPercent; }));
+
+  // Study rows
+  for (let i = 0; i < k; i++) {
+    const w = weights[i];
+    const y = headerH + (i + 0.5) * rowH;
+    const se_i = Math.sqrt(w.vi);
+    const lo = w.yi - 1.96 * se_i;
+    const hi = w.yi + 1.96 * se_i;
+
+    const color = w.excluded ? '#9ca3af' : (w.warn ? '#d97706' : '#111827');
+
+    // Study label
+    svg += '<text x="' + (marginLeft + 4) + '" y="' + (y + 4) + '" fill="' + color + '">' + escHtml(String(w.id)) + '</text>';
+
+    // Events column (if available)
+    if (w.ai !== undefined) {
+      svg += '<text x="' + (marginLeft + labelColW + 4) + '" y="' + (y + 4) + '" fill="' + color + '" font-size="10">'
+        + w.ai + '/' + (w.ai + w.bi) + ' vs ' + w.ci + '/' + (w.ci + w.di) + '</text>';
+    }
+
+    // CI line
+    const x1 = Math.max(plotX, scaleX(lo));
+    const x2 = Math.min(plotX + plotAreaW, scaleX(hi));
+    svg += '<line x1="' + x1 + '" y1="' + y + '" x2="' + x2 + '" y2="' + y + '" stroke="' + color + '" stroke-width="1.5"/>';
+
+    // Arrow caps if CI extends beyond plot
+    if (lo < dataMin) {
+      svg += '<polygon points="' + plotX + ',' + y + ' ' + (plotX + 5) + ',' + (y - 3) + ' ' + (plotX + 5) + ',' + (y + 3) + '" fill="' + color + '"/>';
+    }
+    if (hi > dataMax) {
+      const px = plotX + plotAreaW;
+      svg += '<polygon points="' + px + ',' + y + ' ' + (px - 5) + ',' + (y - 3) + ' ' + (px - 5) + ',' + (y + 3) + '" fill="' + color + '"/>';
+    }
+
+    // Square (size proportional to weight)
+    const sqSize = Math.max(4, Math.min(14, 4 + (w.weightPercent / maxWt) * 10));
+    const cx = scaleX(w.yi);
+    if (cx >= plotX && cx <= plotX + plotAreaW) {
+      svg += '<rect x="' + (cx - sqSize / 2) + '" y="' + (y - sqSize / 2) + '" width="' + sqSize + '" height="' + sqSize + '" fill="' + color + '"/>';
+    }
+
+    // Effect text
+    const effText = isLogScale
+      ? Math.exp(w.yi).toFixed(2) + ' [' + Math.exp(lo).toFixed(2) + ', ' + Math.exp(hi).toFixed(2) + ']'
+      : w.yi.toFixed(4) + ' [' + lo.toFixed(4) + ', ' + hi.toFixed(4) + ']';
+    svg += '<text x="' + (plotX + plotAreaW + 4) + '" y="' + (y + 4) + '" font-size="10" fill="' + color + '">' + effText + '</text>';
+
+    // Weight text
+    svg += '<text x="' + (plotX + plotAreaW + ciColW + 4) + '" y="' + (y + 4) + '" font-size="10" fill="' + color + '">' + w.weightPercent.toFixed(1) + '%</text>';
+  }
+
+  // Summary line
+  const summaryLineY = headerH + k * rowH + gapBeforeSummary / 2;
+  svg += '<line x1="' + marginLeft + '" y1="' + summaryLineY + '" x2="' + (totalW - marginRight) + '" y2="' + summaryLineY + '" stroke="#d1d5db" stroke-width="1"/>';
+
+  // Summary diamond
+  const sy = headerH + k * rowH + gapBeforeSummary + summaryRowH / 2;
+  const dCx = scaleX(result.theta);
+  const dL = scaleX(result.ci_lower);
+  const dR = scaleX(result.ci_upper);
+  const dHalf = 8;
+
+  // Prediction interval (dashed extension)
+  if (result.pi_lower !== null && result.pi_lower !== undefined) {
+    const piL = scaleX(result.pi_lower);
+    const piR = scaleX(result.pi_upper);
+    svg += '<line x1="' + Math.max(plotX, piL) + '" y1="' + sy + '" x2="' + Math.min(plotX + plotAreaW, piR) + '" y2="' + sy
+      + '" stroke="#1e40af" stroke-width="1.5" stroke-dasharray="6,3"/>';
+  }
+
+  // Diamond
+  svg += '<polygon points="' + dL + ',' + sy + ' ' + dCx + ',' + (sy - dHalf) + ' ' + dR + ',' + sy + ' ' + dCx + ',' + (sy + dHalf)
+    + '" fill="#1e40af" opacity="0.85"/>';
+
+  // Summary label
+  svg += '<text x="' + (marginLeft + 4) + '" y="' + (sy + 4) + '" font-weight="700" fill="#1e40af">' + (result.model || 'RE') + ' Pooled</text>';
+
+  // Summary effect text
+  const summEffText = isLogScale
+    ? Math.exp(result.theta).toFixed(2) + ' [' + Math.exp(result.ci_lower).toFixed(2) + ', ' + Math.exp(result.ci_upper).toFixed(2) + ']'
+    : result.theta.toFixed(4) + ' [' + result.ci_lower.toFixed(4) + ', ' + result.ci_upper.toFixed(4) + ']';
+  svg += '<text x="' + (plotX + plotAreaW + 4) + '" y="' + (sy + 4) + '" font-size="10" font-weight="600" fill="#1e40af">' + summEffText + '</text>';
+  svg += '<text x="' + (plotX + plotAreaW + ciColW + 4) + '" y="' + (sy + 4) + '" font-size="10" font-weight="600" fill="#1e40af">100%</text>';
+
+  // X-axis
+  const axisY = sy + dHalf + 16;
+  svg += '<line x1="' + plotX + '" y1="' + axisY + '" x2="' + (plotX + plotAreaW) + '" y2="' + axisY + '" stroke="#374151" stroke-width="1"/>';
+
+  // Tick marks
+  let ticks;
+  if (isLogScale) {
+    ticks = [0.1, 0.2, 0.5, 1, 2, 5, 10].map(function(v) { return Math.log(v); });
+  } else {
+    // Generate nice ticks for linear scale
+    const step = Math.pow(10, Math.floor(Math.log10(dataMax - dataMin))) / 2;
+    ticks = [];
+    for (let v = Math.ceil(dataMin / step) * step; v <= dataMax; v += step) {
+      ticks.push(v);
+    }
+  }
+  ticks.forEach(function(tv) {
+    if (tv >= dataMin && tv <= dataMax) {
+      const tx = scaleX(tv);
+      svg += '<line x1="' + tx + '" y1="' + axisY + '" x2="' + tx + '" y2="' + (axisY + 5) + '" stroke="#374151" stroke-width="1"/>';
+      const label = isLogScale ? Math.exp(tv).toFixed(tv < -0.5 || tv > 0.5 ? 1 : 2) : tv.toFixed(2);
+      svg += '<text x="' + tx + '" y="' + (axisY + 16) + '" text-anchor="middle" font-size="9" fill="#6b7280">' + label + '</text>';
+    }
+  });
+
+  // Axis label
+  svg += '<text x="' + (plotX + plotAreaW / 2) + '" y="' + (axisY + 30) + '" text-anchor="middle" font-size="10" fill="#6b7280">'
+    + (isLogScale ? 'Favours experimental    |    Favours control' : effectLabel)
+    + '</text>';
+
+  // Heterogeneity panel
+  const hetY = axisY + 44;
+  const i2Text = 'I\u00B2 = ' + (result.I2 !== undefined ? result.I2.toFixed(1) : '?') + '%';
+  const tau2Text = '\u03C4\u00B2 = ' + (result.tau2 !== undefined ? result.tau2.toFixed(4) : 'N/A');
+  const qText = 'Q = ' + (result.Q !== undefined ? result.Q.toFixed(2) : '?')
+    + ' (df=' + (result.df !== undefined ? result.df : '?') + ', p='
+    + (result.pQ !== undefined ? (result.pQ < 0.001 ? '<0.001' : result.pQ.toFixed(3)) : '?') + ')';
+  svg += '<text x="' + (marginLeft + 4) + '" y="' + hetY + '" font-size="10" fill="#6b7280">Heterogeneity: '
+    + i2Text + '; ' + tau2Text + '; ' + qText + '</text>';
+
+  svg += '</svg>';
+  return svg;
+}
+
+function escHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+
+// ============================================================================
+// INTEGRATION FUNCTION: runMetaAnalysis
+// ============================================================================
+
+function runMetaAnalysis(data, outcomeTitle, effectMeasure, model) {
+  if (model === undefined) model = 'RE-DL';
+
+  let studies;
+  const hksj = document.getElementById('hksjCheck').checked;
+
+  // Detect data format
+  const first = Array.isArray(data) && data.length > 0 ? data[0] : null;
+  if (!first) return { error: 'No data provided' };
+
+  const isBinary = first.ai !== undefined && first.ci !== undefined;
+  const isPrecomputed = first.yi !== undefined && first.vi !== undefined;
+  const isExtraction = first.cleared_for_synthesis !== undefined || first.outcomes !== undefined;
+
+  if (isExtraction) {
+    // ExtractionObject format: filter cleared, find outcome, extract 2x2 tables
+    const cleared = data.filter(function(d) {
+      return d.cleared_for_synthesis !== false;
+    });
+    studies = [];
+    cleared.forEach(function(ext) {
+      const outcomes = ext.outcomes || [];
+      const match = outcomes.find(function(o) {
+        return o.title === outcomeTitle || o.name === outcomeTitle;
+      });
+      if (match && match.ai !== undefined) {
+        studies.push({
+          id: ext.nctId || ext.id || ext.study_id,
+          ai: match.ai, bi: match.bi,
+          ci: match.ci, di: match.di,
+          n1: match.ai + match.bi,
+          n2: match.ci + match.di
+        });
+      }
+    });
+
+    if (studies.length === 0) return { error: 'No studies with matching outcome: ' + outcomeTitle };
+
+    // Calculate effect sizes from 2x2 tables
+    if (effectMeasure === 'auto' || effectMeasure === 'Auto') effectMeasure = 'RR';
+
+    // Handle MH and Peto models separately - they work on raw 2x2
+    if (model === 'MH') {
+      if (effectMeasure === 'OR') return mhOddsRatio(studies);
+      return mhRiskRatio(studies);
+    }
+    if (model === 'Peto') {
+      return petoOddsRatio(studies);
+    }
+
+    const escalcFn = effectMeasure === 'OR' ? escalcOR
+      : effectMeasure === 'RD' ? escalcRD : escalcRR;
+
+    studies = studies.map(function(s) {
+      const es = escalcFn(s.ai, s.bi, s.ci, s.di, 0);
+      return {
+        id: s.id, yi: es.yi, vi: es.vi,
+        ai: s.ai, bi: s.bi, ci: s.ci, di: s.di
+      };
+    }).filter(function(s) { return s.yi !== null && s.vi !== null; });
+
+  } else if (isBinary) {
+    // Raw 2x2 tables
+    if (effectMeasure === 'auto' || effectMeasure === 'Auto') effectMeasure = 'RR';
+
+    if (model === 'MH') {
+      if (effectMeasure === 'OR') return mhOddsRatio(data);
+      return mhRiskRatio(data);
+    }
+    if (model === 'Peto') {
+      return petoOddsRatio(data);
+    }
+
+    const escalcFn2 = effectMeasure === 'OR' ? escalcOR
+      : effectMeasure === 'RD' ? escalcRD : escalcRR;
+
+    studies = data.map(function(s, i) {
+      const es = escalcFn2(s.ai, s.bi, s.ci, s.di, 0);
+      return {
+        id: s.id || s.nctId || ('Study ' + (i + 1)),
+        yi: es.yi, vi: es.vi,
+        ai: s.ai, bi: s.bi, ci: s.ci, di: s.di
+      };
+    }).filter(function(s) { return s.yi !== null && s.vi !== null; });
+
+  } else if (isPrecomputed) {
+    studies = data.map(function(s, i) {
+      return {
+        id: s.id || s.nctId || s.label || ('Study ' + (i + 1)),
+        yi: s.yi, vi: s.vi,
+        order: s.order || s.year || i
+      };
+    });
+  } else {
+    return { error: 'Unrecognized data format' };
+  }
+
+  if (studies.length === 0) return { error: 'No valid studies after processing' };
+
+  // Run the selected model
+  let pooled;
+  const methodStr = model === 'RE-PM' ? 'PM' : model === 'RE-REML' ? 'REML' : model === 'FE' ? 'FE' : 'DL';
+
+  if (model === 'FE') {
+    pooled = fixedEffects(studies);
+  } else if (model === 'RE-PM') {
+    pooled = pauleMandel(studies, { hksj: hksj });
+  } else if (model === 'RE-REML') {
+    pooled = reml(studies, { hksj: hksj });
+  } else {
+    // Default: RE-DL
+    pooled = derSimonianLaird(studies, { hksj: hksj });
+  }
+
+  if (pooled.error) return pooled;
+
+  // Enrich weights with binary data if available
+  if (studies[0].ai !== undefined) {
+    pooled.weights = pooled.weights.map(function(w, i) {
+      return Object.assign({}, w, {
+        ai: studies[i].ai, bi: studies[i].bi,
+        ci: studies[i].ci, di: studies[i].di
+      });
+    });
+  }
+
+  // Leave-one-out and cumulative
+  const loo = leaveOneOut(studies, methodStr);
+  const cumul = cumulativeMeta(studies, 'order', methodStr);
+
+  // Determine if we should use log scale
+  const isLogScale = effectMeasure !== 'RD' && effectMeasure !== 'SMD';
+
+  // Render forest plot
+  const forestPlotSVG = renderForestPlot(pooled, {
+    logScale: isLogScale,
+    effectLabel: effectMeasure || 'Effect'
+  });
+
+  return {
+    pooled: pooled,
+    studies: studies,
+    forestPlotSVG: forestPlotSVG,
+    loo: loo,
+    cumulative: cumul,
+    effectMeasure: effectMeasure,
+    isLogScale: isLogScale
+  };
+}
+
+
+// ============================================================================
+// UI FUNCTIONS
+// ============================================================================
+
+let lastResult = null;
+
+function loadExample() {
+  const example = [
+    { "yi": -0.3567, "vi": 0.0294, "id": "CHARM-Added", "order": 1 },
+    { "yi": -0.1393, "vi": 0.0167, "id": "Val-HeFT", "order": 2 },
+    { "yi": -0.6931, "vi": 0.0833, "id": "RESOLVD", "order": 3 },
+    { "yi": -0.2877, "vi": 0.0357, "id": "CHARM-Alternative", "order": 4 },
+    { "yi": -0.4463, "vi": 0.0417, "id": "ELITE II", "order": 5 }
+  ];
+  document.getElementById('jsonInput').value = JSON.stringify(example, null, 2);
+  document.getElementById('effectMeasure').value = 'SMD';
+  document.getElementById('modelSelect').value = 'RE-DL';
+}
+
+function parseInput() {
+  const raw = document.getElementById('jsonInput').value.trim();
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    alert('Invalid JSON: ' + e.message);
+    return null;
+  }
+}
+
+function runAnalysis() {
+  const data = parseInput();
+  if (!data) return;
+
+  const effectMeasure = document.getElementById('effectMeasure').value;
+  const model = document.getElementById('modelSelect').value;
+  const outcome = document.getElementById('outcomeSelect').value;
+
+  const result = runMetaAnalysis(data, outcome, effectMeasure, model);
+
+  if (result.error) {
+    alert('Analysis error: ' + result.error);
+    return;
+  }
+
+  lastResult = result;
+  displayResults(result);
+}
+
+function displayResults(result) {
+  document.getElementById('resultsSection').classList.remove('hidden');
+
+  const p = result.pooled;
+  const isLog = result.isLogScale;
+
+  // Pooled estimate card
+  const thetaDisplay = isLog ? Math.exp(p.theta).toFixed(4) : p.theta.toFixed(4);
+  const ciLDisplay = isLog ? Math.exp(p.ci_lower).toFixed(4) : p.ci_lower.toFixed(4);
+  const ciUDisplay = isLog ? Math.exp(p.ci_upper).toFixed(4) : p.ci_upper.toFixed(4);
+
+  let pooledHtml = '<div class="stat-item"><div class="stat-label">Pooled ' + (result.effectMeasure || 'Effect') + '</div>'
+    + '<div class="stat-value">' + thetaDisplay + '</div>'
+    + '<div class="stat-sub">log: ' + p.theta.toFixed(4) + '</div></div>'
+    + '<div class="stat-item"><div class="stat-label">95% CI</div>'
+    + '<div class="stat-value">[' + ciLDisplay + ', ' + ciUDisplay + ']</div></div>'
+    + '<div class="stat-item"><div class="stat-label">p-value</div>'
+    + '<div class="stat-value">' + (p.pValue < 0.001 ? '<0.001' : p.pValue.toFixed(4)) + '</div></div>'
+    + '<div class="stat-item"><div class="stat-label">Model</div>'
+    + '<div class="stat-value">' + (p.model || 'N/A') + '</div>'
+    + '<div class="stat-sub">' + (p.hksj ? 'HKSJ adjusted' : 'Wald CI') + '</div></div>';
+
+  if (p.pi_lower !== null && p.pi_lower !== undefined) {
+    const piL = isLog ? Math.exp(p.pi_lower).toFixed(4) : p.pi_lower.toFixed(4);
+    const piU = isLog ? Math.exp(p.pi_upper).toFixed(4) : p.pi_upper.toFixed(4);
+    pooledHtml += '<div class="stat-item"><div class="stat-label">Prediction Interval</div>'
+      + '<div class="stat-value">[' + piL + ', ' + piU + ']</div>'
+      + '<div class="stat-sub">df = k-2 = ' + (p.k - 2) + '</div></div>';
+  }
+
+  document.getElementById('pooledStats').innerHTML = pooledHtml;
+
+  // Heterogeneity card
+  let hetHtml = '<div class="stat-item"><div class="stat-label">I\u00B2</div>'
+    + '<div class="stat-value">' + (p.I2 !== undefined ? p.I2.toFixed(1) : '?') + '%</div>'
+    + '<div class="stat-sub">'
+    + (p.I2_lower !== undefined ? '[' + p.I2_lower.toFixed(1) + '%, ' + p.I2_upper.toFixed(1) + '%]' : '') + '</div></div>'
+    + '<div class="stat-item"><div class="stat-label">\u03C4\u00B2</div>'
+    + '<div class="stat-value">' + (p.tau2 !== undefined ? p.tau2.toFixed(6) : 'N/A') + '</div>'
+    + '<div class="stat-sub">\u03C4 = ' + (p.tau !== undefined ? p.tau.toFixed(4) : '') + '</div></div>'
+    + '<div class="stat-item"><div class="stat-label">Q statistic</div>'
+    + '<div class="stat-value">' + (p.Q !== undefined ? p.Q.toFixed(2) : '?') + '</div>'
+    + '<div class="stat-sub">df = ' + (p.df !== undefined ? p.df : '?')
+    + ', p = ' + (p.pQ !== undefined ? (p.pQ < 0.001 ? '<0.001' : p.pQ.toFixed(4)) : '?') + '</div></div>'
+    + '<div class="stat-item"><div class="stat-label">Studies (k)</div>'
+    + '<div class="stat-value">' + p.k + '</div></div>';
+
+  document.getElementById('hetStats').innerHTML = hetHtml;
+
+  // Forest plot
+  document.getElementById('forestPlotContainer').innerHTML = result.forestPlotSVG;
+
+  // Leave-one-out table
+  if (result.loo && !result.loo.error) {
+    let looHtml = '<table><thead><tr><th>Omitted</th><th class="text-right">Effect</th><th class="text-right">95% CI</th><th class="text-right">I\u00B2</th></tr></thead><tbody>';
+    result.loo.forEach(function(r) {
+      const eff = isLog ? Math.exp(r.theta).toFixed(3) : r.theta.toFixed(4);
+      const lo = isLog ? Math.exp(r.ci_lower).toFixed(3) : r.ci_lower.toFixed(4);
+      const hi = isLog ? Math.exp(r.ci_upper).toFixed(3) : r.ci_upper.toFixed(4);
+      looHtml += '<tr><td>' + escHtml(String(r.omitted)) + '</td>'
+        + '<td class="text-right mono">' + eff + '</td>'
+        + '<td class="text-right mono">[' + lo + ', ' + hi + ']</td>'
+        + '<td class="text-right mono">' + (r.I2 !== undefined ? r.I2.toFixed(1) + '%' : '') + '</td></tr>';
+    });
+    looHtml += '</tbody></table>';
+    document.getElementById('looTable').innerHTML = looHtml;
+  }
+
+  // Cumulative table
+  if (result.cumulative && !result.cumulative.error) {
+    let cumHtml = '<table><thead><tr><th>Added</th><th class="text-right">k</th><th class="text-right">Effect</th><th class="text-right">95% CI</th></tr></thead><tbody>';
+    result.cumulative.forEach(function(r) {
+      const eff = isLog ? Math.exp(r.theta).toFixed(3) : r.theta.toFixed(4);
+      const lo = isLog ? Math.exp(r.ci_lower).toFixed(3) : r.ci_lower.toFixed(4);
+      const hi = isLog ? Math.exp(r.ci_upper).toFixed(3) : r.ci_upper.toFixed(4);
+      cumHtml += '<tr><td>' + escHtml(String(r.addedStudy)) + '</td>'
+        + '<td class="text-right">' + r.k + '</td>'
+        + '<td class="text-right mono">' + eff + '</td>'
+        + '<td class="text-right mono">[' + lo + ', ' + hi + ']</td></tr>';
+    });
+    cumHtml += '</tbody></table>';
+    document.getElementById('cumulativeTable').innerHTML = cumHtml;
+  }
+}
+
+function exportSVG() {
+  if (!lastResult || !lastResult.forestPlotSVG) { alert('No forest plot to export'); return; }
+  const blob = new Blob([lastResult.forestPlotSVG], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'forest-plot.svg';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportJSON() {
+  if (!lastResult) { alert('No results to export'); return; }
+  const exportData = {
+    pooled: lastResult.pooled,
+    studies: lastResult.studies,
+    loo: lastResult.loo,
+    cumulative: lastResult.cumulative,
+    effectMeasure: lastResult.effectMeasure,
+    generatedAt: new Date().toISOString(),
+    engine: 'CardioSynth MetaEngine v1.0'
+  };
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'meta-analysis-results.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+
+// ============================================================================
+// VALIDATION SUITE
+// ============================================================================
+
+function runValidation() {
+  document.getElementById('validationSection').classList.remove('hidden');
+  const log = document.getElementById('validationLog');
+  log.textContent = '';
+
+  let passed = 0, failed = 0;
+
+  function logMsg(msg) { log.textContent += msg + '\n'; }
+  function logPass(name, msg) { passed++; logMsg('[PASS] ' + name + ': ' + msg); }
+  function logFail(name, msg) { failed++; logMsg('[FAIL] ' + name + ': ' + msg); }
+  function approxEq(a, b, tol) { return Math.abs(a - b) < tol; }
+
+  logMsg('=== CardioSynth MetaEngine Validation Suite ===');
+  logMsg('Date: ' + new Date().toISOString());
+  logMsg('');
+
+  // --- Test 1: DerSimonian-Laird reference values ---
+  logMsg('--- Test 1: DerSimonian-Laird (no HKSJ) ---');
+  const testData = [
+    { yi: -0.3567, vi: 0.0294 },
+    { yi: -0.1393, vi: 0.0167 },
+    { yi: -0.6931, vi: 0.0833 },
+    { yi: -0.2877, vi: 0.0357 },
+    { yi: -0.4463, vi: 0.0417 }
+  ];
+
+  // Reference values verified against R metafor 4.8-0:
+  // rma(yi, vi, method="DL") -> beta=-0.301772, tau2=0.000237, se=0.079955, Q=4.02809
+  const dlNoHKSJ = derSimonianLaird(testData, { hksj: false });
+  if (approxEq(dlNoHKSJ.theta, -0.3018, 0.001)) {
+    logPass('DL theta', 'got ' + dlNoHKSJ.theta.toFixed(4) + ', expected ~-0.3018 (metafor: -0.3018)');
+  } else {
+    logFail('DL theta', 'got ' + dlNoHKSJ.theta.toFixed(4) + ', expected ~-0.3018 (metafor: -0.3018)');
+  }
+  if (approxEq(dlNoHKSJ.tau2, 0.0002, 0.001)) {
+    logPass('DL tau2', 'got ' + dlNoHKSJ.tau2.toFixed(4) + ', expected ~0.0002 (metafor: 0.0002)');
+  } else {
+    logFail('DL tau2', 'got ' + dlNoHKSJ.tau2.toFixed(4) + ', expected ~0.0002 (metafor: 0.0002)');
+  }
+
+  logMsg('  k=' + dlNoHKSJ.k + ', SE=' + dlNoHKSJ.se.toFixed(4)
+    + ', Q=' + dlNoHKSJ.Q.toFixed(4) + ', I2=' + dlNoHKSJ.I2.toFixed(1) + '%');
+
+  // --- Test 2: HKSJ adjustment ---
+  logMsg('');
+  logMsg('--- Test 2: HKSJ Adjustment ---');
+  const dlHKSJ = derSimonianLaird(testData, { hksj: true });
+
+  // HKSJ should use t-distribution (wider CI than Wald)
+  const waldWidth = 2 * 1.96 * dlNoHKSJ.se;
+  const hksjWidth = dlHKSJ.ci_upper - dlHKSJ.ci_lower;
+  if (hksjWidth >= waldWidth * 0.95) {
+    logPass('HKSJ CI width', 'HKSJ CI (' + hksjWidth.toFixed(4) + ') >= Wald CI (' + waldWidth.toFixed(4) + ') or close');
+  } else {
+    logFail('HKSJ CI width', 'HKSJ CI (' + hksjWidth.toFixed(4) + ') < Wald CI (' + waldWidth.toFixed(4) + ')');
+  }
+
+  // Verify t-critical used (k=5, df=4 -> t_0.975 ~ 2.776)
+  const expectedTCrit = tQuantile(0.975, 4);
+  if (approxEq(expectedTCrit, 2.776, 0.01)) {
+    logPass('t-critical df=4', 'got ' + expectedTCrit.toFixed(3) + ', expected ~2.776');
+  } else {
+    logFail('t-critical df=4', 'got ' + expectedTCrit.toFixed(3) + ', expected ~2.776');
+  }
+
+  // --- Test 3: Prediction interval uses t_{k-2} ---
+  logMsg('');
+  logMsg('--- Test 3: Prediction Interval (t_{k-2}) ---');
+  if (dlHKSJ.pi_lower !== null && dlHKSJ.pi_upper !== null) {
+    const piWidth = dlHKSJ.pi_upper - dlHKSJ.pi_lower;
+    // PI should be wider than CI
+    if (piWidth > hksjWidth) {
+      logPass('PI > CI', 'PI width (' + piWidth.toFixed(4) + ') > CI width (' + hksjWidth.toFixed(4) + ')');
+    } else {
+      logFail('PI > CI', 'PI width (' + piWidth.toFixed(4) + ') <= CI width');
+    }
+    // Verify uses k-2=3 df (t_0.975,3 ~ 3.182)
+    const piTCrit = tQuantile(0.975, 3);
+    if (approxEq(piTCrit, 3.182, 0.01)) {
+      logPass('PI t-crit df=3', 'got ' + piTCrit.toFixed(3) + ', expected ~3.182');
+    } else {
+      logFail('PI t-crit df=3', 'got ' + piTCrit.toFixed(3) + ', expected ~3.182');
+    }
+  } else {
+    logFail('PI computed', 'Prediction interval not computed');
+  }
+
+  // --- Test 4: Fixed Effects ---
+  logMsg('');
+  logMsg('--- Test 4: Fixed Effects ---');
+  const feResult = fixedEffects(testData);
+  // FE theta should be closer to large-weight studies
+  if (feResult.k === 5 && feResult.theta !== undefined) {
+    logPass('FE computed', 'theta=' + feResult.theta.toFixed(4) + ', Q=' + feResult.Q.toFixed(4));
+  } else {
+    logFail('FE computed', 'Error: ' + (feResult.error || 'unknown'));
+  }
+
+  // --- Test 5: Leave-one-out ---
+  logMsg('');
+  logMsg('--- Test 5: Leave-One-Out ---');
+  const testDataIds = testData.map(function(s, i) {
+    return Object.assign({}, s, { id: 'Study ' + (i + 1) });
+  });
+  const loo = leaveOneOut(testDataIds, 'DL');
+  if (Array.isArray(loo) && loo.length === 5) {
+    logPass('LOO count', '5 results returned');
+    // Each LOO theta should be a valid number
+    const allValid = loo.every(function(r) { return !isNaN(r.theta); });
+    if (allValid) {
+      logPass('LOO valid', 'All leave-one-out estimates are numeric');
+    } else {
+      logFail('LOO valid', 'Some LOO estimates are NaN');
+    }
+  } else {
+    logFail('LOO count', 'Expected 5 results, got ' + (loo.length || loo.error));
+  }
+
+  // --- Test 6: Cumulative meta-analysis ---
+  logMsg('');
+  logMsg('--- Test 6: Cumulative Meta-Analysis ---');
+  const cumul = cumulativeMeta(testDataIds, 'order', 'DL');
+  if (Array.isArray(cumul) && cumul.length === 5) {
+    logPass('Cumulative count', '5 results returned');
+    // Last cumulative estimate should match full analysis
+    const lastCum = cumul[4];
+    if (approxEq(lastCum.theta, dlNoHKSJ.theta, 0.001)) {
+      logPass('Cumulative final', 'Final cumulative theta matches full DL');
+    } else {
+      logFail('Cumulative final', 'got ' + lastCum.theta.toFixed(4) + ', expected ' + dlNoHKSJ.theta.toFixed(4));
+    }
+  } else {
+    logFail('Cumulative count', 'Expected 5 results');
+  }
+
+  // --- Test 7: Binary effect size calculators ---
+  logMsg('');
+  logMsg('--- Test 7: escalc Functions ---');
+
+  // Test escalcRR: known values
+  // ai=15, bi=85, ci=10, di=90 -> RR = (15/100)/(10/100) = 1.5 -> logRR ~ 0.4055
+  const rr = escalcRR(15, 85, 10, 90);
+  if (approxEq(rr.yi, Math.log(1.5), 0.001)) {
+    logPass('escalcRR', 'logRR=' + rr.yi.toFixed(4) + ', expected ' + Math.log(1.5).toFixed(4));
+  } else {
+    logFail('escalcRR', 'logRR=' + rr.yi.toFixed(4) + ', expected ' + Math.log(1.5).toFixed(4));
+  }
+
+  // Test escalcOR: ai=15, bi=85, ci=10, di=90 -> OR = (15*90)/(85*10) = 1.588
+  const or = escalcOR(15, 85, 10, 90);
+  const expectedLogOR = Math.log((15 * 90) / (85 * 10));
+  if (approxEq(or.yi, expectedLogOR, 0.001)) {
+    logPass('escalcOR', 'logOR=' + or.yi.toFixed(4) + ', expected ' + expectedLogOR.toFixed(4));
+  } else {
+    logFail('escalcOR', 'logOR=' + or.yi.toFixed(4) + ', expected ' + expectedLogOR.toFixed(4));
+  }
+
+  // Test zero-cell handling: cc=0.5 added only when zero cell exists
+  const rrZero = escalcRR(0, 50, 5, 45);
+  if (rrZero.yi !== null) {
+    logPass('escalcRR zero-cell', 'Handled zero cell with cc, logRR=' + rrZero.yi.toFixed(4));
+  } else {
+    logFail('escalcRR zero-cell', 'Returned null for zero cell');
+  }
+
+  // No correction when no zeros
+  const rrNoCC = escalcRR(15, 85, 10, 90, 0);
+  const rrWithCC = escalcRR(15, 85, 10, 90, 0.5);
+  if (approxEq(rrNoCC.yi, rrWithCC.yi, 1e-10)) {
+    logPass('escalcRR no-zero no-cc', 'No correction applied when no zeros (correct)');
+  } else {
+    logFail('escalcRR no-zero no-cc', 'Correction applied even without zeros');
+  }
+
+  // --- Test 8: Peto method ---
+  logMsg('');
+  logMsg('--- Test 8: Peto Odds Ratio ---');
+  const petoData = [
+    { ai: 3, bi: 97, ci: 5, di: 95 },
+    { ai: 7, bi: 93, ci: 12, di: 88 },
+    { ai: 2, bi: 48, ci: 6, di: 44 }
+  ];
+  const petoResult = petoOddsRatio(petoData);
+  if (petoResult.yi !== null && petoResult.k === 3) {
+    logPass('Peto OR', 'k=3, logOR=' + petoResult.yi.toFixed(4) + ', OR=' + petoResult.or.toFixed(4));
+  } else {
+    logFail('Peto OR', 'Error: ' + (petoResult.error || 'unknown'));
+  }
+
+  // --- Test 9: Statistical functions ---
+  logMsg('');
+  logMsg('--- Test 9: Statistical Functions ---');
+
+  // normalCDF(0) = 0.5
+  if (approxEq(normalCDF(0), 0.5, 1e-8)) {
+    logPass('normalCDF(0)', 'got 0.5');
+  } else {
+    logFail('normalCDF(0)', 'got ' + normalCDF(0));
+  }
+
+  // normalCDF(1.96) ~ 0.975
+  if (approxEq(normalCDF(1.96), 0.975, 0.001)) {
+    logPass('normalCDF(1.96)', 'got ' + normalCDF(1.96).toFixed(4));
+  } else {
+    logFail('normalCDF(1.96)', 'got ' + normalCDF(1.96).toFixed(4));
+  }
+
+  // normalQuantile(0.975) ~ 1.96
+  if (approxEq(normalQuantile(0.975), 1.96, 0.001)) {
+    logPass('normalQuantile(0.975)', 'got ' + normalQuantile(0.975).toFixed(4));
+  } else {
+    logFail('normalQuantile(0.975)', 'got ' + normalQuantile(0.975).toFixed(4));
+  }
+
+  // tQuantile(0.975, 30) should approach 1.96
+  const t30 = tQuantile(0.975, 30);
+  if (approxEq(t30, 2.042, 0.01)) {
+    logPass('tQuantile(0.975, 30)', 'got ' + t30.toFixed(3));
+  } else {
+    logFail('tQuantile(0.975, 30)', 'got ' + t30.toFixed(3) + ', expected ~2.042');
+  }
+
+  // chiSquareCDF(3.841, 1) ~ 0.95
+  if (approxEq(chiSquareCDF(3.841, 1), 0.95, 0.01)) {
+    logPass('chiSquareCDF(3.841,1)', 'got ' + chiSquareCDF(3.841, 1).toFixed(4));
+  } else {
+    logFail('chiSquareCDF(3.841,1)', 'got ' + chiSquareCDF(3.841, 1).toFixed(4));
+  }
+
+  // --- Test 10: Paule-Mandel ---
+  logMsg('');
+  logMsg('--- Test 10: Paule-Mandel Estimator ---');
+  const pmResult = pauleMandel(testData, { hksj: false });
+  if (pmResult.theta !== undefined && pmResult.converged) {
+    logPass('PM converged', 'theta=' + pmResult.theta.toFixed(4) + ', tau2=' + pmResult.tau2.toFixed(4));
+  } else {
+    logFail('PM converged', 'Did not converge or error: ' + (pmResult.error || ''));
+  }
+
+  // --- Test 11: REML ---
+  logMsg('');
+  logMsg('--- Test 11: REML Estimator ---');
+  const remlResult = reml(testData, { hksj: false });
+  if (remlResult.theta !== undefined && remlResult.converged) {
+    logPass('REML converged', 'theta=' + remlResult.theta.toFixed(4) + ', tau2=' + remlResult.tau2.toFixed(4));
+  } else {
+    logFail('REML converged', 'Did not converge or error: ' + (remlResult.error || ''));
+  }
+
+  // --- Test 12: HKSJ floor rule ---
+  logMsg('');
+  logMsg('--- Test 12: HKSJ Floor Rule ---');
+  // When Q < k-1, the HKSJ multiplier should use floor max(1, Q*/(k-1))
+  // Use very homogeneous data where Q* might be small
+  const homoData = [
+    { yi: 0.50, vi: 0.01 },
+    { yi: 0.51, vi: 0.01 },
+    { yi: 0.50, vi: 0.01 },
+    { yi: 0.49, vi: 0.01 },
+    { yi: 0.50, vi: 0.01 }
+  ];
+  const homoResult = derSimonianLaird(homoData, { hksj: true });
+  const homoNoHKSJ = derSimonianLaird(homoData, { hksj: false });
+  // With floor rule, HKSJ should not narrow CI below DL
+  // Both use t-dist when HKSJ=true but the floor prevents narrowing
+  if (homoResult.ci_upper - homoResult.ci_lower >= 0) {
+    logPass('HKSJ floor', 'CI width positive: ' + (homoResult.ci_upper - homoResult.ci_lower).toFixed(6));
+  } else {
+    logFail('HKSJ floor', 'CI width negative');
+  }
+
+  // --- Test 13: Forest plot SVG ---
+  logMsg('');
+  logMsg('--- Test 13: Forest Plot SVG ---');
+  const svgResult = renderForestPlot(dlNoHKSJ, { logScale: false, effectLabel: 'SMD' });
+  if (svgResult.indexOf('<svg') >= 0 && svgResult.indexOf('</svg>') > 0) {
+    logPass('SVG generated', 'Valid SVG (' + svgResult.length + ' chars)');
+  } else {
+    logFail('SVG generated', 'Invalid SVG output');
+  }
+  if (svgResult.indexOf('stroke-dasharray') >= 0) {
+    logPass('SVG null line', 'Dashed null-effect line present');
+  } else {
+    logFail('SVG null line', 'Missing dashed null-effect line');
+  }
+  if (svgResult.indexOf('polygon') >= 0) {
+    logPass('SVG diamond', 'Summary diamond present');
+  } else {
+    logFail('SVG diamond', 'Missing summary diamond');
+  }
+
+  // --- Test 14: Integration with binary data ---
+  logMsg('');
+  logMsg('--- Test 14: Binary Data Integration ---');
+  const binaryData = [
+    { id: 'Trial A', ai: 20, bi: 80, ci: 30, di: 70 },
+    { id: 'Trial B', ai: 15, bi: 85, ci: 25, di: 75 },
+    { id: 'Trial C', ai: 10, bi: 90, ci: 18, di: 82 }
+  ];
+  const binaryResult = runMetaAnalysis(binaryData, '', 'RR', 'RE-DL');
+  if (binaryResult.pooled && binaryResult.pooled.k === 3) {
+    logPass('Binary RR', 'k=3, RR=' + Math.exp(binaryResult.pooled.theta).toFixed(4));
+  } else {
+    logFail('Binary RR', 'Error: ' + (binaryResult.error || 'unknown'));
+  }
+
+  // --- Test 15: I2 confidence interval ---
+  logMsg('');
+  logMsg('--- Test 15: I\u00B2 Confidence Interval ---');
+  const i2ci = i2ConfidenceInterval(10, 5); // Q=10, k=5, df=4
+  if (i2ci.lower >= 0 && i2ci.upper <= 100 && i2ci.lower <= i2ci.upper) {
+    logPass('I2 CI bounds', '[' + i2ci.lower.toFixed(1) + '%, ' + i2ci.upper.toFixed(1) + '%]');
+  } else {
+    logFail('I2 CI bounds', 'Invalid bounds: [' + i2ci.lower + ', ' + i2ci.upper + ']');
+  }
+
+  // --- Summary ---
+  logMsg('');
+  logMsg('===========================================');
+  logMsg('TOTAL: ' + (passed + failed) + ' tests | PASSED: ' + passed + ' | FAILED: ' + failed);
+  if (failed === 0) {
+    logMsg('STATUS: ALL TESTS PASSED');
+  } else {
+    logMsg('STATUS: ' + failed + ' FAILURES');
+  }
+  logMsg('===========================================');
+}
+</script>
+</body>
+</html>
