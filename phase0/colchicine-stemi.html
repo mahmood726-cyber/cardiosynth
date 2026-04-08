@@ -756,6 +756,85 @@ a.ctgov-link:hover { text-decoration: underline; color: #60a5fa; }
   .va-print-target { display: block !important; }
 }
 
+/* ========== RECORD EXCERPT MODAL (ENHANCED) ========== */
+.record-section { margin-bottom: 20px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.record-section-header {
+  padding: 12px 16px; font-weight: 700; font-size: 13px;
+  background: var(--surface-raised); border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none;
+}
+.record-section-header .rs-chevron { transition: transform 0.2s; font-size: 10px; color: var(--text-muted); margin-right: 8px; }
+.record-section.rs-open .record-section-header .rs-chevron { transform: rotate(90deg); }
+.record-section-body { padding: 16px; display: none; }
+.record-section.rs-open .record-section-body { display: block; }
+.source-path { font-size: 10px; color: var(--text-muted); font-family: 'SFMono-Regular', Consolas, monospace; display: block; margin-top: 2px; }
+.effect-derivation {
+  font-family: 'SFMono-Regular', Consolas, monospace; font-size: 12px; line-height: 1.8;
+  background: var(--surface-raised); padding: 16px; border-radius: 8px; border: 1px solid var(--border);
+}
+.effect-derivation .src { color: var(--text-muted); font-size: 10px; }
+.ctgov-btn {
+  display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600; color: var(--accent); border: 1px solid var(--accent);
+  text-decoration: none; transition: all 0.2s; background: transparent;
+}
+.ctgov-btn:hover { background: rgba(59,130,246,0.1); }
+.record-overview-card {
+  display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start;
+}
+.record-overview-card .overview-meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.record-overview-card .overview-meta .om-item { font-size: 12px; }
+.record-overview-card .overview-meta .om-label { color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600; }
+.record-overview-card .overview-meta .om-val { font-weight: 600; margin-top: 2px; }
+.record-verdict-badge {
+  padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; text-align: center; white-space: nowrap;
+}
+.record-verdict-badge.pass { background: var(--green-100); color: var(--green-700); }
+.record-verdict-badge.warn { background: var(--amber-100); color: var(--amber-600); }
+.record-verdict-badge.fail { background: var(--red-100); color: var(--red-700); }
+.record-arms-table, .record-outcome-table, .record-ae-table { width: 100%; font-size: 12px; border-collapse: collapse; }
+.record-arms-table th, .record-outcome-table th, .record-ae-table th {
+  text-align: left; font-size: 10px; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.3px; padding: 6px 10px;
+  background: var(--surface-raised); border-bottom: 1px solid var(--border);
+}
+.record-arms-table td, .record-outcome-table td, .record-ae-table td {
+  padding: 6px 10px; border-bottom: 1px solid var(--border-light); font-size: 12px;
+}
+.record-outcome-card { margin-bottom: 12px; border: 1px solid var(--border-light); border-radius: 8px; overflow: hidden; }
+.record-outcome-card-header {
+  padding: 10px 14px; background: var(--surface-raised); cursor: pointer; user-select: none;
+  display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600;
+}
+.record-outcome-card-header .oc-chevron { transition: transform 0.2s; font-size: 10px; color: var(--text-muted); }
+.record-outcome-card.oc-open .record-outcome-card-header .oc-chevron { transform: rotate(90deg); }
+.record-outcome-card-body { display: none; padding: 12px 14px; }
+.record-outcome-card.oc-open .record-outcome-card-body { display: block; }
+.oc-type-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.3px; margin-right: 6px;
+}
+.oc-type-badge.primary { background: var(--green-100); color: var(--green-700); }
+.oc-type-badge.secondary { background: var(--blue-100); color: var(--blue-800); }
+.oc-type-badge.other { background: var(--surface-raised); color: var(--text-muted); }
+.effect-calc-box {
+  margin-top: 10px; padding: 12px; background: var(--surface); border: 1px dashed var(--border);
+  border-radius: 6px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 11px; line-height: 1.8;
+}
+.twobytwo-grid {
+  display: grid; grid-template-columns: auto 1fr 1fr 1fr; gap: 0; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-top: 8px;
+}
+.twobytwo-grid .cell {
+  padding: 6px 12px; font-size: 12px; border-bottom: 1px solid var(--border-light); border-right: 1px solid var(--border-light);
+}
+.twobytwo-grid .cell.header { background: var(--surface-raised); font-weight: 700; font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
+.twobytwo-grid .cell.label { background: var(--surface-raised); font-weight: 600; font-size: 11px; }
+.twobytwo-grid .cell.value { font-family: 'SFMono-Regular', Consolas, monospace; font-weight: 600; }
+@media (max-width: 600px) {
+  .record-overview-card { grid-template-columns: 1fr; }
+  .record-overview-card .overview-meta { grid-template-columns: 1fr 1fr; }
+}
+
 /* ========== RESPONSIVE ========== */
 @media (max-width: 900px) {
   .master-header { padding: 16px; }
@@ -2892,6 +2971,14 @@ function toggleAccordion(el) {
   el.closest('.accordion-item').classList.toggle('open');
 }
 
+function toggleRecordSection(el) {
+  el.closest('.record-section').classList.toggle('rs-open');
+}
+
+function toggleOutcomeCard(el) {
+  el.closest('.record-outcome-card').classList.toggle('oc-open');
+}
+
 
 // ==============================
 // OUTCOME MATCHING HELPERS
@@ -3438,33 +3525,8 @@ function sortEvidenceTable(col) {
 }
 
 function showStudyModal(row) {
-  var ext = row._ext;
-  var report = row._report;
-  var html = '<a href="' + ctgovResultsLink(ext.nct) + '" target="_blank" rel="noopener" class="btn-ctgov">&#128279; View on CT.gov</a>';
-  html += '<h4 style="margin-bottom:12px;font-size:15px">' + escHtml(ext.study_metadata.title) + '</h4>';
-  html += '<div class="stat-grid" style="margin-bottom:16px">';
-  html += '<div class="stat-item"><div class="stat-label">NCT ID</div><div class="stat-value" style="font-size:14px">' + nctLinkHtml(ext.nct) + '</div></div>';
-  html += '<div class="stat-item"><div class="stat-label">Enrollment</div><div class="stat-value" style="font-size:14px">' + escHtml(String(ext.study_metadata.enrollment_actual || '-')) + '</div></div>';
-  // [P1-5 FIX] escHtml on phase — raw API string could contain HTML
-  html += '<div class="stat-item"><div class="stat-label">Phase</div><div class="stat-value" style="font-size:14px">' + escHtml(String(ext.study_metadata.phase || '-')) + '</div></div>';
-  html += '<div class="stat-item"><div class="stat-label">TruthCert</div><div class="stat-value"><span class="tag ' + (report.verdict === 'PASS' ? 'tag-pass' : report.verdict === 'WARN' ? 'tag-warn' : 'tag-fail') + '">' + report.verdict + '</span></div></div>';
-  html += '</div>';
-
-  if (report.flags && report.flags.length > 0) {
-    html += '<h4 style="margin-bottom:8px;font-size:14px">TruthCert Flags</h4>';
-    html += '<table><thead><tr><th>Validator</th><th>Severity</th><th>Message</th></tr></thead><tbody>';
-    report.flags.forEach(function(f) {
-      var sevTag = f.severity === 'INFO' ? 'tag-info' : f.severity === 'WARNING' ? 'tag-warn' : 'tag-fail';
-      html += '<tr><td class="mono" style="font-size:11px">' + escHtml(f.validator) + '</td><td><span class="tag ' + sevTag + '">' + f.severity + '</span></td><td style="font-size:12px">' + escHtml(f.message) + '</td></tr>';
-    });
-    html += '</tbody></table>';
-  }
-
-  html += '<h4 style="margin:16px 0 8px;font-size:14px">ExtractionObject (JSON)</h4>';
-  var safeExt = Object.assign({}, ext);
-  html += '<pre>' + escHtml(JSON.stringify(safeExt, null, 2)) + '</pre>';
-
-  openModal(ext.nct + ' Detail', html);
+  // Delegate to the full record excerpt view for detailed traceability
+  showRecordExcerpt(row._ext.nct);
 }
 
 // ==============================
@@ -3657,6 +3719,22 @@ function ctgovResultsLink(nct) {
 
 function ctgovOutcomesLink(nct) {
   return 'https://clinicaltrials.gov/study/' + encodeURIComponent(nct) + '?tab=results#outcome-measures';
+}
+
+function ctgovStudyLink(nct) {
+  return 'https://clinicaltrials.gov/study/' + encodeURIComponent(nct);
+}
+
+function ctgovParticipantFlowLink(nct) {
+  return 'https://clinicaltrials.gov/study/' + encodeURIComponent(nct) + '?tab=results#participant-flow';
+}
+
+function ctgovAdverseEventsLink(nct) {
+  return 'https://clinicaltrials.gov/study/' + encodeURIComponent(nct) + '?tab=results#adverse-events';
+}
+
+function ctgovBtnHtml(url, label) {
+  return '<a href="' + url + '" target="_blank" rel="noopener" class="ctgov-btn">' + escHtml(label) + ' &#8599;</a>';
 }
 
 function nctLinkHtml(nct) {
@@ -3899,7 +3977,6 @@ function showRecordExcerpt(nct) {
     if (STATE.extractions[i].nct === nct) { ext = STATE.extractions[i]; break; }
   }
   if (!ext) {
-    // Study without results — show minimal info
     var harvested = null;
     for (var i = 0; i < STATE.harvested.length; i++) {
       if (STATE.harvested[i].nctId === nct) { harvested = STATE.harvested[i]; break; }
@@ -3910,7 +3987,8 @@ function showRecordExcerpt(nct) {
         '<div class="stat-item"><div class="stat-label">Title</div><div class="stat-value" style="font-size:13px">' + escHtml(harvested.briefTitle) + '</div></div>' +
         '<div class="stat-item"><div class="stat-label">Status</div><div class="stat-value" style="font-size:13px">' + escHtml(harvested.overallStatus) + '</div></div>' +
         '<div class="stat-item"><div class="stat-label">Enrollment</div><div class="stat-value" style="font-size:13px">' + (harvested.enrollment || '-') + '</div></div>' +
-        '</div>');
+        '</div>' +
+        '<div style="margin-top:12px">' + ctgovBtnHtml(ctgovStudyLink(nct), 'View Full Record on CT.gov') + '</div>');
     } else {
       openModal(nct + ' Record', '<div class="info-box">No data available for this study.</div>');
     }
@@ -3922,178 +4000,310 @@ function showRecordExcerpt(nct) {
     if (STATE.truthCertReports[i].nct === nct) { report = STATE.truthCertReports[i]; break; }
   }
 
-  var html = '<a href="' + ctgovResultsLink(nct) + '" target="_blank" rel="noopener" class="btn-ctgov">&#128279; View on CT.gov</a>';
-  html += '<h4 style="margin-bottom:12px;font-size:15px">' + escHtml(ext.study_metadata.title) + '</h4>';
-
-  // Raw API Excerpts vs Extracted Values side-by-side
-  var rawExc = ext._rawExcerpts;
-  if (rawExc) {
-    html += '<h4 style="margin:16px 0 8px;font-size:14px">Raw CT.gov API Excerpts vs Extracted Values</h4>';
-    html += '<div class="record-excerpt-grid">';
-    // [P0-4 FIX] Null guards on rawExc sub-fields — API may omit any field
-    html += '<div class="excerpt-col"><h5>Raw API Response</h5>';
-    html += '<div class="excerpt-row"><span class="excerpt-label">briefTitle</span><span class="excerpt-value">' + escHtml(String((rawExc.title && rawExc.title.value) || '-')) + '</span></div>';
-    html += '<div class="excerpt-row"><span class="excerpt-label">enrollment.count</span><span class="excerpt-value">' + escHtml(String((rawExc.enrollment && rawExc.enrollment.value) || '-')) + '</span></div>';
-    html += '<div class="excerpt-row"><span class="excerpt-label">overallStatus</span><span class="excerpt-value">' + escHtml(String((rawExc.overallStatus && rawExc.overallStatus.value) || '-')) + '</span></div>';
-    html += '<div class="excerpt-row"><span class="excerpt-label">primaryCompletionDate</span><span class="excerpt-value">' + escHtml(String((rawExc.primaryCompletionDate && rawExc.primaryCompletionDate.value) || '-')) + '</span></div>';
-    if (rawExc.arms && rawExc.arms.value) {
-      rawExc.arms.value.forEach(function(a) {
-        html += '<div class="excerpt-row"><span class="excerpt-label">arm: ' + escHtml(a.label || '') + '</span><span class="excerpt-value">' + escHtml(a.type || '') + '</span></div>';
-      });
-    }
-    html += '</div>';
-
-    html += '<div class="excerpt-col"><h5>CardioSynth Extracted</h5>';
-    html += '<div class="excerpt-row"><span class="excerpt-label">title</span><span class="excerpt-value">' + escHtml(ext.study_metadata.title || '-') + '</span></div>';
-    html += '<div class="excerpt-row"><span class="excerpt-label">enrollment_actual</span><span class="excerpt-value">' + escHtml(String(ext.study_metadata.enrollment_actual || '-')) + '</span></div>';
-    html += '<div class="excerpt-row"><span class="excerpt-label">sponsor_name</span><span class="excerpt-value">' + escHtml(ext.study_metadata.sponsor_name || '-') + '</span></div>';
-    html += '<div class="excerpt-row"><span class="excerpt-label">primary_completion_date</span><span class="excerpt-value">' + escHtml(ext.study_metadata.primary_completion_date || '-') + '</span></div>';
-    ext.arms.forEach(function(a) {
-      html += '<div class="excerpt-row"><span class="excerpt-label">arm: ' + escHtml(a.arm_label) + '</span><span class="excerpt-value">' + escHtml(a.arm_type) + ' (n=' + (a.n_analyzed || '?') + ')</span></div>';
-    });
-    html += '</div>';
-    html += '</div>';
-
-    // Outcome measurements raw detail
-    if (rawExc.measurements && rawExc.measurements.length > 0) {
-      html += '<h4 style="margin:16px 0 8px;font-size:14px">Outcome Measurements (Raw API)</h4>';
-      rawExc.measurements.forEach(function(om, idx) {
-        html += '<div class="accordion-item" style="margin-bottom:8px">';
-        html += '<div class="accordion-header" onclick="toggleAccordion(this)" style="padding:10px 14px;font-size:12px">';
-        html += '<span class="chevron">&#9654;</span>';
-        html += '<span>[' + escHtml(om.type || 'OTHER') + '] ' + escHtml(om.title) + '</span></div>';
-        html += '<div class="accordion-body" style="padding:10px 14px">';
-        html += '<p style="font-size:11px;color:var(--gray-500);margin-bottom:6px">Groups:</p>';
-        om.groups.forEach(function(g) {
-          html += '<span class="tag tag-info" style="margin-right:4px;margin-bottom:4px">' + escHtml(g.id) + ': ' + escHtml(g.title) + '</span>';
-        });
-        if (om.rawValues && om.rawValues.length > 0) {
-          html += '<table style="margin-top:8px"><thead><tr><th>Group ID</th><th>Value</th><th>Spread</th></tr></thead><tbody>';
-          om.rawValues.forEach(function(rv) {
-            html += '<tr><td class="mono">' + escHtml(rv.groupId || '-') + '</td><td class="mono">' + escHtml(String(rv.value !== null && rv.value !== undefined ? rv.value : '-')) + '</td><td class="mono">' + escHtml(String(rv.spread !== null && rv.spread !== undefined ? rv.spread : '-')) + '</td></tr>';
-          });
-          html += '</tbody></table>';
-        }
-        html += '</div></div>';
-      });
-    }
-  }
-
-  // Per-datapoint provenance badges
-  html += '<h4 style="margin:16px 0 8px;font-size:14px">Data Provenance Badges</h4>';
-  html += buildProvenanceBadges(ext, report);
-
-  // TruthCert flags
-  if (report && report.flags && report.flags.length > 0) {
-    html += '<h4 style="margin:16px 0 8px;font-size:14px">TruthCert Validation Flags</h4>';
-    html += '<table><thead><tr><th>Validator</th><th>Severity</th><th>Message</th></tr></thead><tbody>';
-    report.flags.forEach(function(f) {
-      var sevTag = f.severity === 'INFO' ? 'tag-info' : f.severity === 'WARNING' ? 'tag-warn' : 'tag-fail';
-      html += '<tr><td class="mono" style="font-size:11px">' + escHtml(f.validator) + '</td><td><span class="tag ' + sevTag + '">' + f.severity + '</span></td><td style="font-size:12px">' + escHtml(f.message) + '</td></tr>';
-    });
-    html += '</tbody></table>';
-  }
-
-  // Provenance hash
-  html += '<h4 style="margin:16px 0 8px;font-size:14px">Provenance</h4>';
-  html += '<div class="stat-grid">';
-  html += '<div class="stat-item"><div class="stat-label">Source URL</div><div class="stat-value" style="font-size:11px;word-break:break-all">' + escHtml(ext.provenance.source_url) + '</div></div>';
-  html += '<div class="stat-item"><div class="stat-label">Raw Hash (SHA-256)</div><div class="stat-value" style="font-size:11px;word-break:break-all">' + escHtml(ext.provenance.raw_hash) + '</div></div>';
-  html += '<div class="stat-item"><div class="stat-label">Extraction Timestamp</div><div class="stat-value" style="font-size:13px">' + escHtml(ext.provenance.extraction_timestamp) + '</div></div>';
-  html += '</div>';
-
-  openModal(nct + ' Record Excerpt', html);
-}
-
-function buildProvenanceBadges(ext, report) {
-  var html = '';
-  // For each arm, show provenance of extracted data
+  // Identify arms
   var expArm = null, ctrlArm = null;
   for (var i = 0; i < ext.arms.length; i++) {
     if (ext.arms[i].arm_type === 'EXPERIMENTAL') expArm = ext.arms[i];
     else if (ext.arms[i].arm_type === 'PLACEBO' || ext.arms[i].arm_type === 'COMPARATOR') ctrlArm = ext.arms[i];
   }
 
-  // Find the primary outcome data
+  // Find weight from synthesis
+  var studyWeight = null;
+  if (STATE.primarySynthesis && STATE.primarySynthesis.weights) {
+    var wMatch = STATE.primarySynthesis.weights.find(function(w) { return w.id === nct; });
+    if (wMatch) studyWeight = wMatch.weightPercent;
+  }
+
+  var html = '';
+
+  // ============================================================
+  // SECTION A: Study Overview Card
+  // ============================================================
+  var verdictClass = report ? (report.verdict === 'PASS' ? 'pass' : report.verdict === 'WARN' ? 'warn' : 'fail') : 'warn';
+  var verdictText = report ? report.verdict : 'N/A';
+
+  html += '<div class="record-section rs-open">';
+  html += '<div class="record-section-header" onclick="toggleRecordSection(this)"><span><span class="rs-chevron">&#9654;</span>A. Study Overview</span>' + ctgovBtnHtml(ctgovStudyLink(nct), 'View Full Record on CT.gov') + '</div>';
+  html += '<div class="record-section-body">';
+  html += '<h4 style="margin-bottom:12px;font-size:14px;line-height:1.5">' + escHtml(ext.study_metadata.title) + '</h4>';
+  html += '<div class="record-overview-card">';
+  html += '<div class="overview-meta">';
+  html += '<div class="om-item"><div class="om-label">NCT ID</div><div class="om-val">' + nctLinkHtml(nct) + '</div></div>';
+  html += '<div class="om-item"><div class="om-label">Enrollment</div><div class="om-val">' + escHtml(String(ext.study_metadata.enrollment_actual || '-')) + '</div></div>';
+  html += '<div class="om-item"><div class="om-label">Phase</div><div class="om-val">' + escHtml(String(ext.study_metadata.phase || '-')) + '</div></div>';
+  html += '<div class="om-item"><div class="om-label">Sponsor</div><div class="om-val">' + escHtml(ext.study_metadata.sponsor_name || '-') + '</div></div>';
+  html += '<div class="om-item"><div class="om-label">Completion</div><div class="om-val">' + escHtml(ext.study_metadata.primary_completion_date || '-') + '</div></div>';
+  if (studyWeight !== null) {
+    html += '<div class="om-item"><div class="om-label">MA Weight</div><div class="om-val">' + studyWeight.toFixed(1) + '%</div></div>';
+  }
+  html += '</div>';
+  html += '<div class="record-verdict-badge ' + verdictClass + '">TruthCert: ' + escHtml(verdictText) + '</div>';
+  html += '</div>';
+  html += '</div></div>';
+
+  // ============================================================
+  // SECTION B: Arms & Participants
+  // ============================================================
+  html += '<div class="record-section rs-open">';
+  html += '<div class="record-section-header" onclick="toggleRecordSection(this)"><span><span class="rs-chevron">&#9654;</span>B. Arms &amp; Participants</span>' + ctgovBtnHtml(ctgovParticipantFlowLink(nct), 'Participant Flow') + '</div>';
+  html += '<div class="record-section-body">';
+  html += '<table class="record-arms-table"><thead><tr><th>#</th><th>Label</th><th>Type</th><th>Randomized</th><th>Analyzed</th><th>Source</th></tr></thead><tbody>';
+  ext.arms.forEach(function(a, idx) {
+    html += '<tr>';
+    html += '<td>' + (idx + 1) + '</td>';
+    html += '<td>' + escHtml(a.arm_label) + '</td>';
+    html += '<td><span class="tag ' + (a.arm_type === 'EXPERIMENTAL' ? 'tag-info' : a.arm_type === 'PLACEBO' ? 'tag-warn' : 'tag-pass') + '">' + escHtml(a.arm_type) + '</span></td>';
+    html += '<td class="text-right mono">' + (a.n_randomized !== null ? a.n_randomized : '-') + '</td>';
+    html += '<td class="text-right mono">' + (a.n_analyzed !== null ? a.n_analyzed : '-') + '</td>';
+    html += '<td>' + ctgovBtnHtml(ctgovParticipantFlowLink(nct), 'View') + '</td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  html += '</div></div>';
+
+  // ============================================================
+  // SECTION C: Outcome Data (ALL outcomes, expandable)
+  // ============================================================
+  html += '<div class="record-section rs-open">';
+  html += '<div class="record-section-header" onclick="toggleRecordSection(this)"><span><span class="rs-chevron">&#9654;</span>C. Outcome Data (' + ext.outcomes.length + ' outcome' + (ext.outcomes.length !== 1 ? 's' : '') + ')</span>' + ctgovBtnHtml(ctgovOutcomesLink(nct), 'Outcome Measures') + '</div>';
+  html += '<div class="record-section-body">';
+
+  if (ext.outcomes.length === 0) {
+    html += '<div class="info-box">No outcome measures found in posted results.</div>';
+  } else {
+    ext.outcomes.forEach(function(om, omIdx) {
+      var isPrimary = om.type === 'PRIMARY';
+      var typeClass = isPrimary ? 'primary' : om.type === 'SECONDARY' ? 'secondary' : 'other';
+      var openClass = isPrimary ? ' oc-open' : '';
+
+      html += '<div class="record-outcome-card' + openClass + '">';
+      html += '<div class="record-outcome-card-header" onclick="toggleOutcomeCard(this)">';
+      html += '<span class="oc-chevron">&#9654;</span>';
+      html += '<span class="oc-type-badge ' + typeClass + '">' + escHtml(om.type) + '</span>';
+      html += '<span style="flex:1">' + escHtml(om.title) + '</span>';
+      html += '</div>';
+      html += '<div class="record-outcome-card-body">';
+
+      // Outcome metadata
+      html += '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;font-size:11px;color:var(--text-muted)">';
+      if (om.timeframe) html += '<span>Timeframe: <strong style="color:var(--text)">' + escHtml(om.timeframe) + '</strong></span>';
+      if (om.unit) html += '<span>Unit: <strong style="color:var(--text)">' + escHtml(om.unit) + '</strong></span>';
+      if (om.dispersion_type) html += '<span>Dispersion: <strong style="color:var(--text)">' + escHtml(om.dispersion_type) + '</strong></span>';
+      html += '</div>';
+
+      // Per-arm data table
+      if (om.data && om.data.length > 0) {
+        html += '<table class="record-outcome-table"><thead><tr><th>Arm</th><th>Value</th><th>Spread</th><th>Participants</th><th>Source</th></tr></thead><tbody>';
+        om.data.forEach(function(d) {
+          html += '<tr>';
+          html += '<td>' + escHtml(d.arm_label) + ' <span style="font-size:10px;color:var(--text-muted)">(' + escHtml(d.arm_id || '?') + ')</span></td>';
+          html += '<td class="mono text-right"><strong>' + escHtml(String(d.value !== null && d.value !== undefined ? d.value : '-')) + '</strong></td>';
+          html += '<td class="mono text-right">' + escHtml(String(d.spread !== null && d.spread !== undefined ? d.spread : '-')) + '</td>';
+          html += '<td class="mono text-right">' + (d.participants !== null ? d.participants : '-') + '</td>';
+          html += '<td>' + ctgovBtnHtml(ctgovOutcomesLink(nct), 'View') + '</td>';
+          html += '</tr>';
+        });
+        html += '</tbody></table>';
+        html += '<span class="source-path">Path: resultsSection.outcomeMeasuresModule.outcomeMeasures[' + omIdx + '].classes[0].categories[0].measurements[*]</span>';
+      }
+
+      // Inline effect calculation for binary outcomes with 2 non-Total arms
+      var nonTotalData = (om.data || []).filter(function(d) { return (d.arm_label || '').toLowerCase().indexOf('total') === -1; });
+      if (nonTotalData.length >= 2 && expArm && ctrlArm) {
+        var eData = null, cData = null;
+        nonTotalData.forEach(function(d) {
+          var lbl = (d.arm_label || '').toLowerCase();
+          if (expArm && lbl.indexOf(expArm.arm_label.toLowerCase()) !== -1) eData = d;
+          if (ctrlArm && lbl.indexOf(ctrlArm.arm_label.toLowerCase()) !== -1) cData = d;
+        });
+        if (!eData || !cData) { eData = nonTotalData[0]; cData = nonTotalData[1]; }
+
+        var eVal = safeFloat(eData.value);
+        var cVal = safeFloat(cData.value);
+        var eN = eData.participants || (expArm ? expArm.n_analyzed : null);
+        var cN = cData.participants || (ctrlArm ? ctrlArm.n_analyzed : null);
+
+        if (eVal !== null && cVal !== null && eN && cN) {
+          var eNonEv = eN - eVal;
+          var cNonEv = cN - cVal;
+          var eff = escalcRR(eVal, eNonEv, cVal, cNonEv);
+          if (eff.yi !== null) {
+            html += '<div class="effect-calc-box">';
+            html += '<strong style="color:var(--accent)">Effect calculation:</strong><br>';
+            html += 'RR = (' + eVal + '/' + eN + ') / (' + cVal + '/' + cN + ') = <strong>' + Math.exp(eff.yi).toFixed(3) + '</strong><br>';
+            html += 'logRR = ln(' + Math.exp(eff.yi).toFixed(3) + ') = <strong>' + eff.yi.toFixed(4) + '</strong><br>';
+            html += 'Var = 1/' + eVal + ' - 1/' + eN + ' + 1/' + cVal + ' - 1/' + cN + ' = <strong>' + eff.vi.toFixed(6) + '</strong>';
+            html += '</div>';
+          }
+        }
+      }
+
+      html += '</div></div>';
+    });
+  }
+  html += '</div></div>';
+
+  // ============================================================
+  // SECTION D: Adverse Events Summary
+  // ============================================================
+  var aeGroups = (ext.adverse_events && ext.adverse_events.groups) || [];
+  html += '<div class="record-section">';
+  html += '<div class="record-section-header" onclick="toggleRecordSection(this)"><span><span class="rs-chevron">&#9654;</span>D. Adverse Events Summary (' + aeGroups.length + ' group' + (aeGroups.length !== 1 ? 's' : '') + ')</span>' + ctgovBtnHtml(ctgovAdverseEventsLink(nct), 'Adverse Events') + '</div>';
+  html += '<div class="record-section-body">';
+  if (aeGroups.length === 0) {
+    html += '<div class="info-box">No adverse events data found in posted results.</div>';
+  } else {
+    html += '<table class="record-ae-table"><thead><tr><th>Arm</th><th>Serious AE (Affected/At Risk)</th><th>Other AE (Affected/At Risk)</th><th>Deaths</th></tr></thead><tbody>';
+    aeGroups.forEach(function(g) {
+      html += '<tr>';
+      html += '<td>' + escHtml(g.title) + ' <span style="font-size:10px;color:var(--text-muted)">(' + escHtml(g.id) + ')</span></td>';
+      html += '<td class="mono">' + (g.seriousNumAffected !== null ? g.seriousNumAffected : '-') + ' / ' + (g.seriousNumAtRisk !== null ? g.seriousNumAtRisk : '-') + '</td>';
+      html += '<td class="mono">' + (g.otherNumAffected !== null ? g.otherNumAffected : '-') + ' / ' + (g.otherNumAtRisk !== null ? g.otherNumAtRisk : '-') + '</td>';
+      html += '<td class="mono">' + (g.deathsNumAffected !== null ? g.deathsNumAffected : '-') + '</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    html += '<span class="source-path">Path: resultsSection.adverseEventsModule.eventGroups[*]</span>';
+  }
+  html += '</div></div>';
+
+  // ============================================================
+  // SECTION E: Effect Size Derivation (2x2 table + math)
+  // ============================================================
+  html += '<div class="record-section rs-open">';
+  html += '<div class="record-section-header" onclick="toggleRecordSection(this)"><span><span class="rs-chevron">&#9654;</span>E. Effect Size Derivation (2x2 Table)</span></div>';
+  html += '<div class="record-section-body">';
+  html += buildEffectDerivationSection(ext, expArm, ctrlArm, studyWeight, nct);
+  html += '</div></div>';
+
+  // ============================================================
+  // SECTION F: TruthCert Validation
+  // ============================================================
+  html += '<div class="record-section' + (report && report.flags && report.flags.length > 0 ? '' : '') + '">';
+  html += '<div class="record-section-header" onclick="toggleRecordSection(this)"><span><span class="rs-chevron">&#9654;</span>F. TruthCert Validation' + (report ? ' (' + report.flags.length + ' check' + (report.flags.length !== 1 ? 's' : '') + ')' : '') + '</span>';
+  if (report) {
+    var vTag = report.verdict === 'PASS' ? 'tag-pass' : report.verdict === 'WARN' ? 'tag-warn' : 'tag-fail';
+    html += '<span class="tag ' + vTag + '">' + escHtml(report.verdict) + '</span>';
+  }
+  html += '</div>';
+  html += '<div class="record-section-body">';
+  if (report && report.flags && report.flags.length > 0) {
+    html += '<table><thead><tr><th>Validator</th><th>Severity</th><th>Field</th><th>Message</th></tr></thead><tbody>';
+    report.flags.forEach(function(f) {
+      var sevTag = f.severity === 'INFO' ? 'tag-info' : f.severity === 'WARNING' ? 'tag-warn' : 'tag-fail';
+      html += '<tr>';
+      html += '<td class="mono" style="font-size:11px">' + escHtml(f.validator) + '</td>';
+      html += '<td><span class="tag ' + sevTag + '">' + escHtml(f.severity) + '</span></td>';
+      html += '<td class="mono" style="font-size:10px;color:var(--text-muted)">' + escHtml(f.field || '-') + '</td>';
+      html += '<td style="font-size:12px">' + escHtml(f.message) + '</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+  } else {
+    html += '<div class="info-box">No TruthCert report available for this study.</div>';
+  }
+  // Provenance hash
+  html += '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-light)">';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:11px">';
+  html += '<div><span class="om-label" style="display:block;font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.3px">Source URL</span><span style="word-break:break-all">' + escHtml(ext.provenance.source_url) + '</span></div>';
+  html += '<div><span class="om-label" style="display:block;font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.3px">SHA-256 Hash</span><span class="mono" style="word-break:break-all">' + escHtml(ext.provenance.raw_hash) + '</span></div>';
+  html += '<div><span class="om-label" style="display:block;font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.3px">Extracted</span><span>' + escHtml(ext.provenance.extraction_timestamp) + '</span></div>';
+  html += '</div></div>';
+  html += '</div></div>';
+
+  // ============================================================
+  // SECTION G: Raw JSON (collapsible)
+  // ============================================================
+  html += '<div class="record-section">';
+  html += '<div class="record-section-header" onclick="toggleRecordSection(this)"><span><span class="rs-chevron">&#9654;</span>G. Raw ExtractionObject (JSON)</span></div>';
+  html += '<div class="record-section-body">';
+  var safeExt = Object.assign({}, ext);
+  html += '<pre style="max-height:400px;overflow-y:auto">' + escHtml(JSON.stringify(safeExt, null, 2)) + '</pre>';
+  html += '</div></div>';
+
+  openModal(nct + ' Record Excerpt', html);
+}
+
+function buildEffectDerivationSection(ext, expArm, ctrlArm, studyWeight, nct) {
+  var html = '';
   var primaryOm = null;
   for (var i = 0; i < ext.outcomes.length; i++) {
     if (ext.outcomes[i].type === 'PRIMARY') { primaryOm = ext.outcomes[i]; break; }
   }
   if (!primaryOm && ext.outcomes.length > 0) primaryOm = ext.outcomes[0];
 
-  if (primaryOm && expArm) {
-    var expData = null, ctrlData = null;
-    (primaryOm.data || []).forEach(function(d) {
-      var lbl = (d.arm_label || '').toLowerCase();
-      if (expArm && lbl.indexOf(expArm.arm_label.toLowerCase()) !== -1) expData = d;
-      if (ctrlArm && lbl.indexOf(ctrlArm.arm_label.toLowerCase()) !== -1) ctrlData = d;
-    });
-
-    // Fallback positional match
-    if ((!expData || !ctrlData) && primaryOm.data.length >= 2) {
-      var nonTotal = primaryOm.data.filter(function(d) { return (d.arm_label || '').toLowerCase().indexOf('total') === -1; });
-      if (nonTotal.length >= 2) { expData = nonTotal[0]; ctrlData = nonTotal[1]; }
-    }
-
-    if (expData) {
-      var n1 = expData.participants || (expArm ? expArm.n_analyzed : null);
-      html += '<div class="prov-badge">';
-      html += '<div class="prov-field">EXPERIMENTAL arm: ' + escHtml(expData.arm_label || '?') + '</div>';
-      html += '<div>Events (ai) = <strong>' + escHtml(String(expData.value !== null ? expData.value : '?')) + '</strong></div>';
-      html += '<div class="prov-path">Source: resultsSection.outcomeMeasuresModule.outcomeMeasures[0].classes[0].categories[0].measurements[' + escHtml(expData.arm_id || '0') + '].value</div>';
-      if (n1 !== null) html += '<div>Participants (n1) = <strong>' + n1 + '</strong></div>';
-      // TruthCert check
-      var eventCheck = report ? report.flags.find(function(f) { return f.validator === 'EVENT_RATE_PLAUSIBILITY'; }) : null;
-      if (eventCheck) {
-        var checkIcon = eventCheck.severity === 'INFO' ? '<span class="prov-check">PASS</span>' : '<span style="color:var(--red-600);font-weight:600">' + escHtml(eventCheck.severity) + '</span>';
-        html += '<div>TruthCert: EVENT_RATE_PLAUSIBILITY ' + checkIcon + '</div>';
-      }
-      html += '<div style="font-size:11px;color:var(--gray-400)">Witness count: 1 (single-agent extraction)</div>';
-      html += '</div>';
-    }
-
-    if (ctrlData) {
-      var n2 = ctrlData.participants || (ctrlArm ? ctrlArm.n_analyzed : null);
-      html += '<div class="prov-badge">';
-      html += '<div class="prov-field">COMPARATOR arm: ' + escHtml(ctrlData.arm_label || '?') + '</div>';
-      html += '<div>Events (ci) = <strong>' + escHtml(String(ctrlData.value !== null ? ctrlData.value : '?')) + '</strong></div>';
-      html += '<div class="prov-path">Source: resultsSection.outcomeMeasuresModule.outcomeMeasures[0].classes[0].categories[0].measurements[' + escHtml(ctrlData.arm_id || '1') + '].value</div>';
-      if (n2 !== null) html += '<div>Participants (n2) = <strong>' + n2 + '</strong></div>';
-      var totalCheck = report ? report.flags.find(function(f) { return f.validator === 'TOTAL_CHECKER'; }) : null;
-      if (totalCheck) {
-        var checkIcon2 = totalCheck.severity === 'INFO' ? '<span class="prov-check">PASS</span>' : '<span style="color:var(--red-600);font-weight:600">' + escHtml(totalCheck.severity) + '</span>';
-        html += '<div>TruthCert: TOTAL_CHECKER ' + checkIcon2 + '</div>';
-      }
-      html += '<div style="font-size:11px;color:var(--gray-400)">Witness count: 1 (single-agent extraction)</div>';
-      html += '</div>';
-    }
-
-    // Effect size provenance
-    if (expData && ctrlData) {
-      var ai = safeFloat(expData.value);
-      var ci_val = safeFloat(ctrlData.value);
-      var n1 = expData.participants || (expArm ? expArm.n_analyzed : null);
-      var n2 = ctrlData.participants || (ctrlArm ? ctrlArm.n_analyzed : null);
-      if (ai !== null && ci_val !== null && n1 && n2) {
-        var bi = n1 - ai;
-        var di = n2 - ci_val;
-        var eff = escalcRR(ai, bi, ci_val, di);
-        if (eff.yi !== null) {
-          html += '<div class="prov-badge" style="background:var(--blue-50);border-color:var(--blue-100)">';
-          html += '<div class="prov-field">Effect Size Derivation</div>';
-          html += '<div>logRR = ln((' + ai + '/' + n1 + ') / (' + ci_val + '/' + n2 + ')) = <strong>' + eff.yi.toFixed(4) + '</strong></div>';
-          html += '<div>RR = exp(' + eff.yi.toFixed(4) + ') = <strong>' + Math.exp(eff.yi).toFixed(3) + '</strong></div>';
-          html += '<div>Var = 1/' + ai + ' - 1/' + n1 + ' + 1/' + ci_val + ' - 1/' + n2 + ' = <strong>' + eff.vi.toFixed(6) + '</strong></div>';
-          html += '</div>';
-        }
-      }
-    }
+  if (!primaryOm || !expArm) {
+    return '<div class="info-box">No extractable binary outcome data for effect derivation.</div>';
   }
 
-  if (html === '') {
-    html = '<div class="info-box">No extractable binary outcome data for provenance badges.</div>';
+  var expData = null, ctrlData = null;
+  (primaryOm.data || []).forEach(function(d) {
+    var lbl = (d.arm_label || '').toLowerCase();
+    if (expArm && lbl.indexOf(expArm.arm_label.toLowerCase()) !== -1) expData = d;
+    if (ctrlArm && lbl.indexOf(ctrlArm.arm_label.toLowerCase()) !== -1) ctrlData = d;
+  });
+  // Fallback positional match
+  if ((!expData || !ctrlData) && primaryOm.data.length >= 2) {
+    var nonTotal = primaryOm.data.filter(function(d) { return (d.arm_label || '').toLowerCase().indexOf('total') === -1; });
+    if (nonTotal.length >= 2) { expData = nonTotal[0]; ctrlData = nonTotal[1]; }
   }
+
+  if (!expData || !ctrlData) {
+    return '<div class="info-box">Could not match experimental and comparator arm data.</div>';
+  }
+
+  var ai = safeFloat(expData.value);
+  var ci_val = safeFloat(ctrlData.value);
+  var n1 = expData.participants || (expArm ? expArm.n_analyzed : null);
+  var n2 = ctrlData.participants || (ctrlArm ? ctrlArm.n_analyzed : null);
+
+  if (ai === null || ci_val === null || !n1 || !n2) {
+    return '<div class="info-box">Insufficient numeric data for 2x2 table construction.</div>';
+  }
+
+  var bi = n1 - ai;
+  var di = n2 - ci_val;
+
+  // 2x2 Table
+  html += '<p style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Primary outcome: <strong style="color:var(--text)">' + escHtml(primaryOm.title) + '</strong></p>';
+  html += '<div class="twobytwo-grid">';
+  html += '<div class="cell header"></div><div class="cell header">Events</div><div class="cell header">Non-events</div><div class="cell header">Total (n)</div>';
+  html += '<div class="cell label">' + escHtml(expData.arm_label || 'Experimental') + '</div>';
+  html += '<div class="cell value">ai = ' + ai + '<span class="source-path">outcomeMeasures[0].' + escHtml(expData.arm_id || 'OG000') + '.value</span></div>';
+  html += '<div class="cell value">bi = ' + bi + '<span class="source-path">n1 - ai = ' + n1 + ' - ' + ai + '</span></div>';
+  html += '<div class="cell value">n1 = ' + n1 + '<span class="source-path">denoms[0].counts[' + escHtml(expData.arm_id || 'OG000') + ']</span></div>';
+  html += '<div class="cell label">' + escHtml(ctrlData.arm_label || 'Comparator') + '</div>';
+  html += '<div class="cell value">ci = ' + ci_val + '<span class="source-path">outcomeMeasures[0].' + escHtml(ctrlData.arm_id || 'OG001') + '.value</span></div>';
+  html += '<div class="cell value">di = ' + di + '<span class="source-path">n2 - ci = ' + n2 + ' - ' + ci_val + '</span></div>';
+  html += '<div class="cell value">n2 = ' + n2 + '<span class="source-path">denoms[0].counts[' + escHtml(ctrlData.arm_id || 'OG001') + ']</span></div>';
+  html += '</div>';
+
+  // Effect size math
+  var eff = escalcRR(ai, bi, ci_val, di);
+  if (eff.yi !== null) {
+    html += '<div class="effect-derivation" style="margin-top:12px">';
+    html += '<strong style="color:var(--accent)">This study enters the meta-analysis as:</strong><br><br>';
+    html += 'Risk Ratio = (ai/n1) / (ci/n2) = (' + ai + '/' + n1 + ') / (' + ci_val + '/' + n2 + ') = <strong>' + Math.exp(eff.yi).toFixed(4) + '</strong><br>';
+    html += 'log(RR) = ln(' + Math.exp(eff.yi).toFixed(4) + ') = <strong>' + eff.yi.toFixed(4) + '</strong><br>';
+    html += 'Variance = 1/ai - 1/n1 + 1/ci - 1/n2 = 1/' + ai + ' - 1/' + n1 + ' + 1/' + ci_val + ' - 1/' + n2 + ' = <strong>' + eff.vi.toFixed(6) + '</strong><br>';
+    html += 'SE = sqrt(' + eff.vi.toFixed(6) + ') = <strong>' + Math.sqrt(eff.vi).toFixed(4) + '</strong>';
+    if (studyWeight !== null) {
+      html += '<br>Weight (inverse-variance) = <strong>' + studyWeight.toFixed(1) + '%</strong>';
+    }
+    html += '</div>';
+  }
+
   return html;
+}
+
+// Legacy wrapper kept for any external callers
+function buildProvenanceBadges(ext, report) {
+  var expArm = null, ctrlArm = null;
+  for (var i = 0; i < ext.arms.length; i++) {
+    if (ext.arms[i].arm_type === 'EXPERIMENTAL') expArm = ext.arms[i];
+    else if (ext.arms[i].arm_type === 'PLACEBO' || ext.arms[i].arm_type === 'COMPARATOR') ctrlArm = ext.arms[i];
+  }
+  return buildEffectDerivationSection(ext, expArm, ctrlArm, null, ext.nct);
 }
 
 // ==============================
