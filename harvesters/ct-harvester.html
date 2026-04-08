@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CardioSynth CT.gov Harvester</title>
+<meta name="description" content="CardioSynth Phase 0.1 — ClinicalTrials.gov API v2 harvester with cardiology classifier">
+<meta property="og:title" content="CardioSynth CT.gov Harvester">
+<meta property="og:description" content="Browser-native CT.gov study harvester with cardiology MeSH classification">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue-900: #1e3a5f;
+    --blue-800: #1e40af;
+    --blue-700: #1d4ed8;
+    --blue-600: #2563eb;
+    --blue-500: #3b82f6;
+    --blue-100: #dbeafe;
+    --blue-50: #eff6ff;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    --green-600: #16a34a;
+    --green-100: #dcfce7;
+    --red-600: #dc2626;
+    --red-100: #fee2e2;
+    --amber-600: #d97706;
+    --amber-100: #fef3c7;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: #fff;
+    color: var(--gray-800);
+    line-height: 1.6;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, var(--blue-900) 0%, var(--blue-800) 100%);
+    color: #fff;
+    padding: 24px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .header-icon {
+    width: 48px; height: 48px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+  }
+  .header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+  .header .subtitle { font-size: 13px; opacity: 0.8; margin-top: 2px; }
+
+  /* Main layout */
+  .container { max-width: 1400px; margin: 0 auto; padding: 24px 32px; }
+
+  /* Query form */
+  .query-panel {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .query-panel h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: 16px;
+  }
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .form-group input[type="text"],
+  .form-group input[type="date"],
+  .form-group select {
+    padding: 8px 12px;
+    border: 1px solid var(--gray-300);
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--gray-800);
+    background: #fff;
+    transition: border-color 0.15s;
+  }
+  .form-group input:focus, .form-group select:focus {
+    outline: none;
+    border-color: var(--blue-500);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+  }
+  .checkbox-group {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    padding-top: 20px;
+  }
+  .checkbox-group input[type="checkbox"] {
+    width: 18px; height: 18px;
+    accent-color: var(--blue-600);
+  }
+  .checkbox-group label {
+    text-transform: none;
+    font-size: 14px;
+    color: var(--gray-700);
+  }
+
+  .form-actions {
+    margin-top: 16px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .btn {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary {
+    background: var(--blue-600);
+    color: #fff;
+  }
+  .btn-primary:hover:not(:disabled) { background: var(--blue-700); }
+  .btn-secondary {
+    background: var(--gray-100);
+    color: var(--gray-700);
+    border: 1px solid var(--gray-300);
+  }
+  .btn-secondary:hover:not(:disabled) { background: var(--gray-200); }
+  .btn-export {
+    background: var(--green-600);
+    color: #fff;
+  }
+  .btn-export:hover:not(:disabled) { background: #15803d; }
+
+  /* Progress bar */
+  .progress-container {
+    display: none;
+    margin-bottom: 24px;
+  }
+  .progress-container.active { display: block; }
+  .progress-bar-bg {
+    width: 100%;
+    height: 8px;
+    background: var(--gray-200);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--blue-600);
+    border-radius: 4px;
+    transition: width 0.3s;
+    width: 0%;
+  }
+  .progress-text {
+    font-size: 13px;
+    color: var(--gray-500);
+    margin-top: 6px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* Status bar */
+  .status-bar {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background: var(--blue-50);
+    border: 1px solid var(--blue-100);
+    border-radius: 8px;
+  }
+  .status-bar.active { display: flex; }
+  .status-bar.error {
+    background: var(--red-100);
+    border-color: #fecaca;
+    color: var(--red-600);
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .badge-blue { background: var(--blue-100); color: var(--blue-800); }
+  .badge-green { background: var(--green-100); color: var(--green-600); }
+  .badge-amber { background: var(--amber-100); color: var(--amber-600); }
+
+  /* Table */
+  .table-container {
+    overflow-x: auto;
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead th {
+    background: var(--gray-50);
+    border-bottom: 2px solid var(--gray-200);
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--gray-600);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    position: relative;
+  }
+  thead th:hover { background: var(--gray-100); }
+  thead th .sort-arrow {
+    display: inline-block;
+    margin-left: 4px;
+    font-size: 10px;
+    color: var(--gray-400);
+  }
+  thead th.sort-asc .sort-arrow,
+  thead th.sort-desc .sort-arrow { color: var(--blue-600); }
+  tbody tr { border-bottom: 1px solid var(--gray-100); }
+  tbody tr:hover { background: var(--blue-50); }
+  tbody td { padding: 10px 14px; }
+  td.nct-id {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+    font-size: 12px;
+    color: var(--blue-700);
+    font-weight: 600;
+  }
+  td.nct-id a { color: inherit; text-decoration: none; }
+  td.nct-id a:hover { text-decoration: underline; }
+  td.title-cell {
+    max-width: 400px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .tag-yes { background: var(--green-100); color: var(--green-600); }
+  .tag-no { background: var(--gray-100); color: var(--gray-400); }
+  .tag-match { background: #dbeafe; color: var(--blue-800); }
+  .tag-status {
+    background: var(--gray-100);
+    color: var(--gray-600);
+  }
+  .tag-status.completed { background: var(--green-100); color: var(--green-600); }
+  .tag-status.recruiting { background: var(--amber-100); color: var(--amber-600); }
+  .tag-status.terminated { background: var(--red-100); color: var(--red-600); }
+
+  /* Cache info */
+  .cache-info {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--gray-500);
+    display: none;
+  }
+  .cache-info.active { display: block; }
+  .cache-info button {
+    margin-left: 8px;
+    padding: 2px 8px;
+    font-size: 11px;
+    border: 1px solid var(--gray-300);
+    background: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 64px 32px;
+    color: var(--gray-400);
+  }
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+  .empty-state p { font-size: 15px; }
+
+  /* Log panel */
+  .log-panel {
+    margin-top: 24px;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .log-panel summary {
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-600);
+    background: var(--gray-50);
+    cursor: pointer;
+  }
+  .log-panel .log-content {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 12px 16px;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-size: 11px;
+    color: var(--gray-600);
+    background: var(--gray-900);
+    color: #a5f3fc;
+    line-height: 1.8;
+  }
+
+  @media (max-width: 900px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .container { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">&#9764;</div>
+  <div>
+    <h1>CardioSynth CT.gov Harvester</h1>
+    <div class="subtitle">Phase 0.1 &mdash; ClinicalTrials.gov API v2 Study Harvester with Cardiology Classifier</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Query Panel -->
+  <div class="query-panel">
+    <h2>Search Parameters</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="qCondition">Condition / Disease</label>
+        <input type="text" id="qCondition" value="myocardial infarction" placeholder="e.g. heart failure">
+      </div>
+      <div class="form-group">
+        <label for="qIntervention">Intervention / Treatment</label>
+        <input type="text" id="qIntervention" value="colchicine" placeholder="e.g. aspirin">
+      </div>
+      <div class="form-group">
+        <label for="qStudyType">Study Type</label>
+        <select id="qStudyType">
+          <option value="">All Types</option>
+          <option value="INTERVENTIONAL">Interventional</option>
+          <option value="OBSERVATIONAL">Observational</option>
+          <option value="EXPANDED_ACCESS">Expanded Access</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="qDateFrom">Date From</label>
+        <input type="date" id="qDateFrom">
+      </div>
+      <div class="form-group">
+        <label for="qDateTo">Date To</label>
+        <input type="date" id="qDateTo">
+      </div>
+      <div class="form-group checkbox-group">
+        <input type="checkbox" id="qResultsOnly" checked>
+        <label for="qResultsOnly">Results posted only</label>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" id="btnSearch" onclick="startSearch()">Search CT.gov</button>
+      <button class="btn btn-secondary" id="btnStop" onclick="stopSearch()" disabled>Stop</button>
+      <button class="btn btn-export" id="btnExport" onclick="exportJSON()" disabled>Export JSON</button>
+      <button class="btn btn-secondary" id="btnClearCache" onclick="clearAllCache()">Clear Cache</button>
+    </div>
+  </div>
+
+  <!-- Progress Bar -->
+  <div class="progress-container" id="progressContainer">
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+    <div class="progress-text">
+      <span id="progressLabel">Fetching studies...</span>
+      <span id="progressCount">0 / 0</span>
+    </div>
+  </div>
+
+  <!-- Status Bar -->
+  <div class="status-bar" id="statusBar">
+    <span id="statusText"></span>
+  </div>
+
+  <!-- Results Table -->
+  <div id="resultsArea">
+    <div class="empty-state" id="emptyState">
+      <div class="icon">&#128269;</div>
+      <p>Enter search criteria and click Search to query ClinicalTrials.gov</p>
+    </div>
+    <div class="table-container" id="tableContainer" style="display:none;">
+      <table>
+        <thead>
+          <tr id="tableHeader"></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Cache Info -->
+  <div class="cache-info" id="cacheInfo"></div>
+
+  <!-- Log Panel -->
+  <details class="log-panel">
+    <summary>API Log</summary>
+    <div class="log-content" id="logContent"></div>
+  </details>
+</div>
+
+<script>
+// ============================================================
+// CardioSynth CT.gov Harvester — Phase 0.1
+// Single-file, zero-dependency browser tool
+// ============================================================
+
+// --- Utilities ---
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+async function retry(fn, config) {
+  let lastError;
+  for (let attempt = 0; attempt < config.max_attempts; attempt++) {
+    try { return await fn(); } catch (err) {
+      lastError = err;
+      if (attempt < config.max_attempts - 1) {
+        const delay = Math.min(
+          config.initial_delay_ms * Math.pow(config.backoff_multiplier, attempt),
+          config.max_delay_ms
+        );
+        log('Retry attempt ' + (attempt + 1) + ', waiting ' + delay + 'ms...');
+        await sleep(delay);
+      }
+    }
+  }
+  throw lastError;
+}
+
+// DJB2 hash for cache keys
+function djb2Hash(str) {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash + str.charCodeAt(i)) & 0xffffffff;
+  }
+  return (hash >>> 0).toString(36);
+}
+
+// --- Logging ---
+function log(msg) {
+  const el = document.getElementById('logContent');
+  const ts = new Date().toISOString().substr(11, 12);
+  el.textContent += '[' + ts + '] ' + msg + '\n';
+  el.scrollTop = el.scrollHeight;
+}
+
+// --- CT.gov API v2 Client ---
+const CTGOV_API_CONFIG = {
+  base_url: 'https://clinicaltrials.gov/api/v2',
+  rate_limit: {
+    requests_per_minute: 10,
+    burst_limit: 3
+  },
+  retry: {
+    max_attempts: 3,
+    initial_delay_ms: 1000,
+    backoff_multiplier: 2,
+    max_delay_ms: 30000
+  },
+  timeout_ms: 30000,
+  pagination: {
+    page_size: 100,
+    max_pages: 100
+  }
+};
+
+// Token bucket rate limiter
+const rateLimiter = {
+  tokens: CTGOV_API_CONFIG.rate_limit.burst_limit,
+  lastRefill: Date.now()
+};
+
+async function acquireToken() {
+  const now = Date.now();
+  const elapsed = now - rateLimiter.lastRefill;
+  const refillAmount = (elapsed / 60000) * CTGOV_API_CONFIG.rate_limit.requests_per_minute;
+
+  rateLimiter.tokens = Math.min(
+    CTGOV_API_CONFIG.rate_limit.burst_limit,
+    rateLimiter.tokens + refillAmount
+  );
+  rateLimiter.lastRefill = now;
+
+  if (rateLimiter.tokens >= 1) {
+    rateLimiter.tokens--;
+    return;
+  }
+
+  const waitTime = ((1 - rateLimiter.tokens) / CTGOV_API_CONFIG.rate_limit.requests_per_minute) * 60000;
+  log('Rate limit: waiting ' + Math.round(waitTime) + 'ms for token');
+  await sleep(waitTime);
+  rateLimiter.tokens = 0;
+}
+
+async function apiRequest(endpoint) {
+  await acquireToken();
+
+  const url = CTGOV_API_CONFIG.base_url + endpoint;
+  log('GET ' + endpoint.substring(0, 120) + (endpoint.length > 120 ? '...' : ''));
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(function() { controller.abort(); }, CTGOV_API_CONFIG.timeout_ms);
+
+  try {
+    const response = await retry(
+      async function() {
+        const res = await fetch(url, {
+          signal: controller.signal,
+          headers: { 'Accept': 'application/json' }
+        });
+
+        if (!res.ok) {
+          if (res.status === 429) {
+            const retryAfter = parseInt(res.headers.get('Retry-After') || '60', 10);
+            log('Rate limited by server, waiting ' + retryAfter + 's');
+            await sleep(retryAfter * 1000);
+            throw new Error('Rate limited');
+          }
+          const body = await res.text().catch(function() { return ''; });
+          throw new Error('API error: ' + res.status + ' ' + res.statusText + ' ' + body.substring(0, 200));
+        }
+
+        return res;
+      },
+      CTGOV_API_CONFIG.retry
+    );
+
+    clearTimeout(timeoutId);
+    const data = await response.json();
+    return data;
+
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      throw new Error('Request timeout after ' + CTGOV_API_CONFIG.timeout_ms + 'ms');
+    }
+    throw err;
+  }
+}
+
+// --- Query Builder ---
+function buildQueryString(params) {
+  const parts = [];
+
+  if (params.condition) {
+    parts.push('query.cond=' + encodeURIComponent(params.condition));
+  }
+  if (params.intervention) {
+    parts.push('query.intr=' + encodeURIComponent(params.intervention));
+  }
+
+  // Study type filter
+  if (params.studyType) {
+    parts.push('filter.overallStatus=' + encodeURIComponent(params.studyType));
+  }
+
+  // Results-only filter: use aggFilters (v2 API correct parameter)
+  if (params.resultsOnly) {
+    parts.push('aggFilters=results:with');
+  }
+
+  // Date range filters (completion date)
+  if (params.dateFrom || params.dateTo) {
+    const from = params.dateFrom || 'MIN';
+    const to = params.dateTo || 'MAX';
+    parts.push('filter.advanced=' + encodeURIComponent('AREA[CompletionDate]RANGE[' + from + ',' + to + ']'));
+  }
+
+  // Pagination
+  parts.push('pageSize=' + (params.pageSize || CTGOV_API_CONFIG.pagination.page_size));
+  if (params.pageToken) {
+    parts.push('pageToken=' + params.pageToken);
+  }
+
+  parts.push('countTotal=true');
+
+  return parts.join('&');
+}
+
+// --- Cardiology MeSH Classifier ---
+const CARDIOLOGY_TERMS = [
+  'myocardial infarction',
+  'acute coronary syndrome',
+  'stemi',
+  'nstemi',
+  'heart failure',
+  'atrial fibrillation',
+  'coronary artery disease',
+  'hypertension',
+  'cardiac arrest',
+  'ventricular arrhythmia',
+  'cardiomyopathy',
+  'pericarditis',
+  'aortic stenosis',
+  'pulmonary hypertension'
+];
+
+function classifyCardiology(study) {
+  const protocol = study.protocolSection || {};
+  const identification = protocol.identificationModule || {};
+  const conditions = protocol.conditionsModule || {};
+
+  // Build searchable text from multiple fields
+  const textParts = [
+    identification.briefTitle || '',
+    identification.officialTitle || '',
+    ...(conditions.conditions || []),
+    ...(conditions.keywords || [])
+  ];
+  const searchText = textParts.join(' ').toLowerCase();
+
+  const matched = [];
+  for (const term of CARDIOLOGY_TERMS) {
+    if (searchText.indexOf(term) !== -1) {
+      matched.push(term);
+    }
+  }
+
+  return {
+    isCardiology: matched.length > 0,
+    matchedTerms: matched
+  };
+}
+
+// --- Parse Study (simplified for table display) ---
+function parseStudyForTable(raw) {
+  const protocol = raw.protocolSection || {};
+  const identification = protocol.identificationModule || {};
+  const status = protocol.statusModule || {};
+  const sponsor = protocol.sponsorCollaboratorsModule || {};
+  const cardio = classifyCardiology(raw);
+
+  return {
+    nctId: identification.nctId || 'N/A',
+    briefTitle: identification.briefTitle || 'Untitled',
+    officialTitle: identification.officialTitle || '',
+    overallStatus: status.overallStatus || 'Unknown',
+    hasResults: !!raw.hasResults,
+    primaryCompletionDate: (status.primaryCompletionDateStruct && status.primaryCompletionDateStruct.date) || '',
+    startDate: (status.startDateStruct && status.startDateStruct.date) || '',
+    leadSponsor: (sponsor.leadSponsor && sponsor.leadSponsor.name) || '',
+    leadSponsorClass: (sponsor.leadSponsor && sponsor.leadSponsor.class) || '',
+    isCardiology: cardio.isCardiology,
+    matchedTerms: cardio.matchedTerms,
+    conditions: (protocol.conditionsModule && protocol.conditionsModule.conditions) || [],
+    _raw: raw
+  };
+}
+
+// --- Global State ---
+let currentResults = [];
+let sortCol = null;
+let sortAsc = true;
+let abortController = null;
+let isSearching = false;
+
+const TABLE_COLUMNS = [
+  { key: 'nctId', label: 'NCT ID', sortable: true },
+  { key: 'briefTitle', label: 'Title', sortable: true },
+  { key: 'overallStatus', label: 'Status', sortable: true },
+  { key: 'hasResults', label: 'Has Results', sortable: true },
+  { key: 'primaryCompletionDate', label: 'Primary Completion', sortable: true },
+  { key: 'leadSponsorClass', label: 'Sponsor Type', sortable: true },
+  { key: 'isCardiology', label: 'Cardiology Match', sortable: true }
+];
+
+// --- UI Helpers ---
+function showProgress(show) {
+  document.getElementById('progressContainer').classList.toggle('active', show);
+}
+
+function updateProgress(fetched, total) {
+  const pct = total > 0 ? Math.min(100, Math.round((fetched / total) * 100)) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressCount').textContent = fetched + ' / ' + total;
+  document.getElementById('progressLabel').textContent = 'Fetching page ' + Math.ceil(fetched / CTGOV_API_CONFIG.pagination.page_size) + '...';
+}
+
+function showStatus(text, isError) {
+  const bar = document.getElementById('statusBar');
+  bar.classList.add('active');
+  bar.classList.toggle('error', !!isError);
+  document.getElementById('statusText').innerHTML = text;
+}
+
+function hideStatus() {
+  document.getElementById('statusBar').classList.remove('active');
+}
+
+function setSearchState(searching) {
+  isSearching = searching;
+  document.getElementById('btnSearch').disabled = searching;
+  document.getElementById('btnStop').disabled = !searching;
+}
+
+// --- Table Rendering ---
+function renderTableHeader() {
+  const headerRow = document.getElementById('tableHeader');
+  headerRow.innerHTML = '';
+
+  TABLE_COLUMNS.forEach(function(col) {
+    const th = document.createElement('th');
+    let cls = '';
+    let arrow = '';
+    if (col.sortable) {
+      if (sortCol === col.key) {
+        cls = sortAsc ? 'sort-asc' : 'sort-desc';
+        arrow = sortAsc ? '\u25B2' : '\u25BC';
+      } else {
+        arrow = '\u25B4';
+      }
+    }
+    th.className = cls;
+    th.innerHTML = col.label + (col.sortable ? ' <span class="sort-arrow">' + arrow + '</span>' : '');
+    if (col.sortable) {
+      th.addEventListener('click', function() { handleSort(col.key); });
+    }
+    headerRow.appendChild(th);
+  });
+}
+
+function renderTableBody(data) {
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+
+  if (data.length === 0) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td colspan="' + TABLE_COLUMNS.length + '" style="text-align:center;padding:32px;color:var(--gray-400);">No studies found</td>';
+    tbody.appendChild(tr);
+    return;
+  }
+
+  data.forEach(function(study) {
+    const tr = document.createElement('tr');
+
+    // NCT ID (link to CT.gov)
+    const tdNct = document.createElement('td');
+    tdNct.className = 'nct-id';
+    const link = document.createElement('a');
+    link.href = 'https://clinicaltrials.gov/study/' + study.nctId;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.textContent = study.nctId;
+    tdNct.appendChild(link);
+    tr.appendChild(tdNct);
+
+    // Title
+    const tdTitle = document.createElement('td');
+    tdTitle.className = 'title-cell';
+    tdTitle.textContent = study.briefTitle;
+    tdTitle.title = study.officialTitle || study.briefTitle;
+    tr.appendChild(tdTitle);
+
+    // Status
+    const tdStatus = document.createElement('td');
+    const statusTag = document.createElement('span');
+    statusTag.className = 'tag tag-status';
+    const statusLower = (study.overallStatus || '').toLowerCase();
+    if (statusLower.indexOf('completed') !== -1) statusTag.classList.add('completed');
+    else if (statusLower.indexOf('recruit') !== -1) statusTag.classList.add('recruiting');
+    else if (statusLower.indexOf('terminated') !== -1 || statusLower.indexOf('withdrawn') !== -1) statusTag.classList.add('terminated');
+    statusTag.textContent = study.overallStatus;
+    tdStatus.appendChild(statusTag);
+    tr.appendChild(tdStatus);
+
+    // Has Results
+    const tdResults = document.createElement('td');
+    const resTag = document.createElement('span');
+    resTag.className = 'tag ' + (study.hasResults ? 'tag-yes' : 'tag-no');
+    resTag.textContent = study.hasResults ? 'Yes' : 'No';
+    tdResults.appendChild(resTag);
+    tr.appendChild(tdResults);
+
+    // Primary Completion Date
+    const tdDate = document.createElement('td');
+    tdDate.textContent = study.primaryCompletionDate || '-';
+    tr.appendChild(tdDate);
+
+    // Sponsor Type
+    const tdSponsor = document.createElement('td');
+    tdSponsor.textContent = study.leadSponsorClass || '-';
+    tr.appendChild(tdSponsor);
+
+    // Cardiology Match
+    const tdCardio = document.createElement('td');
+    if (study.isCardiology) {
+      const matchTag = document.createElement('span');
+      matchTag.className = 'tag tag-match';
+      matchTag.textContent = study.matchedTerms.join(', ');
+      matchTag.title = 'Matched: ' + study.matchedTerms.join(', ');
+      tdCardio.appendChild(matchTag);
+    } else {
+      const noTag = document.createElement('span');
+      noTag.className = 'tag tag-no';
+      noTag.textContent = 'No';
+      tdCardio.appendChild(noTag);
+    }
+    tr.appendChild(tdCardio);
+
+    tbody.appendChild(tr);
+  });
+}
+
+function handleSort(key) {
+  if (sortCol === key) {
+    sortAsc = !sortAsc;
+  } else {
+    sortCol = key;
+    sortAsc = true;
+  }
+
+  currentResults.sort(function(a, b) {
+    let va = a[key];
+    let vb = b[key];
+
+    // Handle booleans
+    if (typeof va === 'boolean') { va = va ? 1 : 0; vb = vb ? 1 : 0; }
+    // Handle arrays (matchedTerms)
+    if (Array.isArray(va)) { va = va.length; vb = vb.length; }
+    // Null handling
+    if (va == null) va = '';
+    if (vb == null) vb = '';
+
+    if (typeof va === 'string') {
+      va = va.toLowerCase();
+      vb = (vb + '').toLowerCase();
+    }
+
+    if (va < vb) return sortAsc ? -1 : 1;
+    if (va > vb) return sortAsc ? 1 : -1;
+    return 0;
+  });
+
+  renderTableHeader();
+  renderTableBody(currentResults);
+}
+
+function showTable(data) {
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('tableContainer').style.display = 'block';
+  currentResults = data;
+  sortCol = null;
+  sortAsc = true;
+  renderTableHeader();
+  renderTableBody(data);
+}
+
+// --- localStorage Cache ---
+function getCacheKey(params) {
+  const normalized = JSON.stringify(params, Object.keys(params).sort());
+  return 'cardiosynth_harvest_' + djb2Hash(normalized);
+}
+
+function saveToCache(params, studies, totalCount) {
+  const key = getCacheKey(params);
+  const timestamp = new Date().toISOString();
+  const cacheEntry = {
+    params: params,
+    studies: studies.map(function(s) {
+      // Strip _raw to save space
+      var copy = Object.assign({}, s);
+      delete copy._raw;
+      return copy;
+    }),
+    totalCount: totalCount,
+    cachedAt: timestamp
+  };
+
+  try {
+    localStorage.setItem(key, JSON.stringify(cacheEntry));
+    log('Cached ' + studies.length + ' studies under key ' + key);
+    showCacheInfo(key, timestamp, studies.length);
+  } catch (e) {
+    log('Cache save failed (quota exceeded?): ' + e.message);
+  }
+}
+
+function loadFromCache(params) {
+  const key = getCacheKey(params);
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const entry = JSON.parse(raw);
+    return entry;
+  } catch (e) {
+    return null;
+  }
+}
+
+function showCacheInfo(key, timestamp, count) {
+  const el = document.getElementById('cacheInfo');
+  el.classList.add('active');
+  el.innerHTML = 'Cached: ' + count + ' studies at ' + timestamp +
+    ' (key: ' + key + ')' +
+    '<button onclick="deleteCacheEntry(\'' + key + '\')">Delete</button>';
+}
+
+function deleteCacheEntry(key) {
+  localStorage.removeItem(key);
+  document.getElementById('cacheInfo').classList.remove('active');
+  log('Deleted cache entry: ' + key);
+}
+
+function clearAllCache() {
+  const keys = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('cardiosynth_harvest_')) {
+      keys.push(k);
+    }
+  }
+  keys.forEach(function(k) { localStorage.removeItem(k); });
+  document.getElementById('cacheInfo').classList.remove('active');
+  log('Cleared ' + keys.length + ' cache entries');
+}
+
+// --- Build Query Params from Form ---
+function getQueryParams() {
+  return {
+    condition: document.getElementById('qCondition').value.trim(),
+    intervention: document.getElementById('qIntervention').value.trim(),
+    studyType: document.getElementById('qStudyType').value,
+    dateFrom: document.getElementById('qDateFrom').value,
+    dateTo: document.getElementById('qDateTo').value,
+    resultsOnly: document.getElementById('qResultsOnly').checked
+  };
+}
+
+// --- Main Search ---
+async function startSearch() {
+  if (isSearching) return;
+
+  hideStatus();
+  setSearchState(true);
+  showProgress(true);
+  updateProgress(0, 0);
+  document.getElementById('logContent').textContent = '';
+  document.getElementById('btnExport').disabled = true;
+
+  const params = getQueryParams();
+  log('Search params: ' + JSON.stringify(params));
+
+  // Check cache first
+  const cached = loadFromCache(params);
+  if (cached) {
+    log('Found cached results from ' + cached.cachedAt + ' (' + cached.studies.length + ' studies)');
+    const useCached = confirm('Found cached results from ' + cached.cachedAt + ' (' + cached.studies.length + ' studies). Use cached data?\n\nClick Cancel to fetch fresh results.');
+    if (useCached) {
+      showProgress(false);
+      setSearchState(false);
+      showTable(cached.studies);
+      showCacheInfo(getCacheKey(params), cached.cachedAt, cached.studies.length);
+      const cardioCount = cached.studies.filter(function(s) { return s.isCardiology; }).length;
+      showStatus(
+        '<span class="badge badge-blue">' + cached.studies.length + ' studies</span> ' +
+        '<span class="badge badge-green">' + cardioCount + ' cardiology</span> ' +
+        '<span class="badge badge-amber">from cache</span>'
+      );
+      document.getElementById('btnExport').disabled = false;
+      return;
+    }
+  }
+
+  abortController = new AbortController();
+
+  try {
+    const allStudies = [];
+    let pageToken = null;
+    let totalCount = 0;
+    let page = 0;
+
+    do {
+      // Check for abort
+      if (abortController.signal.aborted) {
+        throw new Error('Search stopped by user');
+      }
+
+      const queryString = buildQueryString({
+        condition: params.condition,
+        intervention: params.intervention,
+        studyType: params.studyType,
+        dateFrom: params.dateFrom,
+        dateTo: params.dateTo,
+        resultsOnly: params.resultsOnly,
+        pageToken: pageToken
+      });
+
+      const data = await apiRequest('/studies?' + queryString);
+
+      if (page === 0) {
+        totalCount = data.totalCount || 0;
+        log('Total studies matching: ' + totalCount);
+      }
+
+      const studies = data.studies || [];
+      const parsed = studies.map(parseStudyForTable);
+      allStudies.push.apply(allStudies, parsed);
+
+      pageToken = data.nextPageToken || null;
+      page++;
+
+      updateProgress(allStudies.length, totalCount);
+      log('Page ' + page + ': fetched ' + studies.length + ' studies (total: ' + allStudies.length + '/' + totalCount + ')');
+
+      // Safety limit
+      if (page >= CTGOV_API_CONFIG.pagination.max_pages) {
+        log('Reached max page limit (' + CTGOV_API_CONFIG.pagination.max_pages + ')');
+        break;
+      }
+
+    } while (pageToken);
+
+    // Display results
+    showProgress(false);
+    setSearchState(false);
+    showTable(allStudies);
+
+    // Save to cache
+    saveToCache(params, allStudies, totalCount);
+
+    // Status summary
+    const cardioCount = allStudies.filter(function(s) { return s.isCardiology; }).length;
+    showStatus(
+      '<span class="badge badge-blue">' + allStudies.length + ' studies</span> ' +
+      '<span class="badge badge-green">' + cardioCount + ' cardiology</span> ' +
+      '<span class="badge badge-amber">' + page + ' page' + (page !== 1 ? 's' : '') + '</span>'
+    );
+    document.getElementById('btnExport').disabled = false;
+
+    // Validation check for Phase 0 — COLCOT
+    const colcot = allStudies.find(function(s) { return s.nctId === 'NCT02551094'; });
+    if (colcot) {
+      log('VALIDATION PASS: COLCOT (NCT02551094) found - "' + colcot.briefTitle + '"');
+    } else {
+      log('VALIDATION WARNING: COLCOT (NCT02551094) NOT found in results');
+    }
+    // Check for LoDoCo2
+    const lodoco2 = allStudies.find(function(s) { return s.nctId === 'NCT02278471'; });
+    if (lodoco2) {
+      log('VALIDATION PASS: LoDoCo2 (NCT02278471) found - "' + lodoco2.briefTitle + '"');
+    } else {
+      log('VALIDATION NOTE: LoDoCo2 (NCT02278471) not in results (may not match condition+intervention filter)');
+    }
+
+  } catch (err) {
+    showProgress(false);
+    setSearchState(false);
+    if (err.message === 'Search stopped by user') {
+      showStatus('Search stopped by user', false);
+      log('Search stopped');
+    } else {
+      showStatus('Error: ' + err.message, true);
+      log('ERROR: ' + err.message);
+    }
+  }
+}
+
+function stopSearch() {
+  if (abortController) {
+    abortController.abort();
+  }
+}
+
+// --- Export JSON ---
+function exportJSON() {
+  if (currentResults.length === 0) return;
+
+  const exportData = {
+    exportedAt: new Date().toISOString(),
+    tool: 'CardioSynth CT.gov Harvester v0.1',
+    query: getQueryParams(),
+    totalStudies: currentResults.length,
+    cardiologyMatches: currentResults.filter(function(s) { return s.isCardiology; }).length,
+    studies: currentResults.map(function(s) {
+      var copy = Object.assign({}, s);
+      delete copy._raw;
+      return copy;
+    })
+  };
+
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'cardiosynth-harvest-' + new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  log('Exported ' + currentResults.length + ' studies to JSON');
+}
+
+// --- Init ---
+log('CardioSynth CT.gov Harvester v0.1 ready');
+log('API base: ' + CTGOV_API_CONFIG.base_url);
+log('Default query: colchicine + myocardial infarction + results only');
+</script>
+
+</body>
+</html>
