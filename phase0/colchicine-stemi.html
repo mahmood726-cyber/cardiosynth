@@ -3139,8 +3139,57 @@ async function runFullPipeline() {
       setPipeProgress(Math.round(5 + 10 * ((qi + 1) / CARDIO_CONDITIONS.length)));
     }
 
+    // STEP 1b: Targeted fetch of landmark colchicine CV trials by NCT ID
+    // Published MAs include these but condition queries may miss them
+    var LANDMARK_NCTS = [
+      { nct: 'NCT02278471', name: 'LoDoCo2' },
+      { nct: 'NCT03048825', name: 'COPS' },
+      { nct: 'NCT03874338', name: 'CLEAR SYNERGY' },
+      { nct: 'NCT02898610', name: 'CONVINCE' },
+      { nct: 'NCT00096356', name: 'LoDoCo' },
+      { nct: 'NCT04848857', name: 'CHANCE-3' },
+      { nct: 'NCT01709981', name: 'Colchicine-PCI' },
+      { nct: 'NCT02551094', name: 'COLCOT' }
+    ];
+    var landmarkAdded = 0;
+    pipeLog('Fetching ' + LANDMARK_NCTS.length + ' landmark trials by NCT ID...');
+    for (var li = 0; li < LANDMARK_NCTS.length; li++) {
+      var lm = LANDMARK_NCTS[li];
+      if (seenNCTs.has(lm.nct)) {
+        pipeLog('  ' + lm.name + ' (' + lm.nct + '): already harvested');
+        continue;
+      }
+      try {
+        var lmData = await apiRequest('/studies/' + lm.nct);
+        if (lmData) {
+          var lmStudy = parseStudyForTable(lmData);
+          if (lmStudy && lmStudy.nctId) {
+            seenNCTs.add(lmStudy.nctId);
+            allStudies.push(lmStudy);
+            landmarkAdded++;
+            pipeLog('  ' + lm.name + ' (' + lm.nct + '): ADDED' + (lmStudy.hasResults ? ' (has results)' : ' (no results)'));
+          }
+        }
+      } catch (lmErr) {
+        pipeLog('  ' + lm.name + ' (' + lm.nct + '): ERROR — ' + lmErr.message);
+      }
+    }
+    if (landmarkAdded > 0) {
+      pipeLog('Added ' + landmarkAdded + ' landmark trials not found via condition queries');
+      STATE.searchLog.push({
+        database: 'ClinicalTrials.gov API v2 (direct NCT fetch)',
+        query: 'Landmark trials: ' + LANDMARK_NCTS.map(function(l) { return l.nct; }).join(', '),
+        condition: 'N/A — targeted NCT lookup',
+        intervention: 'colchicine',
+        resultsCount: LANDMARK_NCTS.length,
+        studiesReturned: landmarkAdded,
+        newStudies: landmarkAdded,
+        timestamp: new Date().toISOString()
+      });
+    }
+
     STATE.harvested = allStudies;
-    pipeLog('Harvested ' + allStudies.length + ' studies');
+    pipeLog('Harvested ' + allStudies.length + ' studies total (including ' + landmarkAdded + ' landmark additions)');
     setPipeStep('harvest', 'done');
     setPipeProgress(15);
 
