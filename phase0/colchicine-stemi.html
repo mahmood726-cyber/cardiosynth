@@ -1154,7 +1154,8 @@ async function apiRequest(endpoint) {
         var res = await fetch(url, { signal: controller.signal, headers: { 'Accept': 'application/json' } });
         if (!res.ok) {
           if (res.status === 429) {
-            var retryAfter = parseInt(res.headers.get('Retry-After') || '60', 10);
+            // [P1-6 FIX] Clamp Retry-After to prevent DoS via malicious header
+            var retryAfter = Math.min(parseInt(res.headers.get('Retry-After') || '60', 10), 300);
             pipeLog('Rate limited by server, waiting ' + retryAfter + 's');
             await sleep(retryAfter * 1000);
             throw new Error('Rate limited');
@@ -1822,7 +1823,8 @@ function derSimonianLaird(studies, options) {
     qStar = 0;
     for (var i = 0; i < k; i++) qStar += wiStar[i] * Math.pow(valid[i].yi - theta, 2);
     var hksjMultiplier = Math.max(1, qStar / (k - 1));
-    if (hksjMultiplier > 1) { se = se * Math.sqrt(hksjMultiplier); hksjApplied = true; }
+    if (hksjMultiplier > 1) { se = se * Math.sqrt(hksjMultiplier); }
+    hksjApplied = true; // [P0-1 FIX] Always true when HKSJ path entered — t-quantile always used
     tCritVal = tQuantile(0.975, k - 1);
     ci_lower = theta - tCritVal * se;
     ci_upper = theta + tCritVal * se;
@@ -1837,16 +1839,20 @@ function derSimonianLaird(studies, options) {
     pi_upper = theta + piTCrit * piSE;
   }
 
-  var zTest = theta / se;
-  var pValue = hksj ? 2 * (1 - tCDF(Math.abs(zTest), k - 1)) : 2 * (1 - normalCDF(Math.abs(zTest)));
-  var I2 = tau2 > 0 ? (tau2 / (tau2 + variance)) * 100 : 0;
+  var tStat = theta / se;
+  var pValue = hksj ? 2 * (1 - tCDF(Math.abs(tStat), k - 1)) : 2 * (1 - normalCDF(Math.abs(tStat)));
+  // [P1-1 FIX] Use Higgins I2 formula = (Q-(k-1))/Q, not signal-ratio formula
+  var I2 = fe.Q > k - 1 ? ((fe.Q - (k - 1)) / fe.Q) * 100 : 0;
   var I2CI = i2ConfidenceInterval(fe.Q, k);
+  // [P0-2 FIX] DL tau2 is negatively biased for k<10
+  var dlWarning = k < 10 ? 'DL tau2 estimator is negatively biased for k<10; consider REML or Paule-Mandel.' : null;
 
   return {
     model: 'RE-DL', k: k, theta: theta, se: se, variance: variance,
-    ci_lower: ci_lower, ci_upper: ci_upper, z: zTest, pValue: pValue,
+    ci_lower: ci_lower, ci_upper: ci_upper, tStat: tStat, pValue: pValue,
     tau2: tau2, tau: Math.sqrt(tau2), pi_lower: pi_lower, pi_upper: pi_upper,
     Q: fe.Q, df: k - 1, pQ: fe.pQ, I2: I2, I2_lower: I2CI.lower, I2_upper: I2CI.upper,
+    warning: dlWarning,
     hksj: hksjApplied, qStar: qStar,
     weights: valid.map(function(s, i) { return { id: s.id || s.nctId || i, yi: s.yi, vi: s.vi, weight: wiStar[i], weightPercent: (wiStar[i] / sumWiStar) * 100 }; }),
     fe: { theta: fe.theta, se: fe.se, ci_lower: fe.ci_lower, ci_upper: fe.ci_upper }
@@ -2134,6 +2140,9 @@ function renderFunnelPlotSVG(studies) {
   return svg;
 }
 
+// [P1-2] Standard Egger's asymmetry test (Egger 1997). For binary RR outcomes,
+// Peters' test is preferred. Radial (Galbraith) version differs in axis definitions.
+// Low power for k<10 — results should be interpreted with caution.
 function eggersTest(studies) {
   var valid = studies.filter(function(s) { return typeof s.yi === 'number' && isFinite(s.yi) && typeof s.vi === 'number' && s.vi > 0; });
   var n = valid.length;
@@ -2165,8 +2174,10 @@ function eggersTest(studies) {
 
 function autoGRADE(synthesis, biasFlags) {
   var certainty = 4; // Start HIGH (RCTs)
-  if (synthesis.I2 > 75) certainty -= 2;
-  else if (synthesis.I2 > 50) certainty -= 1;
+  // [P1-3 FIX] Use both I2 and tau magnitude for inconsistency — I2 alone is proportion, not magnitude
+  var tauMag = Math.sqrt(synthesis.tau2 || 0);
+  if (synthesis.I2 > 75 || tauMag > 0.5) certainty -= 2;
+  else if (synthesis.I2 > 50 || tauMag > 0.2) certainty -= 1;
   if (biasFlags.filter(function(f) { return f.severity === 'CRITICAL'; }).length > 0) certainty -= 2;
   if (biasFlags.filter(function(f) { return f.severity === 'WARNING'; }).length > 2) certainty -= 1;
   if (synthesis.k < 3) certainty -= 1;
@@ -2193,7 +2204,8 @@ function generateE156(synthesis, biasData) {
   var k = synthesis.k;
   var I2 = synthesis.I2.toFixed(0);
 
-  var s1 = 'Does colchicine reduce major adverse cardiovascular events after ST-elevation myocardial infarction?';
+  // [P0-4 FIX] Broadened scope — query includes chronic CAD, ACS, pericarditis, not just STEMI
+  var s1 = 'Does colchicine reduce major adverse cardiovascular events in patients with coronary artery disease?';
   var s2 = 'We synthesised ' + k + ' randomised controlled trials from ClinicalTrials.gov structured results data, using dual-agent extraction with TruthCert validation.';
   var s3 = 'DerSimonian-Laird random-effects meta-analysis with Hartung-Knapp-Sidik-Jonkman correction pooled log risk ratios and back-transformed to the natural scale.';
   var s4 = 'The pooled risk ratio for MACE was ' + rr + ' (95% CI ' + ciLo + ' to ' + ciHi + '; I\u00B2=' + I2 + '%; ' + k + ' trials).';
@@ -2201,7 +2213,8 @@ function generateE156(synthesis, biasData) {
     'the 95% prediction interval was ' + Math.exp(synthesis.pi_lower).toFixed(2) + ' to ' + Math.exp(synthesis.pi_upper).toFixed(2) :
     'prediction interval undefined (k<3)';
   var s5 = 'Leave-one-out analysis confirmed robustness to exclusion of any single trial; ' + piText + '.';
-  var grade = autoGRADE(synthesis, []);
+  // [P2-1 FIX] Pass actual bias flags instead of empty array
+  var grade = autoGRADE(synthesis, biasData && biasData.flags ? biasData.flags : []);
   var s6 = 'Colchicine ' + (parseFloat(rr) < 1 ? 'may reduce' : 'does not appear to reduce') + ' MACE after STEMI, though confidence is ' + grade.toLowerCase() + '.';
   var s7 = 'This living synthesis is limited to ClinicalTrials.gov posted results; grey literature and individual patient data are excluded.';
 
@@ -2482,6 +2495,7 @@ async function runFullPipeline() {
       pipeLog('Query ' + (qi+1) + '/' + CARDIO_CONDITIONS.length + ': condition=' + condQ);
       var pageToken = null;
       var page = 0;
+      try { // [P0-3 FIX] Per-query error handling — one failure doesn't abort entire pipeline
       do {
         var qs = buildQueryString({
           condition: condQ,
@@ -2501,6 +2515,9 @@ async function runFullPipeline() {
         pageToken = data.nextPageToken || null;
         page++;
       } while (pageToken && page < 10 && !pipelineAbort);
+      } catch (queryErr) {
+        pipeLog('ERROR querying "' + condQ + '": ' + queryErr.message + ' — skipping, continuing');
+      }
       setPipeProgress(Math.round(5 + 10 * ((qi + 1) / CARDIO_CONDITIONS.length)));
     }
 
@@ -2832,8 +2849,9 @@ function showStudyModal(row) {
   var html = '<h4 style="margin-bottom:12px;font-size:15px">' + escHtml(ext.study_metadata.title) + '</h4>';
   html += '<div class="stat-grid" style="margin-bottom:16px">';
   html += '<div class="stat-item"><div class="stat-label">NCT ID</div><div class="stat-value" style="font-size:14px">' + escHtml(ext.nct) + '</div></div>';
-  html += '<div class="stat-item"><div class="stat-label">Enrollment</div><div class="stat-value" style="font-size:14px">' + (ext.study_metadata.enrollment_actual || '-') + '</div></div>';
-  html += '<div class="stat-item"><div class="stat-label">Phase</div><div class="stat-value" style="font-size:14px">' + (ext.study_metadata.phase || '-') + '</div></div>';
+  html += '<div class="stat-item"><div class="stat-label">Enrollment</div><div class="stat-value" style="font-size:14px">' + escHtml(String(ext.study_metadata.enrollment_actual || '-')) + '</div></div>';
+  // [P1-5 FIX] escHtml on phase — raw API string could contain HTML
+  html += '<div class="stat-item"><div class="stat-label">Phase</div><div class="stat-value" style="font-size:14px">' + escHtml(String(ext.study_metadata.phase || '-')) + '</div></div>';
   html += '<div class="stat-item"><div class="stat-label">TruthCert</div><div class="stat-value"><span class="tag ' + (report.verdict === 'PASS' ? 'tag-pass' : report.verdict === 'WARN' ? 'tag-warn' : 'tag-fail') + '">' + report.verdict + '</span></div></div>';
   html += '</div>';
 
@@ -2885,7 +2903,8 @@ function renderPrimarySynthesis() {
     '<div class="stat-item"><div class="stat-label">I\u00B2</div><div class="stat-value">' + syn.I2.toFixed(1) + '%</div><div class="stat-sub">' + syn.I2_lower.toFixed(0) + '% to ' + syn.I2_upper.toFixed(0) + '%</div></div>' +
     '<div class="stat-item"><div class="stat-label">\u03C4\u00B2</div><div class="stat-value">' + syn.tau2.toFixed(4) + '</div></div>' +
     '<div class="stat-item"><div class="stat-label">Q (p)</div><div class="stat-value">' + syn.Q.toFixed(2) + '</div><div class="stat-sub">df=' + syn.df + ', p=' + pQText + '</div></div>' +
-    '<div class="stat-item"><div class="stat-label">HKSJ Applied</div><div class="stat-value">' + (syn.hksj ? 'Yes' : 'No') + '</div></div>';
+    '<div class="stat-item"><div class="stat-label">HKSJ Applied</div><div class="stat-value">' + (syn.hksj ? 'Yes' : 'No') + '</div></div>' +
+    (syn.warning ? '<div class="stat-item" style="grid-column:1/-1"><div class="stat-label" style="color:var(--amber-600)">Warning</div><div class="stat-value" style="font-size:12px;color:var(--amber-600)">' + escHtml(syn.warning) + '</div></div>' : '');
 
   // LOO
   if (syn._studies && syn._studies.length >= 2) {
@@ -3199,7 +3218,7 @@ function saveState() {
     };
     localStorage.setItem('cardiosynth_dashboard_state', JSON.stringify(stateToSave));
   } catch (e) {
-    // Quota exceeded or other storage error, ignore
+    pipeLog('WARNING: Could not save state (' + e.message + '). Results may be lost on page reload.');
   }
 }
 
@@ -3209,7 +3228,11 @@ function loadState() {
     if (!raw) return false;
     var saved = JSON.parse(raw);
     if (!saved.lastUpdated) return false;
-    Object.keys(saved).forEach(function(k) { STATE[k] = saved[k]; });
+    // [P1-4 FIX] Restore only known STATE keys — prevent localStorage injection
+    var ALLOWED = ['harvested','extractions','truthCertReports','clearedExtractions',
+      'primarySynthesis','secondarySyntheses','cumulativeData','biasData',
+      'provenanceBundle','e156Text','lastUpdated','pipelineRunning'];
+    ALLOWED.forEach(function(ak) { if (Object.prototype.hasOwnProperty.call(saved, ak)) STATE[ak] = saved[ak]; });
     return true;
   } catch (e) {
     return false;
