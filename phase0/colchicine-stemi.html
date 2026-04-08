@@ -3141,15 +3141,18 @@ async function runFullPipeline() {
 
     // STEP 1b: Targeted fetch of landmark colchicine CV trials by NCT ID
     // Published MAs include these but condition queries may miss them
+    // Landmark colchicine CV trials — verified NCT IDs (2026-04-08)
+    // NOTE: LoDoCo2 is on ANZCTR (ACTRN12614000093684), NOT CT.gov — cannot be fetched
+    // COPS not found on CT.gov with posted results
     var LANDMARK_NCTS = [
-      { nct: 'NCT02278471', name: 'LoDoCo2' },
-      { nct: 'NCT03048825', name: 'COPS' },
-      { nct: 'NCT03874338', name: 'CLEAR SYNERGY' },
-      { nct: 'NCT02898610', name: 'CONVINCE' },
-      { nct: 'NCT00096356', name: 'LoDoCo' },
-      { nct: 'NCT04848857', name: 'CHANCE-3' },
-      { nct: 'NCT01709981', name: 'Colchicine-PCI' },
-      { nct: 'NCT02551094', name: 'COLCOT' }
+      { nct: 'NCT02551094', name: 'COLCOT' },           // N=4745, has results
+      { nct: 'NCT02594111', name: 'Colchicine-PCI' },   // N=714, has results
+      { nct: 'NCT01709981', name: 'Anti-inflam PCI' },  // N=280, has results
+      { nct: 'NCT03048825', name: 'CLEAR SYNERGY' },    // N=7264, NO results yet
+      { nct: 'NCT02898610', name: 'CONVINCE' },          // N=3154, NO results yet
+      { nct: 'NCT03021343', name: 'END-AF' },            // N=360, has results
+      { nct: 'NCT04322682', name: 'COLCORONA' },         // N=4506, has results (COVID but colchicine)
+      { nct: 'NCT01985425', name: 'COP-AF Pilot' }      // N=100, has results
     ];
     var landmarkAdded = 0;
     pipeLog('Fetching ' + LANDMARK_NCTS.length + ' landmark trials by NCT ID...');
