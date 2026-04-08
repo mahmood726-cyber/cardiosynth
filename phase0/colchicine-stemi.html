@@ -4075,7 +4075,7 @@ function showRecordExcerpt(nct) {
   var verdictText = report ? report.verdict : 'N/A';
 
   html += '<div class="record-section rs-open">';
-  html += '<div class="record-section-header" onclick="toggleRecordSection(this)" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()"><span><span class="rs-chevron">&#9654;</span>A. Study Overview</span>' + ctgovBtnHtml(ctgovStudyLink(nct), 'View Full Record on CT.gov') + '</div>';
+  html += '<div class="record-section-header" onclick="toggleRecordSection(this)" tabindex="0" onkeydown="if(event.key===&quot;Enter&quot;||event.key===&quot; &quot;)this.click()"><span><span class="rs-chevron">&#9654;</span>A. Study Overview</span>' + ctgovBtnHtml(ctgovStudyLink(nct), 'View Full Record on CT.gov') + '</div>';
   html += '<div class="record-section-body">';
   html += '<h4 style="margin-bottom:12px;font-size:14px;line-height:1.5">' + escHtml(ext.study_metadata.title) + '</h4>';
   html += '<div class="record-overview-card">';
@@ -4097,7 +4097,7 @@ function showRecordExcerpt(nct) {
   // SECTION B: Arms & Participants
   // ============================================================
   html += '<div class="record-section rs-open">';
-  html += '<div class="record-section-header" onclick="toggleRecordSection(this)" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()"><span><span class="rs-chevron">&#9654;</span>B. Arms &amp; Participants</span>' + ctgovBtnHtml(ctgovParticipantFlowLink(nct), 'Participant Flow') + '</div>';
+  html += '<div class="record-section-header" onclick="toggleRecordSection(this)" tabindex="0" onkeydown="if(event.key===&quot;Enter&quot;||event.key===&quot; &quot;)this.click()"><span><span class="rs-chevron">&#9654;</span>B. Arms &amp; Participants</span>' + ctgovBtnHtml(ctgovParticipantFlowLink(nct), 'Participant Flow') + '</div>';
   html += '<div class="record-section-body">';
   html += '<table class="record-arms-table"><thead><tr><th>#</th><th>Label</th><th>Type</th><th>Randomized</th><th>Analyzed</th><th>Source</th></tr></thead><tbody>';
   ext.arms.forEach(function(a, idx) {
@@ -4117,7 +4117,7 @@ function showRecordExcerpt(nct) {
   // SECTION C: Outcome Data (ALL outcomes, expandable)
   // ============================================================
   html += '<div class="record-section rs-open">';
-  html += '<div class="record-section-header" onclick="toggleRecordSection(this)" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()"><span><span class="rs-chevron">&#9654;</span>C. Outcome Data (' + ext.outcomes.length + ' outcome' + (ext.outcomes.length !== 1 ? 's' : '') + ')</span>' + ctgovBtnHtml(ctgovOutcomesLink(nct), 'Outcome Measures') + '</div>';
+  html += '<div class="record-section-header" onclick="toggleRecordSection(this)" tabindex="0" onkeydown="if(event.key===&quot;Enter&quot;||event.key===&quot; &quot;)this.click()"><span><span class="rs-chevron">&#9654;</span>C. Outcome Data (' + ext.outcomes.length + ' outcome' + (ext.outcomes.length !== 1 ? 's' : '') + ')</span>' + ctgovBtnHtml(ctgovOutcomesLink(nct), 'Outcome Measures') + '</div>';
   html += '<div class="record-section-body">';
 
   if (ext.outcomes.length === 0) {
@@ -4200,7 +4200,7 @@ function showRecordExcerpt(nct) {
   // ============================================================
   var aeGroups = (ext.adverse_events && ext.adverse_events.groups) || [];
   html += '<div class="record-section">';
-  html += '<div class="record-section-header" onclick="toggleRecordSection(this)" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()"><span><span class="rs-chevron">&#9654;</span>D. Adverse Events Summary (' + aeGroups.length + ' group' + (aeGroups.length !== 1 ? 's' : '') + ')</span>' + ctgovBtnHtml(ctgovAdverseEventsLink(nct), 'Adverse Events') + '</div>';
+  html += '<div class="record-section-header" onclick="toggleRecordSection(this)" tabindex="0" onkeydown="if(event.key===&quot;Enter&quot;||event.key===&quot; &quot;)this.click()"><span><span class="rs-chevron">&#9654;</span>D. Adverse Events Summary (' + aeGroups.length + ' group' + (aeGroups.length !== 1 ? 's' : '') + ')</span>' + ctgovBtnHtml(ctgovAdverseEventsLink(nct), 'Adverse Events') + '</div>';
   html += '<div class="record-section-body">';
   if (aeGroups.length === 0) {
     html += '<div class="info-box">No adverse events data found in posted results.</div>';
@@ -4223,7 +4223,7 @@ function showRecordExcerpt(nct) {
   // SECTION E: Effect Size Derivation (2x2 table + math)
   // ============================================================
   html += '<div class="record-section rs-open">';
-  html += '<div class="record-section-header" onclick="toggleRecordSection(this)" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()"><span><span class="rs-chevron">&#9654;</span>E. Effect Size Derivation (2x2 Table)</span></div>';
+  html += '<div class="record-section-header" onclick="toggleRecordSection(this)" tabindex="0" onkeydown="if(event.key===&quot;Enter&quot;||event.key===&quot; &quot;)this.click()"><span><span class="rs-chevron">&#9654;</span>E. Effect Size Derivation (2x2 Table)</span></div>';
   html += '<div class="record-section-body">';
   html += buildEffectDerivationSection(ext, expArm, ctrlArm, studyWeight, nct);
   html += '</div></div>';
@@ -4269,7 +4269,7 @@ function showRecordExcerpt(nct) {
   // SECTION G: Raw JSON (collapsible)
   // ============================================================
   html += '<div class="record-section">';
-  html += '<div class="record-section-header" onclick="toggleRecordSection(this)" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()"><span><span class="rs-chevron">&#9654;</span>G. Raw ExtractionObject (JSON)</span></div>';
+  html += '<div class="record-section-header" onclick="toggleRecordSection(this)" tabindex="0" onkeydown="if(event.key===&quot;Enter&quot;||event.key===&quot; &quot;)this.click()"><span><span class="rs-chevron">&#9654;</span>G. Raw ExtractionObject (JSON)</span></div>';
   html += '<div class="record-section-body">';
   var safeExt = Object.assign({}, ext);
   html += '<pre style="max-height:400px;overflow-y:auto">' + escHtml(JSON.stringify(safeExt, null, 2)) + '</pre>';
