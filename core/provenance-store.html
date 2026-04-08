@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CardioSynth Provenance Store</title>
+<meta name="description" content="CardioSynth Phase 0.3b — Provenance Store: audit trail for every extraction entering synthesis">
+<meta property="og:title" content="CardioSynth Provenance Store">
+<meta property="og:description" content="Browser-native provenance chain storage with SHA-256 hashing, timeline visualization, and full export/import">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue-900: #1e3a5f;
+    --blue-800: #1e40af;
+    --blue-700: #1d4ed8;
+    --blue-600: #2563eb;
+    --blue-500: #3b82f6;
+    --blue-100: #dbeafe;
+    --blue-50: #eff6ff;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    --green-700: #15803d;
+    --green-600: #16a34a;
+    --green-100: #dcfce7;
+    --green-50: #f0fdf4;
+    --red-700: #b91c1c;
+    --red-600: #dc2626;
+    --red-100: #fee2e2;
+    --red-50: #fef2f2;
+    --amber-700: #b45309;
+    --amber-600: #d97706;
+    --amber-100: #fef3c7;
+    --amber-50: #fffbeb;
+    --purple-600: #9333ea;
+    --purple-100: #f3e8ff;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: #fff;
+    color: var(--gray-800);
+    line-height: 1.6;
+  }
+
+  .header {
+    background: linear-gradient(135deg, var(--blue-900) 0%, var(--blue-800) 100%);
+    color: #fff;
+    padding: 24px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .header-icon {
+    width: 48px; height: 48px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+  .header-left { flex: 1; }
+  .header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+  .header .subtitle { font-size: 13px; opacity: 0.8; margin-top: 2px; }
+  .header-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .header-actions .btn {
+    font-size: 13px;
+    padding: 8px 14px;
+  }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px 32px; }
+
+  .panel {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .panel h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: 16px;
+  }
+  .panel h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gray-600);
+    margin-bottom: 8px;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 12px;
+    border: 1px solid var(--gray-300);
+    border-radius: 8px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    resize: vertical;
+    color: var(--gray-800);
+    background: #fff;
+  }
+  textarea:focus { outline: none; border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+
+  input[type="text"] {
+    padding: 10px 14px;
+    border: 1px solid var(--gray-300);
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--gray-800);
+    background: #fff;
+    outline: none;
+  }
+  input[type="text"]:focus { border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn-primary {
+    background: var(--blue-600);
+    color: #fff;
+  }
+  .btn-primary:hover { background: var(--blue-700); }
+  .btn-secondary {
+    background: var(--gray-200);
+    color: var(--gray-700);
+  }
+  .btn-secondary:hover { background: var(--gray-300); }
+  .btn-green {
+    background: var(--green-600);
+    color: #fff;
+  }
+  .btn-green:hover { background: var(--green-700); }
+  .btn-red {
+    background: var(--red-600);
+    color: #fff;
+  }
+  .btn-red:hover { background: var(--red-700); }
+  .btn-amber {
+    background: var(--amber-600);
+    color: #fff;
+  }
+  .btn-amber:hover { background: var(--amber-700); }
+
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .file-input-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+  .file-input-wrapper input[type="file"] {
+    position: absolute;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    background: var(--blue-50);
+    border: 1px solid var(--blue-100);
+    border-radius: 10px;
+    padding: 14px 20px;
+    display: flex;
+    gap: 32px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+    font-size: 14px;
+    color: var(--gray-700);
+  }
+  .stats-bar .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .stats-bar .stat-value {
+    font-weight: 700;
+    color: var(--blue-800);
+  }
+  .stats-bar .stat-label {
+    color: var(--gray-500);
+    font-size: 13px;
+  }
+
+  /* Search bar */
+  .search-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    align-items: center;
+  }
+  .search-bar input {
+    flex: 1;
+    max-width: 400px;
+  }
+
+  /* Dashboard table */
+  .dash-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .dash-table th {
+    text-align: left;
+    padding: 10px 14px;
+    background: var(--gray-100);
+    color: var(--gray-600);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--gray-200);
+  }
+  .dash-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--gray-200);
+    vertical-align: middle;
+  }
+  .dash-table tr:hover td {
+    background: var(--blue-50);
+  }
+  .dash-table tr { cursor: pointer; }
+  .dash-table .nct-link {
+    font-weight: 600;
+    color: var(--blue-600);
+  }
+
+  /* Badge styles */
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .badge-pass { background: var(--green-100); color: var(--green-700); }
+  .badge-warn { background: var(--amber-100); color: var(--amber-700); }
+  .badge-critical { background: var(--red-100); color: var(--red-700); }
+  .badge-cleared { background: var(--green-100); color: var(--green-700); }
+  .badge-blocked { background: var(--red-100); color: var(--red-700); }
+
+  /* Chain view */
+  .chain-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .chain-header h2 {
+    margin-bottom: 0;
+  }
+
+  .timeline {
+    position: relative;
+    padding-left: 36px;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--gray-300);
+  }
+  .timeline-item {
+    position: relative;
+    margin-bottom: 24px;
+    padding: 16px 20px;
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -30px;
+    top: 20px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px var(--gray-300);
+  }
+  .timeline-item.verdict-pass::before { background: var(--green-600); box-shadow: 0 0 0 2px var(--green-600); }
+  .timeline-item.verdict-warn::before { background: var(--amber-600); box-shadow: 0 0 0 2px var(--amber-600); }
+  .timeline-item.verdict-critical::before { background: var(--red-600); box-shadow: 0 0 0 2px var(--red-600); }
+  .timeline-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .timeline-item-header .timestamp {
+    font-size: 13px;
+    color: var(--gray-500);
+    font-weight: 500;
+  }
+  .timeline-item-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+    font-size: 13px;
+  }
+  .timeline-item-details .detail-label {
+    color: var(--gray-500);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .timeline-item-details .detail-value {
+    font-weight: 600;
+    color: var(--gray-800);
+  }
+  .timeline-expand-btn {
+    margin-top: 10px;
+    font-size: 12px;
+    padding: 4px 10px;
+    background: var(--gray-100);
+    border: 1px solid var(--gray-200);
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--gray-600);
+  }
+  .timeline-expand-btn:hover {
+    background: var(--gray-200);
+  }
+  .timeline-raw {
+    margin-top: 10px;
+    padding: 10px;
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 6px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 11px;
+    max-height: 300px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    display: none;
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--gray-400);
+  }
+  .empty-state .empty-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+  }
+  .empty-state .empty-text {
+    font-size: 16px;
+    font-weight: 500;
+  }
+  .empty-state .empty-hint {
+    font-size: 13px;
+    margin-top: 6px;
+  }
+
+  /* Confirm modal */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    display: none;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal-box {
+    background: #fff;
+    border-radius: 12px;
+    padding: 28px;
+    max-width: 440px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .modal-box h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--red-700);
+    margin-bottom: 12px;
+  }
+  .modal-box p {
+    font-size: 14px;
+    color: var(--gray-600);
+    margin-bottom: 16px;
+  }
+  .modal-box input[type="text"] {
+    width: 100%;
+    margin-bottom: 16px;
+  }
+  .modal-box .btn-row {
+    margin-top: 0;
+    justify-content: flex-end;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--gray-800);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 2000;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+    pointer-events: none;
+  }
+  .toast.visible { opacity: 1; transform: translateY(0); }
+  .toast.toast-success { background: var(--green-700); }
+  .toast.toast-error { background: var(--red-700); }
+
+  /* Test results */
+  .test-results {
+    margin-top: 16px;
+    padding: 16px;
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 12px;
+    max-height: 400px;
+    overflow: auto;
+  }
+  .test-pass { color: var(--green-700); }
+  .test-fail { color: var(--red-700); font-weight: bold; }
+  .test-summary { margin-top: 8px; font-weight: bold; font-size: 14px; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .header { padding: 16px; flex-wrap: wrap; }
+    .container { padding: 16px; }
+    .stats-bar { gap: 16px; }
+    .header-actions { width: 100%; justify-content: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">&#x1f4dc;</div>
+  <div class="header-left">
+    <h1>CardioSynth Provenance Store</h1>
+    <div class="subtitle">Phase 0.3b &mdash; Audit Trail for Every Number Entering Synthesis</div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-green" onclick="exportAuditTrail()">Export</button>
+    <div class="file-input-wrapper">
+      <button class="btn btn-secondary">Import</button>
+      <input type="file" accept=".json" onchange="importAuditTrail(event)">
+    </div>
+    <button class="btn btn-red" onclick="showClearAllModal()">Clear All</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Stats bar -->
+  <div class="stats-bar" id="statsBar">
+    <div class="stat-item">
+      <span class="stat-value" id="statStudies">0</span>
+      <span class="stat-label">studies tracked</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value" id="statRecords">0</span>
+      <span class="stat-label">records</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value" id="statSize">0</span>
+      <span class="stat-label">KB used</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value" id="statCleared">0</span>
+      <span class="stat-label">cleared for synthesis</span>
+    </div>
+  </div>
+
+  <!-- Dashboard view (default) -->
+  <div id="dashboardView">
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search by NCT ID..." oninput="renderDashboard()">
+      <button class="btn btn-primary" onclick="showStorePanel()">+ Store Record</button>
+      <button class="btn btn-secondary" onclick="computeSynthesisHash()">Synthesis Hash</button>
+      <button class="btn btn-secondary" onclick="runTests()">Run Tests</button>
+    </div>
+
+    <div class="panel" id="storePanel" style="display:none;">
+      <h2>Store Provenance Record</h2>
+      <h3>ExtractionObject JSON</h3>
+      <textarea id="extractionInput" placeholder="Paste ExtractionObject JSON here..."></textarea>
+      <h3 style="margin-top:12px;">TruthCert Report JSON</h3>
+      <textarea id="truthCertInput" placeholder="Paste TruthCert report JSON here..."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-green" onclick="handleStoreRecord()">Store Record</button>
+        <button class="btn btn-secondary" onclick="loadDemoData()">Load Demo</button>
+        <button class="btn btn-secondary" onclick="hideStorePanel()">Cancel</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Tracked Studies</h2>
+      <div id="dashboardContent"></div>
+    </div>
+
+    <div id="testResults"></div>
+  </div>
+
+  <!-- Chain view (shows when NCT is clicked) -->
+  <div id="chainView" style="display:none;">
+    <div class="panel">
+      <div class="chain-header">
+        <div>
+          <h2 id="chainTitle">NCT00000000</h2>
+          <div id="chainSubtitle" style="font-size:13px;color:var(--gray-500);margin-top:2px;"></div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-secondary" onclick="showDashboard()">Back to Dashboard</button>
+          <button class="btn btn-red" onclick="showDeleteChainModal()">Delete Chain</button>
+        </div>
+      </div>
+      <div id="chainContent"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Clear All Modal -->
+<div class="modal-overlay" id="clearAllModal">
+  <div class="modal-box">
+    <h3>Clear All Provenance Data</h3>
+    <p>This will permanently delete all provenance records from localStorage. Type <strong>DELETE</strong> to confirm.</p>
+    <input type="text" id="clearAllConfirm" placeholder="Type DELETE to confirm">
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="hideClearAllModal()">Cancel</button>
+      <button class="btn btn-red" onclick="executeClearAll()">Delete Everything</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Chain Modal -->
+<div class="modal-overlay" id="deleteChainModal">
+  <div class="modal-box">
+    <h3>Delete Provenance Chain</h3>
+    <p id="deleteChainMsg">This will permanently delete all records for this study.</p>
+    <input type="text" id="deleteChainConfirm" placeholder="Type DELETE to confirm">
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="hideDeleteChainModal()">Cancel</button>
+      <button class="btn btn-red" onclick="executeDeleteChain()">Delete Chain</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// CARDIOSYNTH PROVENANCE STORE — Core Functions
+// ============================================================
+
+var KEYS = {
+  index: 'cardiosynth_prov_index',
+  meta: 'cardiosynth_prov_meta',
+  chainPrefix: 'cardiosynth_prov_chain_'
+};
+
+var currentChainNCT = null;
+
+// ============================================================
+// SHA-256 HASH
+// ============================================================
+
+async function sha256(obj) {
+  var text = JSON.stringify(obj, null, 0);
+  var buffer = new TextEncoder().encode(text);
+  var hash = await crypto.subtle.digest('SHA-256', buffer);
+  return Array.from(new Uint8Array(hash)).map(function(b) {
+    return b.toString(16).padStart(2, '0');
+  }).join('');
+}
+
+// ============================================================
+// STORAGE HELPERS
+// ============================================================
+
+function getIndex() {
+  try {
+    var raw = localStorage.getItem(KEYS.index);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function setIndex(arr) {
+  localStorage.setItem(KEYS.index, JSON.stringify(arr));
+}
+
+function getMeta() {
+  try {
+    var raw = localStorage.getItem(KEYS.meta);
+    return raw ? JSON.parse(raw) : { total_records: 0, last_export: null, created_at: new Date().toISOString() };
+  } catch (e) {
+    return { total_records: 0, last_export: null, created_at: new Date().toISOString() };
+  }
+}
+
+function setMeta(meta) {
+  localStorage.setItem(KEYS.meta, JSON.stringify(meta));
+}
+
+function getChain(nct) {
+  try {
+    var raw = localStorage.getItem(KEYS.chainPrefix + nct);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function setChain(nct, chain) {
+  localStorage.setItem(KEYS.chainPrefix + nct, JSON.stringify(chain));
+}
+
+// ============================================================
+// CORE API: storeProvenance
+// ============================================================
+
+function storeProvenance(extraction, truthCertReport) {
+  if (!extraction || !extraction.nct) {
+    throw new Error('ExtractionObject must have an nct field');
+  }
+
+  var nct = extraction.nct;
+  var now = new Date().toISOString();
+
+  var chain = getChain(nct);
+  var chainIndex = chain.length;
+
+  var record = {
+    extraction: extraction,
+    truthCert: truthCertReport || null,
+    chain_index: chainIndex,
+    stored_at: now
+  };
+
+  chain.push(record);
+
+  try {
+    setChain(nct, chain);
+  } catch (e) {
+    if (e.name === 'QuotaExceededError' || (e.message && e.message.indexOf('quota') !== -1)) {
+      throw new Error('localStorage quota exceeded. Export and clear old records to free space.');
+    }
+    throw e;
+  }
+
+  // Update index
+  var index = getIndex();
+  if (index.indexOf(nct) === -1) {
+    index.push(nct);
+    setIndex(index);
+  }
+
+  // Update meta
+  var meta = getMeta();
+  meta.total_records = (meta.total_records || 0) + 1;
+  meta.last_updated = now;
+  setMeta(meta);
+
+  return record;
+}
+
+// ============================================================
+// CORE API: getProvenanceChain
+// ============================================================
+
+function getProvenanceChain(nct) {
+  var chain = getChain(nct);
+  // Return ordered by time (oldest first by chain_index)
+  chain.sort(function(a, b) { return a.chain_index - b.chain_index; });
+  return chain;
+}
+
+// ============================================================
+// CORE API: getAllChains
+// ============================================================
+
+function getAllChains() {
+  var index = getIndex();
+  var all = [];
+  for (var i = 0; i < index.length; i++) {
+    var chain = getChain(index[i]);
+    for (var j = 0; j < chain.length; j++) {
+      all.push(chain[j]);
+    }
+  }
+  return all;
+}
+
+// ============================================================
+// CORE API: getSynthesisStateHash
+// ============================================================
+
+async function getSynthesisStateHash() {
+  var allRecords = getAllChains();
+  var cleared = allRecords.filter(function(r) {
+    return r.truthCert && r.truthCert.cleared_for_synthesis;
+  });
+  // Sort deterministically by nct then chain_index
+  cleared.sort(function(a, b) {
+    var nctA = (a.extraction && a.extraction.nct) || '';
+    var nctB = (b.extraction && b.extraction.nct) || '';
+    if (nctA !== nctB) return nctA < nctB ? -1 : 1;
+    return a.chain_index - b.chain_index;
+  });
+  return sha256({ records: cleared, computed_at: new Date().toISOString() });
+}
+
+// ============================================================
+// CORE API: exportAuditTrail
+// ============================================================
+
+function buildExportBundle() {
+  var index = getIndex();
+  var chains = {};
+  for (var i = 0; i < index.length; i++) {
+    chains[index[i]] = getChain(index[i]);
+  }
+  return {
+    format: 'cardiosynth_provenance_v1',
+    exported_at: new Date().toISOString(),
+    index: index,
+    meta: getMeta(),
+    chains: chains
+  };
+}
+
+function exportAuditTrail() {
+  var bundle = buildExportBundle();
+  var json = JSON.stringify(bundle, null, 2);
+  var blob = new Blob([json], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'cardiosynth-provenance-' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  // Update meta
+  var meta = getMeta();
+  meta.last_export = new Date().toISOString();
+  setMeta(meta);
+
+  showToast('Audit trail exported (' + getIndex().length + ' studies)', 'success');
+}
+
+// ============================================================
+// CORE API: importAuditTrail
+// ============================================================
+
+function importAuditTrail(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var bundle = JSON.parse(e.target.result);
+      if (bundle.format !== 'cardiosynth_provenance_v1') {
+        showToast('Invalid format: expected cardiosynth_provenance_v1', 'error');
+        return;
+      }
+      if (!bundle.index || !bundle.chains) {
+        showToast('Invalid bundle: missing index or chains', 'error');
+        return;
+      }
+
+      var importedCount = 0;
+      var existingIndex = getIndex();
+
+      for (var i = 0; i < bundle.index.length; i++) {
+        var nct = bundle.index[i];
+        var importedChain = bundle.chains[nct];
+        if (!importedChain || !Array.isArray(importedChain)) continue;
+
+        var existingChain = getChain(nct);
+        // Merge: append records with chain_index >= existing length
+        var startIdx = existingChain.length;
+        for (var j = 0; j < importedChain.length; j++) {
+          if (importedChain[j].chain_index >= startIdx) {
+            existingChain.push(importedChain[j]);
+            importedCount++;
+          }
+        }
+        setChain(nct, existingChain);
+
+        if (existingIndex.indexOf(nct) === -1) {
+          existingIndex.push(nct);
+        }
+      }
+
+      setIndex(existingIndex);
+
+      // Recalculate meta
+      var totalRecords = 0;
+      for (var k = 0; k < existingIndex.length; k++) {
+        totalRecords += getChain(existingIndex[k]).length;
+      }
+      var meta = getMeta();
+      meta.total_records = totalRecords;
+      meta.last_updated = new Date().toISOString();
+      setMeta(meta);
+
+      showToast('Imported ' + importedCount + ' records from ' + bundle.index.length + ' studies', 'success');
+      renderDashboard();
+      updateStats();
+    } catch (err) {
+      showToast('Import failed: ' + err.message, 'error');
+    }
+  };
+  reader.readAsText(file);
+  // Reset input so same file can be re-imported
+  event.target.value = '';
+}
+
+// ============================================================
+// CORE API: deleteChain
+// ============================================================
+
+function deleteChain(nct) {
+  localStorage.removeItem(KEYS.chainPrefix + nct);
+  var index = getIndex();
+  var newIndex = index.filter(function(id) { return id !== nct; });
+  setIndex(newIndex);
+
+  // Recalculate meta
+  var totalRecords = 0;
+  for (var i = 0; i < newIndex.length; i++) {
+    totalRecords += getChain(newIndex[i]).length;
+  }
+  var meta = getMeta();
+  meta.total_records = totalRecords;
+  meta.last_updated = new Date().toISOString();
+  setMeta(meta);
+}
+
+// ============================================================
+// CORE API: clearAll
+// ============================================================
+
+function clearAll() {
+  var index = getIndex();
+  for (var i = 0; i < index.length; i++) {
+    localStorage.removeItem(KEYS.chainPrefix + index[i]);
+  }
+  localStorage.removeItem(KEYS.index);
+  localStorage.removeItem(KEYS.meta);
+}
+
+// ============================================================
+// STORAGE STATISTICS
+// ============================================================
+
+function getStorageStats() {
+  var index = getIndex();
+  var totalRecords = 0;
+  var clearedCount = 0;
+  var totalSize = 0;
+
+  // Size of index and meta
+  var indexRaw = localStorage.getItem(KEYS.index) || '';
+  var metaRaw = localStorage.getItem(KEYS.meta) || '';
+  totalSize += indexRaw.length + metaRaw.length;
+
+  for (var i = 0; i < index.length; i++) {
+    var raw = localStorage.getItem(KEYS.chainPrefix + index[i]) || '';
+    totalSize += raw.length;
+    var chain = getChain(index[i]);
+    totalRecords += chain.length;
+    for (var j = 0; j < chain.length; j++) {
+      if (chain[j].truthCert && chain[j].truthCert.cleared_for_synthesis) {
+        clearedCount++;
+      }
+    }
+  }
+
+  // Size in KB (UTF-16 in JS, but localStorage uses ~1 byte per char in most engines)
+  var sizeKB = (totalSize * 2 / 1024).toFixed(1);
+
+  return {
+    studies: index.length,
+    records: totalRecords,
+    sizeKB: sizeKB,
+    cleared: clearedCount
+  };
+}
+
+// ============================================================
+// UI: UTILITIES
+// ============================================================
+
+function escapeHtml(text) {
+  var div = document.createElement('div');
+  div.appendChild(document.createTextNode(String(text)));
+  return div.innerHTML;
+}
+
+function formatTime(isoStr) {
+  if (!isoStr) return 'N/A';
+  try {
+    var d = new Date(isoStr);
+    return d.toLocaleDateString() + ' ' + d.toLocaleTimeString();
+  } catch (e) {
+    return isoStr;
+  }
+}
+
+var toastTimer = null;
+function showToast(msg, type) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast visible' + (type ? ' toast-' + type : '');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() {
+    el.className = 'toast';
+  }, 3000);
+}
+
+// ============================================================
+// UI: STATS BAR
+// ============================================================
+
+function updateStats() {
+  var stats = getStorageStats();
+  document.getElementById('statStudies').textContent = stats.studies;
+  document.getElementById('statRecords').textContent = stats.records;
+  document.getElementById('statSize').textContent = stats.sizeKB;
+  document.getElementById('statCleared').textContent = stats.cleared;
+}
+
+// ============================================================
+// UI: DASHBOARD
+// ============================================================
+
+function renderDashboard() {
+  var index = getIndex();
+  var searchTerm = document.getElementById('searchInput').value.trim().toUpperCase();
+  var container = document.getElementById('dashboardContent');
+
+  if (index.length === 0) {
+    container.innerHTML = '<div class="empty-state">' +
+      '<div class="empty-icon">&#x1f4dc;</div>' +
+      '<div class="empty-text">No provenance records yet</div>' +
+      '<div class="empty-hint">Store an ExtractionObject + TruthCert report to begin tracking</div>' +
+      '</div>';
+    return;
+  }
+
+  // Build rows
+  var rows = [];
+  for (var i = 0; i < index.length; i++) {
+    var nct = index[i];
+    if (searchTerm && nct.toUpperCase().indexOf(searchTerm) === -1) continue;
+
+    var chain = getChain(nct);
+    if (chain.length === 0) continue;
+
+    var lastRecord = chain[chain.length - 1];
+    var title = (lastRecord.extraction && lastRecord.extraction.study_title) || 'Untitled';
+    var verdict = (lastRecord.truthCert && lastRecord.truthCert.verdict) || 'N/A';
+    var cleared = lastRecord.truthCert && lastRecord.truthCert.cleared_for_synthesis;
+    var lastUpdated = lastRecord.stored_at;
+
+    rows.push({
+      nct: nct,
+      title: title,
+      count: chain.length,
+      verdict: verdict,
+      cleared: cleared,
+      lastUpdated: lastUpdated
+    });
+  }
+
+  // Sort by last updated (newest first)
+  rows.sort(function(a, b) {
+    return (b.lastUpdated || '').localeCompare(a.lastUpdated || '');
+  });
+
+  if (rows.length === 0) {
+    container.innerHTML = '<div class="empty-state">' +
+      '<div class="empty-text">No matches for "' + escapeHtml(searchTerm) + '"</div>' +
+      '</div>';
+    return;
+  }
+
+  var html = '<table class="dash-table">';
+  html += '<thead><tr>' +
+    '<th>NCT ID</th>' +
+    '<th>Study Title</th>' +
+    '<th>Records</th>' +
+    '<th>Last Updated</th>' +
+    '<th>Verdict</th>' +
+    '<th>Synthesis</th>' +
+    '</tr></thead><tbody>';
+
+  for (var j = 0; j < rows.length; j++) {
+    var r = rows[j];
+    var verdictClass = r.verdict === 'PASS' ? 'badge-pass' : (r.verdict === 'WARN' ? 'badge-warn' : 'badge-critical');
+    var clearedClass = r.cleared ? 'badge-cleared' : 'badge-blocked';
+    var clearedText = r.cleared ? 'Cleared' : 'Blocked';
+
+    html += '<tr onclick="showChain(\'' + escapeHtml(r.nct) + '\')">' +
+      '<td class="nct-link">' + escapeHtml(r.nct) + '</td>' +
+      '<td>' + escapeHtml(r.title.length > 60 ? r.title.substring(0, 57) + '...' : r.title) + '</td>' +
+      '<td>' + r.count + '</td>' +
+      '<td>' + formatTime(r.lastUpdated) + '</td>' +
+      '<td><span class="badge ' + verdictClass + '">' + escapeHtml(r.verdict) + '</span></td>' +
+      '<td><span class="badge ' + clearedClass + '">' + clearedText + '</span></td>' +
+      '</tr>';
+  }
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+  updateStats();
+}
+
+// ============================================================
+// UI: CHAIN VIEW
+// ============================================================
+
+function showChain(nct) {
+  currentChainNCT = nct;
+  document.getElementById('dashboardView').style.display = 'none';
+  document.getElementById('chainView').style.display = 'block';
+
+  var chain = getProvenanceChain(nct);
+  document.getElementById('chainTitle').textContent = nct;
+
+  var subtitle = chain.length + ' record' + (chain.length !== 1 ? 's' : '');
+  if (chain.length > 0) {
+    var lastRec = chain[chain.length - 1];
+    var title = (lastRec.extraction && lastRec.extraction.study_title) || '';
+    if (title) subtitle = escapeHtml(title) + ' — ' + subtitle;
+  }
+  document.getElementById('chainSubtitle').innerHTML = subtitle;
+
+  var container = document.getElementById('chainContent');
+
+  if (chain.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-text">No records in chain</div></div>';
+    return;
+  }
+
+  // Render timeline (newest first)
+  var reversed = chain.slice().reverse();
+  var html = '<div class="timeline">';
+
+  for (var i = 0; i < reversed.length; i++) {
+    var rec = reversed[i];
+    var verdict = (rec.truthCert && rec.truthCert.verdict) || 'N/A';
+    var verdictLower = verdict.toLowerCase();
+    // Map verdict to CSS class
+    var itemClass = 'verdict-pass';
+    if (verdictLower === 'critical') itemClass = 'verdict-critical';
+    else if (verdictLower === 'warn') itemClass = 'verdict-warn';
+
+    var verdictBadgeClass = verdict === 'PASS' ? 'badge-pass' : (verdict === 'WARN' ? 'badge-warn' : 'badge-critical');
+    var extractorId = (rec.extraction && rec.extraction.provenance && rec.extraction.provenance.extractor_id) || 'N/A';
+    var witnessCount = (rec.truthCert && rec.truthCert.witness_count != null) ? rec.truthCert.witness_count : 'N/A';
+    var flagsCount = (rec.truthCert && rec.truthCert.flags) ? rec.truthCert.flags.length : 0;
+    var cleared = rec.truthCert && rec.truthCert.cleared_for_synthesis;
+    var clearedBadge = cleared
+      ? '<span class="badge badge-cleared">Cleared</span>'
+      : '<span class="badge badge-blocked">Blocked</span>';
+
+    var rawId = 'raw_' + rec.chain_index;
+
+    html += '<div class="timeline-item ' + itemClass + '">' +
+      '<div class="timeline-item-header">' +
+      '<span class="timestamp">Record #' + rec.chain_index + ' — ' + formatTime(rec.stored_at) + '</span>' +
+      '<span>' + clearedBadge + '</span>' +
+      '</div>' +
+      '<div class="timeline-item-details">' +
+      '<div><div class="detail-label">Verdict</div><div class="detail-value"><span class="badge ' + verdictBadgeClass + '">' + escapeHtml(verdict) + '</span></div></div>' +
+      '<div><div class="detail-label">Extractor ID</div><div class="detail-value">' + escapeHtml(extractorId) + '</div></div>' +
+      '<div><div class="detail-label">Witness Count</div><div class="detail-value">' + escapeHtml(String(witnessCount)) + '</div></div>' +
+      '<div><div class="detail-label">Flags</div><div class="detail-value">' + flagsCount + '</div></div>' +
+      '</div>' +
+      '<button class="timeline-expand-btn" onclick="toggleRaw(\'' + rawId + '\')">Show Raw JSON</button>' +
+      '<div class="timeline-raw" id="' + rawId + '">' + escapeHtml(JSON.stringify(rec, null, 2)) + '</div>' +
+      '</div>';
+  }
+
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function toggleRaw(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = el.style.display === 'block' ? 'none' : 'block';
+}
+
+function showDashboard() {
+  currentChainNCT = null;
+  document.getElementById('chainView').style.display = 'none';
+  document.getElementById('dashboardView').style.display = 'block';
+  renderDashboard();
+}
+
+// ============================================================
+// UI: STORE PANEL
+// ============================================================
+
+function showStorePanel() {
+  document.getElementById('storePanel').style.display = 'block';
+}
+
+function hideStorePanel() {
+  document.getElementById('storePanel').style.display = 'none';
+}
+
+function handleStoreRecord() {
+  var extractionRaw = document.getElementById('extractionInput').value.trim();
+  var truthCertRaw = document.getElementById('truthCertInput').value.trim();
+
+  if (!extractionRaw) {
+    showToast('ExtractionObject JSON is required', 'error');
+    return;
+  }
+
+  var extraction, truthCertReport;
+  try {
+    extraction = JSON.parse(extractionRaw);
+  } catch (e) {
+    showToast('Invalid ExtractionObject JSON: ' + e.message, 'error');
+    return;
+  }
+
+  if (truthCertRaw) {
+    try {
+      truthCertReport = JSON.parse(truthCertRaw);
+    } catch (e) {
+      showToast('Invalid TruthCert JSON: ' + e.message, 'error');
+      return;
+    }
+  } else {
+    truthCertReport = null;
+  }
+
+  try {
+    var record = storeProvenance(extraction, truthCertReport);
+    showToast('Record stored for ' + extraction.nct + ' (chain #' + record.chain_index + ')', 'success');
+    document.getElementById('extractionInput').value = '';
+    document.getElementById('truthCertInput').value = '';
+    hideStorePanel();
+    renderDashboard();
+  } catch (e) {
+    showToast('Store failed: ' + e.message, 'error');
+  }
+}
+
+// ============================================================
+// UI: MODALS
+// ============================================================
+
+function showClearAllModal() {
+  document.getElementById('clearAllConfirm').value = '';
+  document.getElementById('clearAllModal').className = 'modal-overlay active';
+}
+
+function hideClearAllModal() {
+  document.getElementById('clearAllModal').className = 'modal-overlay';
+}
+
+function executeClearAll() {
+  if (document.getElementById('clearAllConfirm').value !== 'DELETE') {
+    showToast('Type DELETE to confirm', 'error');
+    return;
+  }
+  clearAll();
+  hideClearAllModal();
+  showToast('All provenance data deleted', 'success');
+  showDashboard();
+  updateStats();
+}
+
+function showDeleteChainModal() {
+  if (!currentChainNCT) return;
+  document.getElementById('deleteChainMsg').textContent = 'This will permanently delete all records for ' + currentChainNCT + '. Type DELETE to confirm.';
+  document.getElementById('deleteChainConfirm').value = '';
+  document.getElementById('deleteChainModal').className = 'modal-overlay active';
+}
+
+function hideDeleteChainModal() {
+  document.getElementById('deleteChainModal').className = 'modal-overlay';
+}
+
+function executeDeleteChain() {
+  if (document.getElementById('deleteChainConfirm').value !== 'DELETE') {
+    showToast('Type DELETE to confirm', 'error');
+    return;
+  }
+  deleteChain(currentChainNCT);
+  hideDeleteChainModal();
+  showToast('Chain deleted for ' + currentChainNCT, 'success');
+  showDashboard();
+  updateStats();
+}
+
+// ============================================================
+// UI: SYNTHESIS HASH
+// ============================================================
+
+function computeSynthesisHash() {
+  getSynthesisStateHash().then(function(hash) {
+    showToast('Synthesis hash: ' + hash.substring(0, 16) + '...', 'success');
+    alert('Synthesis State Hash\n\n' + hash + '\n\nComputed at: ' + new Date().toISOString());
+  });
+}
+
+// ============================================================
+// DEMO DATA
+// ============================================================
+
+function loadDemoData() {
+  var demoExtraction = {
+    nct: 'NCT06789012',
+    study_title: 'Colchicine vs Placebo in Acute STEMI',
+    status: 'COMPLETED',
+    phase: 'Phase 3',
+    enrollment: 4745,
+    arms: [
+      { arm_type: 'EXPERIMENTAL', label: 'Colchicine 0.5mg', n: 2373 },
+      { arm_type: 'PLACEBO_COMPARATOR', label: 'Placebo', n: 2372 }
+    ],
+    outcomes: {
+      PRIMARY: {
+        measure: 'MACE at 12 months',
+        timeframe: '12 months',
+        values: { experimental: { events: 141, n: 2373 }, control: { events: 179, n: 2372 } }
+      }
+    },
+    provenance: {
+      source_url: 'https://clinicaltrials.gov/api/v2/studies/NCT06789012',
+      api_version: 'v2',
+      raw_hash: 'a1b2c3d4e5f6',
+      extraction_timestamp: new Date().toISOString(),
+      extractor_id: 'cardiosynth_harvester_v0.2'
+    }
+  };
+
+  var demoReport = {
+    nct: 'NCT06789012',
+    verdict: 'PASS',
+    flags: [
+      { validator: 'ARM_SWAP_DETECTOR', severity: 'INFO', path: 'arms.0.arm_type', message: 'arm_type=EXPERIMENTAL consistent with label' }
+    ],
+    witness_count: 0,
+    certified_at: new Date().toISOString(),
+    cleared_for_synthesis: true
+  };
+
+  document.getElementById('extractionInput').value = JSON.stringify(demoExtraction, null, 2);
+  document.getElementById('truthCertInput').value = JSON.stringify(demoReport, null, 2);
+  showToast('Demo data loaded', 'success');
+}
+
+// ============================================================
+// TESTS
+// ============================================================
+
+function runTests() {
+  var results = [];
+  var passed = 0;
+  var failed = 0;
+
+  function assert(name, condition, detail) {
+    if (condition) {
+      results.push('<div class="test-pass">PASS: ' + escapeHtml(name) + '</div>');
+      passed++;
+    } else {
+      results.push('<div class="test-fail">FAIL: ' + escapeHtml(name) + (detail ? ' — ' + escapeHtml(detail) : '') + '</div>');
+      failed++;
+    }
+  }
+
+  // Save current state and work in a clean slate
+  var savedIndex = localStorage.getItem(KEYS.index);
+  var savedMeta = localStorage.getItem(KEYS.meta);
+  var savedChains = {};
+  var origIndex = getIndex();
+  for (var si = 0; si < origIndex.length; si++) {
+    savedChains[origIndex[si]] = localStorage.getItem(KEYS.chainPrefix + origIndex[si]);
+  }
+
+  // Clear for tests
+  clearAll();
+
+  // --- Test 1: Store and retrieve ---
+  var ext1 = { nct: 'NCT00000001', study_title: 'Test Study A', provenance: { extractor_id: 'test' } };
+  var cert1 = { nct: 'NCT00000001', verdict: 'PASS', flags: [], witness_count: 0, certified_at: '2026-01-01T00:00:00.000Z', cleared_for_synthesis: true };
+  var rec1 = storeProvenance(ext1, cert1);
+  assert('Store returns record with chain_index=0', rec1.chain_index === 0);
+  assert('Store returns record with stored_at', typeof rec1.stored_at === 'string' && rec1.stored_at.length > 0);
+  assert('Store preserves extraction', rec1.extraction.nct === 'NCT00000001');
+  assert('Store preserves truthCert', rec1.truthCert.verdict === 'PASS');
+
+  var chain1 = getProvenanceChain('NCT00000001');
+  assert('getProvenanceChain returns 1 record', chain1.length === 1);
+  assert('Chain record matches stored record', chain1[0].chain_index === 0 && chain1[0].extraction.nct === 'NCT00000001');
+
+  // --- Test 2: Second record increments chain_index ---
+  var cert1b = { nct: 'NCT00000001', verdict: 'WARN', flags: [{ severity: 'WARNING' }], witness_count: 0, certified_at: '2026-01-02T00:00:00.000Z', cleared_for_synthesis: true };
+  var rec1b = storeProvenance(ext1, cert1b);
+  assert('Second store has chain_index=1', rec1b.chain_index === 1);
+  var chain1b = getProvenanceChain('NCT00000001');
+  assert('Chain now has 2 records', chain1b.length === 2);
+
+  // --- Test 3: Multiple NCTs tracked ---
+  var ext2 = { nct: 'NCT00000002', study_title: 'Test Study B', provenance: { extractor_id: 'test2' } };
+  var cert2 = { nct: 'NCT00000002', verdict: 'CRITICAL', flags: [{ severity: 'CRITICAL' }], witness_count: 1, certified_at: '2026-01-03T00:00:00.000Z', cleared_for_synthesis: false };
+  storeProvenance(ext2, cert2);
+  var idx = getIndex();
+  assert('Index has 2 NCTs', idx.length === 2);
+  assert('Index contains NCT00000001', idx.indexOf('NCT00000001') !== -1);
+  assert('Index contains NCT00000002', idx.indexOf('NCT00000002') !== -1);
+
+  // --- Test 4: getAllChains returns all ---
+  var allChains = getAllChains();
+  assert('getAllChains returns 3 total records', allChains.length === 3);
+
+  // --- Test 5: Storage stats ---
+  var stats = getStorageStats();
+  assert('Stats shows 2 studies', stats.studies === 2);
+  assert('Stats shows 3 records', stats.records === 3);
+  assert('Stats shows cleared count', stats.cleared === 2, 'Got: ' + stats.cleared);
+  assert('Stats sizeKB is numeric string', parseFloat(stats.sizeKB) > 0);
+
+  // --- Test 6: Delete chain ---
+  deleteChain('NCT00000002');
+  var idx2 = getIndex();
+  assert('After delete, index has 1 NCT', idx2.length === 1);
+  assert('Deleted NCT not in index', idx2.indexOf('NCT00000002') === -1);
+  var chain2 = getProvenanceChain('NCT00000002');
+  assert('Deleted chain is empty', chain2.length === 0);
+
+  // --- Test 7: Export/import bundle structure ---
+  var bundle = buildExportBundle();
+  assert('Export format is correct', bundle.format === 'cardiosynth_provenance_v1');
+  assert('Export has index array', Array.isArray(bundle.index));
+  assert('Export has chains object', typeof bundle.chains === 'object');
+  assert('Export chains has NCT00000001', Array.isArray(bundle.chains['NCT00000001']));
+  assert('Export chain has 2 records', bundle.chains['NCT00000001'].length === 2);
+
+  // --- Test 8: Clear all ---
+  clearAll();
+  assert('After clearAll, index is empty', getIndex().length === 0);
+  assert('After clearAll, chain is empty', getProvenanceChain('NCT00000001').length === 0);
+
+  // --- Test 9: Import from bundle ---
+  // Re-import the bundle we exported earlier
+  var importIndex = getIndex();
+  for (var bi = 0; bi < bundle.index.length; bi++) {
+    var nctI = bundle.index[bi];
+    var chainI = bundle.chains[nctI];
+    if (!chainI) continue;
+    setChain(nctI, chainI);
+    if (importIndex.indexOf(nctI) === -1) importIndex.push(nctI);
+  }
+  setIndex(importIndex);
+  var afterImport = getProvenanceChain('NCT00000001');
+  assert('After import, NCT00000001 has 2 records', afterImport.length === 2);
+  assert('Imported records have correct chain_index', afterImport[0].chain_index === 0 && afterImport[1].chain_index === 1);
+
+  // --- Test 10: Store without truthCert ---
+  var ext3 = { nct: 'NCT00000003', study_title: 'No cert study' };
+  var rec3 = storeProvenance(ext3, null);
+  assert('Store with null truthCert succeeds', rec3.truthCert === null);
+  assert('Chain index 0 for new NCT', rec3.chain_index === 0);
+
+  // --- Test 11: Store without nct throws ---
+  var threw = false;
+  try {
+    storeProvenance({ study_title: 'No NCT' }, null);
+  } catch (e) {
+    threw = true;
+  }
+  assert('Store without nct throws error', threw);
+
+  // --- Test 12: SHA-256 hash (async) ---
+  var hashPromise = sha256({ test: 'data', value: 42 });
+  hashPromise.then(function(hash) {
+    assert('SHA-256 returns 64-char hex string', hash.length === 64 && /^[0-9a-f]+$/.test(hash));
+
+    // Test determinism: same input = same hash
+    sha256({ test: 'data', value: 42 }).then(function(hash2) {
+      assert('SHA-256 is deterministic', hash === hash2);
+
+      // Different input = different hash
+      sha256({ test: 'data', value: 43 }).then(function(hash3) {
+        assert('SHA-256 different input gives different hash', hash !== hash3);
+
+        // --- Test 13: Meta tracking ---
+        var meta = getMeta();
+        assert('Meta tracks total_records', typeof meta.total_records === 'number');
+        assert('Meta tracks last_updated', typeof meta.last_updated === 'string');
+
+        // --- Cleanup: restore original state ---
+        clearAll();
+        if (savedIndex) localStorage.setItem(KEYS.index, savedIndex);
+        if (savedMeta) localStorage.setItem(KEYS.meta, savedMeta);
+        for (var key in savedChains) {
+          if (savedChains.hasOwnProperty(key)) {
+            localStorage.setItem(KEYS.chainPrefix + key, savedChains[key]);
+          }
+        }
+
+        // Show results
+        var summary = '<div class="test-summary ' + (failed === 0 ? 'test-pass' : 'test-fail') + '">' +
+          passed + ' passed, ' + failed + ' failed, ' + (passed + failed) + ' total</div>';
+        document.getElementById('testResults').innerHTML =
+          '<div class="panel"><h2>Test Results</h2><div class="test-results">' +
+          results.join('') + summary + '</div></div>';
+
+        updateStats();
+        renderDashboard();
+      });
+    });
+  });
+}
+
+// ============================================================
+// INIT
+// ============================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+  updateStats();
+  renderDashboard();
+});
+</script>
+</body>
+</html>
