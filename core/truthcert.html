@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CardioSynth TruthCert Validator</title>
+<meta name="description" content="CardioSynth Phase 0.3 — TruthCert Validator Suite: 10 validators for ExtractionObject integrity">
+<meta property="og:title" content="CardioSynth TruthCert Validator">
+<meta property="og:description" content="Browser-native ExtractionObject validation with 10-step pipeline and CRITICAL/WARN/PASS verdicts">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue-900: #1e3a5f;
+    --blue-800: #1e40af;
+    --blue-700: #1d4ed8;
+    --blue-600: #2563eb;
+    --blue-500: #3b82f6;
+    --blue-100: #dbeafe;
+    --blue-50: #eff6ff;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    --green-700: #15803d;
+    --green-600: #16a34a;
+    --green-100: #dcfce7;
+    --green-50: #f0fdf4;
+    --red-700: #b91c1c;
+    --red-600: #dc2626;
+    --red-100: #fee2e2;
+    --red-50: #fef2f2;
+    --amber-700: #b45309;
+    --amber-600: #d97706;
+    --amber-100: #fef3c7;
+    --amber-50: #fffbeb;
+    --purple-600: #9333ea;
+    --purple-100: #f3e8ff;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: #fff;
+    color: var(--gray-800);
+    line-height: 1.6;
+  }
+
+  .header {
+    background: linear-gradient(135deg, var(--blue-900) 0%, var(--blue-800) 100%);
+    color: #fff;
+    padding: 24px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .header-icon {
+    width: 48px; height: 48px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+  }
+  .header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+  .header .subtitle { font-size: 13px; opacity: 0.8; margin-top: 2px; }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px 32px; }
+
+  .panel {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .panel h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: 16px;
+  }
+  .panel h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gray-600);
+    margin-bottom: 8px;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 12px;
+    border: 1px solid var(--gray-300);
+    border-radius: 8px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    resize: vertical;
+    color: var(--gray-800);
+    background: #fff;
+  }
+  textarea:focus { outline: none; border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn-primary {
+    background: var(--blue-600);
+    color: #fff;
+  }
+  .btn-primary:hover { background: var(--blue-700); }
+  .btn-secondary {
+    background: var(--gray-200);
+    color: var(--gray-700);
+  }
+  .btn-secondary:hover { background: var(--gray-300); }
+  .btn-green {
+    background: var(--green-600);
+    color: #fff;
+  }
+  .btn-green:hover { background: var(--green-700); }
+  .btn-red {
+    background: var(--red-600);
+    color: #fff;
+  }
+  .btn-red:hover { background: var(--red-700); }
+
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .file-input-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+  .file-input-wrapper input[type="file"] {
+    position: absolute;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  /* Verdict badge */
+  .verdict-section {
+    text-align: center;
+    padding: 32px;
+    margin-bottom: 24px;
+    border-radius: 12px;
+    border: 2px solid;
+  }
+  .verdict-section.verdict-pass {
+    background: var(--green-50);
+    border-color: var(--green-600);
+  }
+  .verdict-section.verdict-warn {
+    background: var(--amber-50);
+    border-color: var(--amber-600);
+  }
+  .verdict-section.verdict-critical {
+    background: var(--red-50);
+    border-color: var(--red-600);
+  }
+  .verdict-badge {
+    display: inline-block;
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    padding: 8px 32px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+  }
+  .verdict-pass .verdict-badge { color: var(--green-700); }
+  .verdict-warn .verdict-badge { color: var(--amber-700); }
+  .verdict-critical .verdict-badge { color: var(--red-700); }
+
+  .verdict-nct {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--gray-600);
+    margin-bottom: 4px;
+  }
+  .verdict-meta {
+    font-size: 13px;
+    color: var(--gray-500);
+  }
+
+  .synthesis-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 12px;
+  }
+  .synthesis-badge.cleared {
+    background: var(--green-100);
+    color: var(--green-700);
+  }
+  .synthesis-badge.blocked {
+    background: var(--red-100);
+    color: var(--red-700);
+  }
+
+  /* Flags table */
+  .flags-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .flags-table th {
+    background: var(--gray-100);
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--gray-600);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--gray-200);
+  }
+  .flags-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--gray-100);
+    vertical-align: top;
+  }
+  .flags-table tr.severity-info td { background: var(--green-50); }
+  .flags-table tr.severity-warning td { background: var(--amber-50); }
+  .flags-table tr.severity-critical td { background: var(--red-50); }
+
+  .severity-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .severity-tag.info { background: var(--green-100); color: var(--green-700); }
+  .severity-tag.warning { background: var(--amber-100); color: var(--amber-700); }
+  .severity-tag.critical { background: var(--red-100); color: var(--red-700); }
+
+  .field-path {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 11px;
+    color: var(--blue-700);
+    background: var(--blue-50);
+    padding: 1px 4px;
+    border-radius: 3px;
+  }
+
+  /* Test results */
+  .test-results-panel {
+    margin-top: 16px;
+  }
+  .test-result {
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .test-result.pass { background: var(--green-100); color: var(--green-700); }
+  .test-result.fail { background: var(--red-100); color: var(--red-700); }
+  .test-result-icon { font-weight: 700; font-size: 14px; }
+  .test-summary {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 15px;
+    margin-top: 12px;
+    text-align: center;
+  }
+  .test-summary.all-pass { background: var(--green-100); color: var(--green-700); }
+  .test-summary.has-fail { background: var(--red-100); color: var(--red-700); }
+
+  .halted-notice {
+    padding: 8px 12px;
+    background: var(--red-50);
+    border: 1px solid var(--red-600);
+    border-radius: 6px;
+    color: var(--red-700);
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 4px;
+  }
+
+  #resultsArea { display: none; }
+  #testResultsArea { display: none; }
+
+  .input-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 12px;
+  }
+  .input-tab {
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid var(--gray-300);
+    background: var(--gray-100);
+    color: var(--gray-600);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .input-tab:first-child { border-radius: 8px 0 0 8px; }
+  .input-tab:last-child { border-radius: 0 8px 8px 0; }
+  .input-tab.active {
+    background: var(--blue-600);
+    color: #fff;
+    border-color: var(--blue-600);
+  }
+  .input-section { display: none; }
+  .input-section.active { display: block; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 800px) { .two-col { grid-template-columns: 1fr; } }
+
+  .raw-json-output {
+    max-height: 300px;
+    overflow-y: auto;
+    background: var(--gray-900);
+    color: #a5f3fc;
+    padding: 16px;
+    border-radius: 8px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 12px;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">&#x2714;</div>
+  <div>
+    <h1>CardioSynth TruthCert Validator</h1>
+    <div class="subtitle">Phase 0.3 &mdash; 10-Validator Pipeline for ExtractionObject Integrity</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Input Panel -->
+  <div class="panel">
+    <h2>ExtractionObject Input</h2>
+    <div class="input-tabs">
+      <div class="input-tab active" onclick="switchInputTab('paste')">Paste JSON</div>
+      <div class="input-tab" onclick="switchInputTab('upload')">Upload File</div>
+    </div>
+    <div id="inputPaste" class="input-section active">
+      <textarea id="jsonInput" placeholder="Paste ExtractionObject JSON here..."></textarea>
+    </div>
+    <div id="inputUpload" class="input-section">
+      <div class="file-input-wrapper">
+        <button class="btn btn-secondary">Choose JSON File</button>
+        <input type="file" id="fileInput" accept=".json" onchange="loadFile(this)">
+      </div>
+      <div id="fileName" style="margin-top:8px; font-size:13px; color:var(--gray-500);"></div>
+    </div>
+  </div>
+
+  <!-- Existing Pool (optional) -->
+  <div class="panel">
+    <h2>Existing Pool (optional, for duplicate detection)</h2>
+    <div class="input-tabs">
+      <div class="input-tab active" onclick="switchPoolTab('paste')">Paste JSON Array</div>
+      <div class="input-tab" onclick="switchPoolTab('upload')">Upload File</div>
+    </div>
+    <div id="poolPaste" class="input-section active">
+      <textarea id="poolInput" placeholder="Paste array of previously validated ExtractionObjects (optional)..." style="min-height:80px;"></textarea>
+    </div>
+    <div id="poolUpload" class="input-section">
+      <div class="file-input-wrapper">
+        <button class="btn btn-secondary">Choose Pool File</button>
+        <input type="file" id="poolFileInput" accept=".json" onchange="loadPoolFile(this)">
+      </div>
+      <div id="poolFileName" style="margin-top:8px; font-size:13px; color:var(--gray-500);"></div>
+    </div>
+  </div>
+
+  <!-- Action buttons -->
+  <div class="btn-row" style="margin-bottom:24px;">
+    <button class="btn btn-primary" onclick="runTruthCert()">&#x2714; Run TruthCert</button>
+    <button class="btn btn-secondary" onclick="runTests()">&#x1F9EA; Run Tests</button>
+    <button class="btn btn-green" id="exportBtn" onclick="exportReport()" style="display:none;">&#x2B07; Download TruthCert Report</button>
+  </div>
+
+  <!-- Results Area -->
+  <div id="resultsArea">
+    <div id="verdictSection" class="verdict-section"></div>
+
+    <div class="panel">
+      <h2>Validator Flags</h2>
+      <div id="haltedNotice"></div>
+      <table class="flags-table">
+        <thead>
+          <tr>
+            <th style="width:20%">Validator</th>
+            <th style="width:10%">Severity</th>
+            <th style="width:18%">Field</th>
+            <th>Message</th>
+          </tr>
+        </thead>
+        <tbody id="flagsBody"></tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <h2>Raw TruthCert JSON</h2>
+      <div id="rawOutput" class="raw-json-output"></div>
+    </div>
+  </div>
+
+  <!-- Test Results Area -->
+  <div id="testResultsArea">
+    <div class="panel">
+      <h2>Test Suite Results</h2>
+      <div id="testResults" class="test-results-panel"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// CardioSynth TruthCert Validator Suite — Phase 0.3
+// 10 validators, strict execution order, halt on CRITICAL
+// ============================================================
+
+var currentReport = null;
+
+// --- UI Tab Switching ---
+function switchInputTab(tab) {
+  var tabs = document.querySelectorAll('.panel:nth-child(1) .input-tab');
+  tabs.forEach(function(t) { t.classList.remove('active'); });
+  document.getElementById('inputPaste').classList.remove('active');
+  document.getElementById('inputUpload').classList.remove('active');
+  if (tab === 'paste') {
+    tabs[0].classList.add('active');
+    document.getElementById('inputPaste').classList.add('active');
+  } else {
+    tabs[1].classList.add('active');
+    document.getElementById('inputUpload').classList.add('active');
+  }
+}
+
+function switchPoolTab(tab) {
+  var tabs = document.querySelectorAll('.panel:nth-child(2) .input-tab');
+  tabs.forEach(function(t) { t.classList.remove('active'); });
+  document.getElementById('poolPaste').classList.remove('active');
+  document.getElementById('poolUpload').classList.remove('active');
+  if (tab === 'paste') {
+    tabs[0].classList.add('active');
+    document.getElementById('poolPaste').classList.add('active');
+  } else {
+    tabs[1].classList.add('active');
+    document.getElementById('poolUpload').classList.add('active');
+  }
+}
+
+function loadFile(input) {
+  if (!input.files || !input.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('jsonInput').value = e.target.result;
+    document.getElementById('fileName').textContent = 'Loaded: ' + input.files[0].name;
+  };
+  reader.readAsText(input.files[0]);
+}
+
+function loadPoolFile(input) {
+  if (!input.files || !input.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('poolInput').value = e.target.result;
+    document.getElementById('poolFileName').textContent = 'Loaded: ' + input.files[0].name;
+  };
+  reader.readAsText(input.files[0]);
+}
+
+// --- Levenshtein Similarity ---
+function levenshteinSimilarity(a, b) {
+  a = (a || '').toLowerCase().trim();
+  b = (b || '').toLowerCase().trim();
+  if (a === b) return 1;
+  if (!a.length || !b.length) return 0;
+  var matrix = Array.from({ length: a.length + 1 }, function(_, i) {
+    return Array.from({ length: b.length + 1 }, function(_, j) {
+      return (i === 0 ? j : j === 0 ? i : 0);
+    });
+  });
+  for (var i = 1; i <= a.length; i++) {
+    for (var j = 1; j <= b.length; j++) {
+      var cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost
+      );
+    }
+  }
+  return 1 - matrix[a.length][b.length] / Math.max(a.length, b.length);
+}
+
+// --- Duration Parser ---
+function parseDuration(text) {
+  if (!text || typeof text !== 'string') return null;
+  var t = text.toLowerCase().trim();
+  // Extract number and unit pairs
+  var matches = [];
+  var re = /(\d+(?:\.\d+)?)\s*(year|yr|month|mo|week|wk|day|d|hour|hr|h)/gi;
+  var m;
+  while ((m = re.exec(t)) !== null) {
+    var num = parseFloat(m[1]);
+    var unit = m[2].toLowerCase();
+    // Normalize to days
+    if (unit === 'year' || unit === 'yr') matches.push(num * 365.25);
+    else if (unit === 'month' || unit === 'mo') matches.push(num * 30.44);
+    else if (unit === 'week' || unit === 'wk') matches.push(num * 7);
+    else if (unit === 'day' || unit === 'd') matches.push(num);
+    else if (unit === 'hour' || unit === 'hr' || unit === 'h') matches.push(num / 24);
+  }
+  if (matches.length === 0) return null;
+  // Sum all components
+  var total = 0;
+  for (var i = 0; i < matches.length; i++) total += matches[i];
+  return total;
+}
+
+// --- Date Parser ---
+function parseDate(str) {
+  if (!str) return null;
+  var d = new Date(str);
+  if (isNaN(d.getTime())) return null;
+  return d;
+}
+
+// --- Make a flag object ---
+function makeFlag(validator, severity, field, message, rawValues) {
+  return {
+    validator: validator,
+    severity: severity,
+    field: field || null,
+    message: message,
+    raw_values: rawValues || null
+  };
+}
+
+// ============================================================
+// THE 10 VALIDATORS
+// ============================================================
+
+// 1. ARM_SWAP_DETECTOR
+function validateArmSwap(obj) {
+  var flags = [];
+  var arms = obj.arms || [];
+  for (var i = 0; i < arms.length; i++) {
+    var arm = arms[i];
+    var label = (arm.arm_label || '').toLowerCase();
+    var type = (arm.arm_type || '').toUpperCase();
+
+    if (type === 'UNKNOWN' || type === 'OTHER') {
+      flags.push(makeFlag('ARM_SWAP_DETECTOR', 'INFO', 'arms.' + i + '.arm_type',
+        'Arm type is ' + type + ' for "' + arm.arm_label + '"',
+        { arm_label: arm.arm_label, arm_type: arm.arm_type }));
+      continue;
+    }
+
+    // CRITICAL: label says placebo/control but type says EXPERIMENTAL
+    if (type === 'EXPERIMENTAL') {
+      if (label.indexOf('placebo') !== -1 || label.indexOf('control') !== -1) {
+        flags.push(makeFlag('ARM_SWAP_DETECTOR', 'CRITICAL', 'arms.' + i + '.arm_type',
+          'Arm label contains "' + (label.indexOf('placebo') !== -1 ? 'placebo' : 'control') + '" but type = EXPERIMENTAL. Possible arm swap.',
+          { arm_label: arm.arm_label, arm_type: arm.arm_type }));
+        continue;
+      }
+    }
+
+    // CRITICAL: label says experimental/treatment/active but type says PLACEBO or COMPARATOR
+    if (type === 'PLACEBO' || type === 'COMPARATOR') {
+      if (label.indexOf('experimental') !== -1 || label.indexOf('treatment') !== -1 || label.indexOf('active') !== -1) {
+        flags.push(makeFlag('ARM_SWAP_DETECTOR', 'CRITICAL', 'arms.' + i + '.arm_type',
+          'Arm label contains "' + (label.indexOf('experimental') !== -1 ? 'experimental' : label.indexOf('treatment') !== -1 ? 'treatment' : 'active') + '" but type = ' + type + '. Possible arm swap.',
+          { arm_label: arm.arm_label, arm_type: arm.arm_type }));
+        continue;
+      }
+    }
+
+    // If we get here, classification looks OK
+    flags.push(makeFlag('ARM_SWAP_DETECTOR', 'INFO', 'arms.' + i + '.arm_type',
+      'Arm type correctly classified',
+      { arm_label: arm.arm_label, arm_type: arm.arm_type }));
+  }
+
+  if (arms.length === 0) {
+    flags.push(makeFlag('ARM_SWAP_DETECTOR', 'INFO', 'arms',
+      'No arms found in ExtractionObject', null));
+  }
+
+  return flags;
+}
+
+// 2. TIMEPOINT_DRIFT
+function validateTimepointDrift(obj) {
+  var flags = [];
+  var regPrimary = ((obj.registered_outcomes || {}).primary || [])[0];
+  var reportedPrimary = null;
+  var outcomes = obj.outcomes || [];
+  for (var i = 0; i < outcomes.length; i++) {
+    if (outcomes[i].type === 'PRIMARY') { reportedPrimary = outcomes[i]; break; }
+  }
+
+  var regTimeframe = regPrimary ? (regPrimary.timeFrame || '') : '';
+  var repTimeframe = reportedPrimary ? (reportedPrimary.timeframe || '') : '';
+
+  if (!regTimeframe || !repTimeframe) {
+    flags.push(makeFlag('TIMEPOINT_DRIFT', 'INFO', 'registered_outcomes.primary.0.timeFrame',
+      'Timeframe comparison skipped: ' + (!regTimeframe ? 'registered' : 'reported') + ' timeframe missing',
+      { registered: regTimeframe || null, reported: repTimeframe || null }));
+    return flags;
+  }
+
+  var regDays = parseDuration(regTimeframe);
+  var repDays = parseDuration(repTimeframe);
+
+  if (regDays !== null && repDays !== null) {
+    var maxDur = Math.max(regDays, repDays);
+    var diff = Math.abs(regDays - repDays);
+    if (maxDur > 0 && diff / maxDur > 0.2) {
+      flags.push(makeFlag('TIMEPOINT_DRIFT', 'CRITICAL', 'outcomes.PRIMARY.timeframe',
+        'Numeric duration differs by >' + Math.round(diff / maxDur * 100) + '% (registered: ' + regTimeframe + ' [~' + Math.round(regDays) + 'd], reported: ' + repTimeframe + ' [~' + Math.round(repDays) + 'd])',
+        { registered: regTimeframe, reported: repTimeframe, registered_days: regDays, reported_days: repDays }));
+      return flags;
+    }
+  }
+
+  // Text comparison
+  if (regTimeframe.toLowerCase().trim() !== repTimeframe.toLowerCase().trim()) {
+    flags.push(makeFlag('TIMEPOINT_DRIFT', 'WARNING', 'outcomes.PRIMARY.timeframe',
+      'Timeframe wording differs (registered: "' + regTimeframe + '", reported: "' + repTimeframe + '")',
+      { registered: regTimeframe, reported: repTimeframe }));
+  } else {
+    flags.push(makeFlag('TIMEPOINT_DRIFT', 'INFO', 'outcomes.PRIMARY.timeframe',
+      'Timeframes match',
+      { registered: regTimeframe, reported: repTimeframe }));
+  }
+
+  return flags;
+}
+
+// 3. UNIT_CHECKER
+function validateUnitChecker(obj) {
+  var flags = [];
+  var outcomes = obj.outcomes || [];
+  var flagged = false;
+
+  for (var i = 0; i < outcomes.length; i++) {
+    var om = outcomes[i];
+    if (om.measure_type === 'COUNT' || om.measure_type === 'NUMBER') continue;
+    if (om.measure_type !== 'MEAN' && om.measure_type !== 'MEDIAN') continue;
+
+    var data = om.data || [];
+    for (var j = 0; j < data.length; j++) {
+      var d = data[j];
+      var val = d.value;
+      var spread = d.spread;
+      if (val === null || val === undefined || spread === null || spread === undefined) continue;
+      if (Math.abs(val) === 0) continue; // skip zero values to avoid div-by-zero style issues
+
+      if (spread > 3 * Math.abs(val)) {
+        flags.push(makeFlag('UNIT_CHECKER', 'WARNING',
+          'outcomes.' + i + '.data.' + j + '.spread',
+          'Spread (' + spread + ') > 3x |value| (' + Math.abs(val) + ') in "' + om.title + '" for arm "' + (d.arm_label || 'unknown') + '". Possible unit error.',
+          { outcome: om.title, arm: d.arm_label, value: val, spread: spread, unit: om.unit }));
+        flagged = true;
+      }
+    }
+  }
+
+  if (!flagged) {
+    flags.push(makeFlag('UNIT_CHECKER', 'INFO', null,
+      'No unit anomalies detected', null));
+  }
+
+  return flags;
+}
+
+// 4. TOTAL_CHECKER
+function validateTotalChecker(obj) {
+  var flags = [];
+  var enrollment = (obj.study_metadata || {}).enrollment_actual;
+  var arms = obj.arms || [];
+
+  if (enrollment === null || enrollment === undefined) {
+    flags.push(makeFlag('TOTAL_CHECKER', 'INFO', 'study_metadata.enrollment_actual',
+      'Enrollment not available, skipping total check', null));
+    return flags;
+  }
+
+  var totalAnalyzed = 0;
+  var anyAnalyzed = false;
+  for (var i = 0; i < arms.length; i++) {
+    if (arms[i].n_analyzed !== null && arms[i].n_analyzed !== undefined) {
+      totalAnalyzed += arms[i].n_analyzed;
+      anyAnalyzed = true;
+    }
+  }
+
+  if (!anyAnalyzed) {
+    flags.push(makeFlag('TOTAL_CHECKER', 'INFO', 'arms.n_analyzed',
+      'No arm-level n_analyzed data available', null));
+    return flags;
+  }
+
+  if (totalAnalyzed > enrollment) {
+    flags.push(makeFlag('TOTAL_CHECKER', 'CRITICAL', 'arms.n_analyzed',
+      'Total analyzed (' + totalAnalyzed + ') exceeds enrolled (' + enrollment + ')',
+      { total_analyzed: totalAnalyzed, enrollment_actual: enrollment }));
+  } else if (totalAnalyzed < enrollment * 0.5) {
+    flags.push(makeFlag('TOTAL_CHECKER', 'WARNING', 'arms.n_analyzed',
+      'Total analyzed (' + totalAnalyzed + ') is <50% of enrolled (' + enrollment + '). High attrition.',
+      { total_analyzed: totalAnalyzed, enrollment_actual: enrollment, attrition_pct: Math.round((1 - totalAnalyzed / enrollment) * 100) }));
+  } else {
+    flags.push(makeFlag('TOTAL_CHECKER', 'INFO', 'arms.n_analyzed',
+      'Total analyzed (' + totalAnalyzed + ') within expected range of enrolled (' + enrollment + ')',
+      { total_analyzed: totalAnalyzed, enrollment_actual: enrollment }));
+  }
+
+  return flags;
+}
+
+// 5. EVENT_RATE_PLAUSIBILITY
+function validateEventRate(obj) {
+  var flags = [];
+  var outcomes = obj.outcomes || [];
+  var flagged = false;
+
+  for (var i = 0; i < outcomes.length; i++) {
+    var om = outcomes[i];
+    if (om.measure_type !== 'COUNT' && om.measure_type !== 'NUMBER') continue;
+
+    var data = om.data || [];
+    for (var j = 0; j < data.length; j++) {
+      var d = data[j];
+      if (d.participants === null || d.participants === undefined || d.participants === 0) continue;
+      if (d.value === null || d.value === undefined) continue;
+
+      if (d.value > d.participants) {
+        flags.push(makeFlag('EVENT_RATE_PLAUSIBILITY', 'CRITICAL',
+          'outcomes.' + i + '.data.' + j + '.value',
+          'Events (' + d.value + ') > participants (' + d.participants + ') in "' + om.title + '" for arm "' + (d.arm_label || 'unknown') + '"',
+          { outcome: om.title, arm: d.arm_label, events: d.value, participants: d.participants }));
+        flagged = true;
+      }
+    }
+  }
+
+  if (!flagged) {
+    flags.push(makeFlag('EVENT_RATE_PLAUSIBILITY', 'INFO', null,
+      'All event counts within participant bounds', null));
+  }
+
+  return flags;
+}
+
+// 6. ZERO_CELL_HANDLER
+function validateZeroCell(obj) {
+  var flags = [];
+  var outcomes = obj.outcomes || [];
+  var zeroFound = false;
+
+  for (var i = 0; i < outcomes.length; i++) {
+    var om = outcomes[i];
+    if (om.measure_type !== 'COUNT' && om.measure_type !== 'NUMBER') continue;
+
+    var data = om.data || [];
+    for (var j = 0; j < data.length; j++) {
+      if (data[j].value === 0) {
+        flags.push(makeFlag('ZERO_CELL_HANDLER', 'INFO',
+          'outcomes.' + i + '.data.' + j + '.value',
+          'Zero events in "' + om.title + '" for arm "' + (data[j].arm_label || 'unknown') + '" -- use Peto OR or add 0.5 continuity correction',
+          { outcome: om.title, arm: data[j].arm_label, value: 0 }));
+        zeroFound = true;
+      }
+    }
+  }
+
+  if (!zeroFound) {
+    flags.push(makeFlag('ZERO_CELL_HANDLER', 'INFO', null,
+      'No zero cells detected in COUNT outcomes', null));
+  }
+
+  return flags;
+}
+
+// 7. DUPLICATE_DETECTOR
+function validateDuplicate(obj, pool) {
+  var flags = [];
+  pool = pool || [];
+
+  if (pool.length === 0) {
+    flags.push(makeFlag('DUPLICATE_DETECTOR', 'INFO', null,
+      'No existing pool provided, duplicate check skipped', null));
+    return flags;
+  }
+
+  var nct = obj.nct || '';
+  var title = (obj.study_metadata || {}).title || '';
+  var duplicateFound = false;
+
+  for (var i = 0; i < pool.length; i++) {
+    var poolObj = pool[i];
+    var poolNct = poolObj.nct || '';
+    var poolTitle = (poolObj.study_metadata || {}).title || '';
+
+    // NCT match
+    if (nct && poolNct && nct.toUpperCase() === poolNct.toUpperCase()) {
+      flags.push(makeFlag('DUPLICATE_DETECTOR', 'CRITICAL', 'nct',
+        'NCT number ' + nct + ' already exists in pool (index ' + i + ')',
+        { nct: nct, pool_index: i }));
+      duplicateFound = true;
+      continue;
+    }
+
+    // Title similarity
+    if (title && poolTitle) {
+      var sim = levenshteinSimilarity(title, poolTitle);
+      if (sim > 0.85) {
+        flags.push(makeFlag('DUPLICATE_DETECTOR', 'WARNING', 'study_metadata.title',
+          'Possible duplicate: title similarity ' + (sim * 100).toFixed(1) + '% with pool study "' + poolNct + '"',
+          { title: title, pool_title: poolTitle, similarity: sim, pool_nct: poolNct }));
+        duplicateFound = true;
+      }
+    }
+  }
+
+  if (!duplicateFound) {
+    flags.push(makeFlag('DUPLICATE_DETECTOR', 'INFO', null,
+      'No duplicates detected in pool of ' + pool.length + ' studies', null));
+  }
+
+  return flags;
+}
+
+// 8. MULTIARM_ADJUSTER
+function validateMultiarm(obj) {
+  var flags = [];
+  var arms = obj.arms || [];
+
+  if (arms.length > 2) {
+    flags.push(makeFlag('MULTIARM_ADJUSTER', 'WARNING', 'arms',
+      'Multi-arm trial (' + arms.length + ' arms) requires arbitration before pairwise synthesis',
+      { arm_count: arms.length, arm_labels: arms.map(function(a) { return a.arm_label; }) }));
+  } else {
+    flags.push(makeFlag('MULTIARM_ADJUSTER', 'INFO', 'arms',
+      'Standard ' + arms.length + '-arm design',
+      { arm_count: arms.length }));
+  }
+
+  return flags;
+}
+
+// 9. OUTCOME_SWITCHING_DETECTOR
+function validateOutcomeSwitching(obj) {
+  var flags = [];
+  var regPrimary = ((obj.registered_outcomes || {}).primary || [])[0];
+  var reportedPrimary = null;
+  var outcomes = obj.outcomes || [];
+  for (var i = 0; i < outcomes.length; i++) {
+    if (outcomes[i].type === 'PRIMARY') { reportedPrimary = outcomes[i]; break; }
+  }
+
+  var regMeasure = regPrimary ? (regPrimary.measure || '') : '';
+  var repTitle = reportedPrimary ? (reportedPrimary.title || '') : '';
+
+  if (!regMeasure || !repTitle) {
+    flags.push(makeFlag('OUTCOME_SWITCHING_DETECTOR', 'INFO',
+      'registered_outcomes.primary.0.measure',
+      'Outcome switching check skipped: ' + (!regMeasure ? 'registered' : 'reported') + ' primary outcome title missing',
+      { registered: regMeasure || null, reported: repTitle || null }));
+    return flags;
+  }
+
+  var sim = levenshteinSimilarity(regMeasure, repTitle);
+
+  if (sim < 0.4) {
+    flags.push(makeFlag('OUTCOME_SWITCHING_DETECTOR', 'CRITICAL',
+      'outcomes.PRIMARY.title',
+      'Likely outcome switching: registered vs reported primary similarity = ' + (sim * 100).toFixed(1) + '% (threshold: 40%)',
+      { registered: regMeasure, reported: repTitle, similarity: sim }));
+  } else if (sim < 0.7) {
+    flags.push(makeFlag('OUTCOME_SWITCHING_DETECTOR', 'WARNING',
+      'outcomes.PRIMARY.title',
+      'Possible outcome modification: registered vs reported primary similarity = ' + (sim * 100).toFixed(1) + '% (threshold: 70%)',
+      { registered: regMeasure, reported: repTitle, similarity: sim }));
+  } else if (sim < 0.9) {
+    flags.push(makeFlag('OUTCOME_SWITCHING_DETECTOR', 'INFO',
+      'outcomes.PRIMARY.title',
+      'Minor wording difference: registered vs reported primary similarity = ' + (sim * 100).toFixed(1) + '%',
+      { registered: regMeasure, reported: repTitle, similarity: sim }));
+  } else {
+    flags.push(makeFlag('OUTCOME_SWITCHING_DETECTOR', 'INFO',
+      'outcomes.PRIMARY.title',
+      'Registered and reported primary outcomes match (' + (sim * 100).toFixed(1) + '%)',
+      { registered: regMeasure, reported: repTitle, similarity: sim }));
+  }
+
+  return flags;
+}
+
+// 10. REGISTRATION_TIMING
+function validateRegistrationTiming(obj) {
+  var flags = [];
+  var meta = obj.study_metadata || {};
+  var submitStr = meta.study_first_submit_date || '';
+  var completionStr = meta.primary_completion_date || '';
+
+  if (!submitStr || !completionStr) {
+    flags.push(makeFlag('REGISTRATION_TIMING', 'INFO',
+      'study_metadata.study_first_submit_date',
+      'Registration timing check skipped: ' + (!submitStr ? 'submit date' : 'completion date') + ' missing',
+      { study_first_submit_date: submitStr || null, primary_completion_date: completionStr || null }));
+    return flags;
+  }
+
+  var submitDate = parseDate(submitStr);
+  var completionDate = parseDate(completionStr);
+
+  if (!submitDate || !completionDate) {
+    flags.push(makeFlag('REGISTRATION_TIMING', 'INFO',
+      'study_metadata.study_first_submit_date',
+      'Registration timing check skipped: could not parse dates',
+      { study_first_submit_date: submitStr, primary_completion_date: completionStr }));
+    return flags;
+  }
+
+  var diffMs = completionDate.getTime() - submitDate.getTime();
+  var diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+  if (diffDays < 0) {
+    // Registration was AFTER completion
+    flags.push(makeFlag('REGISTRATION_TIMING', 'WARNING',
+      'study_metadata.study_first_submit_date',
+      'Registration (' + submitStr + ') was after primary completion (' + completionStr + '). Post-hoc registration.',
+      { study_first_submit_date: submitStr, primary_completion_date: completionStr, diff_days: Math.round(diffDays) }));
+  } else if (diffDays <= 30) {
+    flags.push(makeFlag('REGISTRATION_TIMING', 'INFO',
+      'study_metadata.study_first_submit_date',
+      'Registration (' + submitStr + ') within 30 days of primary completion (' + completionStr + ')',
+      { study_first_submit_date: submitStr, primary_completion_date: completionStr, diff_days: Math.round(diffDays) }));
+  } else {
+    flags.push(makeFlag('REGISTRATION_TIMING', 'INFO',
+      'study_metadata.study_first_submit_date',
+      'Prospective registration: ' + Math.round(diffDays) + ' days before primary completion',
+      { study_first_submit_date: submitStr, primary_completion_date: completionStr, diff_days: Math.round(diffDays) }));
+  }
+
+  return flags;
+}
+
+// ============================================================
+// PIPELINE ORCHESTRATOR
+// ============================================================
+
+var VALIDATORS = [
+  { name: 'ARM_SWAP_DETECTOR',           fn: validateArmSwap },
+  { name: 'TIMEPOINT_DRIFT',             fn: validateTimepointDrift },
+  { name: 'UNIT_CHECKER',                fn: validateUnitChecker },
+  { name: 'TOTAL_CHECKER',               fn: validateTotalChecker },
+  { name: 'EVENT_RATE_PLAUSIBILITY',     fn: validateEventRate },
+  { name: 'ZERO_CELL_HANDLER',           fn: validateZeroCell },
+  { name: 'DUPLICATE_DETECTOR',          fn: validateDuplicate },
+  { name: 'MULTIARM_ADJUSTER',           fn: validateMultiarm },
+  { name: 'OUTCOME_SWITCHING_DETECTOR',  fn: validateOutcomeSwitching },
+  { name: 'REGISTRATION_TIMING',         fn: validateRegistrationTiming }
+];
+
+function runPipeline(obj, pool) {
+  var allFlags = [];
+  var halted = false;
+  var haltedAt = null;
+
+  for (var i = 0; i < VALIDATORS.length; i++) {
+    var v = VALIDATORS[i];
+    var flags;
+
+    // DUPLICATE_DETECTOR needs the pool as second arg
+    if (v.name === 'DUPLICATE_DETECTOR') {
+      flags = v.fn(obj, pool);
+    } else {
+      flags = v.fn(obj);
+    }
+
+    for (var j = 0; j < flags.length; j++) {
+      allFlags.push(flags[j]);
+    }
+
+    // Check for CRITICAL — halt pipeline
+    var hasCritical = flags.some(function(f) { return f.severity === 'CRITICAL'; });
+    if (hasCritical) {
+      halted = true;
+      haltedAt = v.name;
+      break;
+    }
+  }
+
+  // Determine verdict
+  var hasCriticalFlag = allFlags.some(function(f) { return f.severity === 'CRITICAL'; });
+  var hasWarningFlag = allFlags.some(function(f) { return f.severity === 'WARNING'; });
+  var verdict;
+  if (hasCriticalFlag) verdict = 'CRITICAL';
+  else if (hasWarningFlag) verdict = 'WARN';
+  else verdict = 'PASS';
+
+  var report = {
+    nct: obj.nct || 'UNKNOWN',
+    verdict: verdict,
+    flags: allFlags,
+    witness_count: allFlags.filter(function(f) { return f.severity === 'CRITICAL'; }).length,
+    certified_at: new Date().toISOString(),
+    cleared_for_synthesis: !hasCriticalFlag,
+    _halted: halted,
+    _halted_at: haltedAt
+  };
+
+  return report;
+}
+
+// ============================================================
+// UI RENDERING
+// ============================================================
+
+function escapeHtml(text) {
+  var div = document.createElement('div');
+  div.appendChild(document.createTextNode(text));
+  return div.innerHTML;
+}
+
+function renderReport(report) {
+  currentReport = report;
+  var resultsArea = document.getElementById('resultsArea');
+  resultsArea.style.display = 'block';
+  document.getElementById('exportBtn').style.display = 'inline-flex';
+
+  // Verdict section
+  var vs = document.getElementById('verdictSection');
+  vs.className = 'verdict-section verdict-' + report.verdict.toLowerCase();
+  vs.innerHTML = '<div class="verdict-nct">' + escapeHtml(report.nct) + '</div>' +
+    '<div class="verdict-badge">' + escapeHtml(report.verdict) + '</div>' +
+    '<div class="verdict-meta">Certified: ' + escapeHtml(report.certified_at) + ' | Flags: ' + report.flags.length + ' | CRITICAL: ' + report.witness_count + '</div>' +
+    '<div class="synthesis-badge ' + (report.cleared_for_synthesis ? 'cleared' : 'blocked') + '">' +
+    (report.cleared_for_synthesis ? '\u2714 Cleared for Synthesis' : '\u2716 Blocked from Synthesis') +
+    '</div>';
+
+  // Halted notice
+  var haltedDiv = document.getElementById('haltedNotice');
+  if (report._halted) {
+    haltedDiv.innerHTML = '<div class="halted-notice">\u26A0 Pipeline halted at ' + escapeHtml(report._halted_at) + ' due to CRITICAL flag. Remaining validators were not executed.</div>';
+  } else {
+    haltedDiv.innerHTML = '';
+  }
+
+  // Flags table
+  var tbody = document.getElementById('flagsBody');
+  tbody.innerHTML = '';
+  for (var i = 0; i < report.flags.length; i++) {
+    var f = report.flags[i];
+    var tr = document.createElement('tr');
+    tr.className = 'severity-' + f.severity.toLowerCase();
+    tr.innerHTML = '<td><strong>' + escapeHtml(f.validator) + '</strong></td>' +
+      '<td><span class="severity-tag ' + f.severity.toLowerCase() + '">' + escapeHtml(f.severity) + '</span></td>' +
+      '<td>' + (f.field ? '<span class="field-path">' + escapeHtml(f.field) + '</span>' : '--') + '</td>' +
+      '<td>' + escapeHtml(f.message) + '</td>';
+    tbody.appendChild(tr);
+  }
+
+  // Raw JSON output
+  var rawReport = JSON.parse(JSON.stringify(report));
+  delete rawReport._halted;
+  delete rawReport._halted_at;
+  document.getElementById('rawOutput').textContent = JSON.stringify(rawReport, null, 2);
+}
+
+function runTruthCert() {
+  var jsonStr = document.getElementById('jsonInput').value.trim();
+  if (!jsonStr) {
+    alert('Please paste or upload an ExtractionObject JSON.');
+    return;
+  }
+
+  var obj;
+  try {
+    obj = JSON.parse(jsonStr);
+  } catch (e) {
+    alert('Invalid JSON: ' + e.message);
+    return;
+  }
+
+  var pool = [];
+  var poolStr = document.getElementById('poolInput').value.trim();
+  if (poolStr) {
+    try {
+      pool = JSON.parse(poolStr);
+      if (!Array.isArray(pool)) pool = [pool];
+    } catch (e) {
+      alert('Invalid pool JSON: ' + e.message);
+      return;
+    }
+  }
+
+  var report = runPipeline(obj, pool);
+  renderReport(report);
+}
+
+function exportReport() {
+  if (!currentReport) return;
+  var rawReport = JSON.parse(JSON.stringify(currentReport));
+  delete rawReport._halted;
+  delete rawReport._halted_at;
+  var jsonStr = JSON.stringify(rawReport, null, 2);
+  var blob = new Blob([jsonStr], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = rawReport.nct + '_truthcert.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ============================================================
+// TEST SUITE
+// ============================================================
+
+function makeTestExtraction(overrides) {
+  var base = {
+    nct: 'NCT00000001',
+    extraction_timestamp: '2026-04-08T12:00:00.000Z',
+    extractor_id: 'test',
+    study_metadata: {
+      title: 'Test Study of Drug X vs Placebo',
+      phase: 'Phase 3',
+      sponsor_type: 'INDUSTRY',
+      enrollment_actual: 200,
+      primary_completion_date: '2025-06-15',
+      study_first_submit_date: '2023-01-10'
+    },
+    arms: [
+      { arm_id: 'drug_x', arm_label: 'Drug X', arm_type: 'EXPERIMENTAL', n_randomized: 100, n_analyzed: 95 },
+      { arm_id: 'placebo', arm_label: 'Placebo', arm_type: 'PLACEBO', n_randomized: 100, n_analyzed: 97 }
+    ],
+    outcomes: [
+      {
+        outcome_id: 'OM_1',
+        title: 'Major Adverse Cardiac Events',
+        type: 'PRIMARY',
+        timeframe: '12 months',
+        measure_type: 'COUNT',
+        unit: 'Participants',
+        dispersion_type: '',
+        data: [
+          { arm_id: 'drug_x', arm_label: 'Drug X', value: 15, spread: null, lower_limit: null, upper_limit: null, spread_type: '', participants: 95, class_title: null, category_title: null },
+          { arm_id: 'placebo', arm_label: 'Placebo', value: 25, spread: null, lower_limit: null, upper_limit: null, spread_type: '', participants: 97, class_title: null, category_title: null }
+        ]
+      }
+    ],
+    adverse_events: { frequency_threshold: 5, groups: [] },
+    participant_flow: { groups: [] },
+    registered_outcomes: {
+      primary: [{ measure: 'Major Adverse Cardiac Events', description: '', timeFrame: '12 months' }],
+      secondary: []
+    },
+    provenance: { source_url: 'https://clinicaltrials.gov/api/v2/studies/NCT00000001', api_version: 'v2', raw_hash: 'abc123', extraction_timestamp: '2026-04-08T12:00:00.000Z', extractor_id: 'test' }
+  };
+
+  // Apply overrides (shallow merge for top-level, deep merge for nested)
+  if (overrides) {
+    for (var key in overrides) {
+      if (overrides.hasOwnProperty(key)) {
+        base[key] = overrides[key];
+      }
+    }
+  }
+  return base;
+}
+
+function runTests() {
+  var results = [];
+  var passed = 0;
+  var failed = 0;
+
+  function assert(name, condition, detail) {
+    if (condition) {
+      results.push({ name: name, pass: true, detail: detail || '' });
+      passed++;
+    } else {
+      results.push({ name: name, pass: false, detail: detail || '' });
+      failed++;
+    }
+  }
+
+  // ---- Test 1: Clean extraction passes ----
+  var clean = makeTestExtraction();
+  var r1 = runPipeline(clean, []);
+  assert('Clean extraction: verdict=PASS',
+    r1.verdict === 'PASS',
+    'Got: ' + r1.verdict);
+  assert('Clean extraction: cleared_for_synthesis=true',
+    r1.cleared_for_synthesis === true,
+    'Got: ' + r1.cleared_for_synthesis);
+
+  // ---- Test 2: ARM_SWAP_DETECTOR - placebo as EXPERIMENTAL ----
+  var swapped = makeTestExtraction({
+    arms: [
+      { arm_id: 'drug_x', arm_label: 'Drug X', arm_type: 'EXPERIMENTAL', n_randomized: 100, n_analyzed: 95 },
+      { arm_id: 'placebo', arm_label: 'Placebo', arm_type: 'EXPERIMENTAL', n_randomized: 100, n_analyzed: 97 }
+    ]
+  });
+  var r2 = runPipeline(swapped, []);
+  assert('Arm swap: placebo as EXPERIMENTAL -> CRITICAL',
+    r2.verdict === 'CRITICAL',
+    'Got: ' + r2.verdict);
+  assert('Arm swap: blocked from synthesis',
+    r2.cleared_for_synthesis === false,
+    'Got: ' + r2.cleared_for_synthesis);
+  var armSwapFlags = r2.flags.filter(function(f) { return f.validator === 'ARM_SWAP_DETECTOR' && f.severity === 'CRITICAL'; });
+  assert('Arm swap: CRITICAL flag present',
+    armSwapFlags.length > 0,
+    'CRITICAL flags: ' + armSwapFlags.length);
+
+  // ---- Test 3: ARM_SWAP_DETECTOR - control as EXPERIMENTAL ----
+  var controlSwap = makeTestExtraction({
+    arms: [
+      { arm_id: 'active', arm_label: 'Active Treatment', arm_type: 'PLACEBO', n_randomized: 100, n_analyzed: 95 },
+      { arm_id: 'control', arm_label: 'Standard Control', arm_type: 'PLACEBO', n_randomized: 100, n_analyzed: 97 }
+    ]
+  });
+  var r3 = runPipeline(controlSwap, []);
+  // 'Active Treatment' labeled PLACEBO should trigger CRITICAL
+  var armSwapFlags3 = r3.flags.filter(function(f) { return f.validator === 'ARM_SWAP_DETECTOR' && f.severity === 'CRITICAL'; });
+  assert('Arm swap: "Active Treatment" as PLACEBO -> CRITICAL',
+    armSwapFlags3.length > 0,
+    'CRITICAL flags: ' + armSwapFlags3.length);
+
+  // ---- Test 4: EVENT_RATE_PLAUSIBILITY - events > participants ----
+  var badEvents = makeTestExtraction({
+    outcomes: [{
+      outcome_id: 'OM_1', title: 'MACE', type: 'PRIMARY', timeframe: '12 months',
+      measure_type: 'COUNT', unit: 'Participants', dispersion_type: '',
+      data: [
+        { arm_id: 'drug_x', arm_label: 'Drug X', value: 150, spread: null, lower_limit: null, upper_limit: null, spread_type: '', participants: 95, class_title: null, category_title: null },
+        { arm_id: 'placebo', arm_label: 'Placebo', value: 25, spread: null, lower_limit: null, upper_limit: null, spread_type: '', participants: 97, class_title: null, category_title: null }
+      ]
+    }],
+    registered_outcomes: {
+      primary: [{ measure: 'MACE', description: '', timeFrame: '12 months' }],
+      secondary: []
+    }
+  });
+  var r4 = runPipeline(badEvents, []);
+  var eventFlags = r4.flags.filter(function(f) { return f.validator === 'EVENT_RATE_PLAUSIBILITY' && f.severity === 'CRITICAL'; });
+  assert('Event rate: events > participants -> CRITICAL',
+    eventFlags.length > 0,
+    'CRITICAL flags: ' + eventFlags.length);
+  assert('Event rate: blocked from synthesis',
+    r4.cleared_for_synthesis === false,
+    'Got: ' + r4.cleared_for_synthesis);
+
+  // ---- Test 5: MULTIARM_ADJUSTER - 3 arms ----
+  var threeArm = makeTestExtraction({
+    arms: [
+      { arm_id: 'drug_a', arm_label: 'Drug A', arm_type: 'EXPERIMENTAL', n_randomized: 70, n_analyzed: 65 },
+      { arm_id: 'drug_b', arm_label: 'Drug B', arm_type: 'EXPERIMENTAL', n_randomized: 70, n_analyzed: 66 },
+      { arm_id: 'placebo', arm_label: 'Placebo', arm_type: 'PLACEBO', n_randomized: 70, n_analyzed: 68 }
+    ]
+  });
+  var r5 = runPipeline(threeArm, []);
+  var multiarmFlags = r5.flags.filter(function(f) { return f.validator === 'MULTIARM_ADJUSTER' && f.severity === 'WARNING'; });
+  assert('Multi-arm: 3 arms -> WARNING',
+    multiarmFlags.length > 0,
+    'WARNING flags: ' + multiarmFlags.length);
+  assert('Multi-arm: verdict at least WARN',
+    r5.verdict === 'WARN' || r5.verdict === 'CRITICAL',
+    'Got: ' + r5.verdict);
+
+  // ---- Test 6: TOTAL_CHECKER - analyzed > enrolled ----
+  var overEnrolled = makeTestExtraction({
+    study_metadata: {
+      title: 'Test Study', phase: 'Phase 3', sponsor_type: 'INDUSTRY',
+      enrollment_actual: 100,
+      primary_completion_date: '2025-06-15',
+      study_first_submit_date: '2023-01-10'
+    },
+    arms: [
+      { arm_id: 'drug_x', arm_label: 'Drug X', arm_type: 'EXPERIMENTAL', n_randomized: 100, n_analyzed: 80 },
+      { arm_id: 'placebo', arm_label: 'Placebo', arm_type: 'PLACEBO', n_randomized: 100, n_analyzed: 80 }
+    ]
+  });
+  var r6 = runPipeline(overEnrolled, []);
+  var totalFlags = r6.flags.filter(function(f) { return f.validator === 'TOTAL_CHECKER' && f.severity === 'CRITICAL'; });
+  assert('Total checker: analyzed(160) > enrolled(100) -> CRITICAL',
+    totalFlags.length > 0,
+    'CRITICAL flags: ' + totalFlags.length);
+
+  // ---- Test 7: TOTAL_CHECKER - high attrition ----
+  var highAttrition = makeTestExtraction({
+    study_metadata: {
+      title: 'Test Study', phase: 'Phase 3', sponsor_type: 'INDUSTRY',
+      enrollment_actual: 500,
+      primary_completion_date: '2025-06-15',
+      study_first_submit_date: '2023-01-10'
+    },
+    arms: [
+      { arm_id: 'drug_x', arm_label: 'Drug X', arm_type: 'EXPERIMENTAL', n_randomized: 250, n_analyzed: 60 },
+      { arm_id: 'placebo', arm_label: 'Placebo', arm_type: 'PLACEBO', n_randomized: 250, n_analyzed: 65 }
+    ]
+  });
+  var r7 = runPipeline(highAttrition, []);
+  var attritionFlags = r7.flags.filter(function(f) { return f.validator === 'TOTAL_CHECKER' && f.severity === 'WARNING'; });
+  assert('Total checker: analyzed(125) < 50% of enrolled(500) -> WARNING',
+    attritionFlags.length > 0,
+    'WARNING flags: ' + attritionFlags.length);
+
+  // ---- Test 8: DUPLICATE_DETECTOR - same NCT ----
+  var dup = makeTestExtraction();
+  var pool = [makeTestExtraction()];
+  var r8 = runPipeline(dup, pool);
+  var dupFlags = r8.flags.filter(function(f) { return f.validator === 'DUPLICATE_DETECTOR' && f.severity === 'CRITICAL'; });
+  assert('Duplicate detector: same NCT -> CRITICAL',
+    dupFlags.length > 0,
+    'CRITICAL flags: ' + dupFlags.length);
+
+  // ---- Test 9: OUTCOME_SWITCHING_DETECTOR - completely different outcome ----
+  var switched = makeTestExtraction({
+    outcomes: [{
+      outcome_id: 'OM_1', title: 'All-Cause Mortality at 5 Years', type: 'PRIMARY',
+      timeframe: '12 months', measure_type: 'COUNT', unit: 'Participants', dispersion_type: '',
+      data: [
+        { arm_id: 'drug_x', arm_label: 'Drug X', value: 15, spread: null, lower_limit: null, upper_limit: null, spread_type: '', participants: 95, class_title: null, category_title: null },
+        { arm_id: 'placebo', arm_label: 'Placebo', value: 25, spread: null, lower_limit: null, upper_limit: null, spread_type: '', participants: 97, class_title: null, category_title: null }
+      ]
+    }],
+    registered_outcomes: {
+      primary: [{ measure: 'Reduction in LDL Cholesterol', description: '', timeFrame: '12 months' }],
+      secondary: []
+    }
+  });
+  var r9 = runPipeline(switched, []);
+  var switchFlags = r9.flags.filter(function(f) { return f.validator === 'OUTCOME_SWITCHING_DETECTOR' && (f.severity === 'CRITICAL' || f.severity === 'WARNING'); });
+  assert('Outcome switching: completely different -> CRITICAL or WARNING',
+    switchFlags.length > 0,
+    'Flags: ' + switchFlags.map(function(f) { return f.severity; }).join(', '));
+
+  // ---- Test 10: REGISTRATION_TIMING - post-hoc registration ----
+  var postHoc = makeTestExtraction({
+    study_metadata: {
+      title: 'Test Study', phase: 'Phase 3', sponsor_type: 'INDUSTRY',
+      enrollment_actual: 200,
+      primary_completion_date: '2020-06-15',
+      study_first_submit_date: '2022-01-10'
+    }
+  });
+  var r10 = runPipeline(postHoc, []);
+  var timingFlags = r10.flags.filter(function(f) { return f.validator === 'REGISTRATION_TIMING' && f.severity === 'WARNING'; });
+  assert('Registration timing: post-hoc -> WARNING',
+    timingFlags.length > 0,
+    'WARNING flags: ' + timingFlags.length);
+
+  // ---- Test 11: ZERO_CELL_HANDLER ----
+  var zeroCell = makeTestExtraction({
+    outcomes: [{
+      outcome_id: 'OM_1', title: 'Death', type: 'PRIMARY', timeframe: '12 months',
+      measure_type: 'COUNT', unit: 'Participants', dispersion_type: '',
+      data: [
+        { arm_id: 'drug_x', arm_label: 'Drug X', value: 0, spread: null, lower_limit: null, upper_limit: null, spread_type: '', participants: 95, class_title: null, category_title: null },
+        { arm_id: 'placebo', arm_label: 'Placebo', value: 3, spread: null, lower_limit: null, upper_limit: null, spread_type: '', participants: 97, class_title: null, category_title: null }
+      ]
+    }],
+    registered_outcomes: {
+      primary: [{ measure: 'Death', description: '', timeFrame: '12 months' }],
+      secondary: []
+    }
+  });
+  var r11 = runPipeline(zeroCell, []);
+  var zeroFlags = r11.flags.filter(function(f) { return f.validator === 'ZERO_CELL_HANDLER' && f.severity === 'INFO'; });
+  assert('Zero cell: value=0 -> INFO with correction advice',
+    zeroFlags.length > 0 && zeroFlags[0].message.indexOf('continuity correction') !== -1,
+    'INFO flags: ' + zeroFlags.length);
+
+  // ---- Test 12: UNIT_CHECKER - spread > 3x value ----
+  var unitErr = makeTestExtraction({
+    outcomes: [{
+      outcome_id: 'OM_1', title: 'LDL Change', type: 'PRIMARY', timeframe: '12 months',
+      measure_type: 'MEAN', unit: 'mg/dL', dispersion_type: 'Standard Deviation',
+      data: [
+        { arm_id: 'drug_x', arm_label: 'Drug X', value: 5, spread: 50, lower_limit: null, upper_limit: null, spread_type: 'Standard Deviation', participants: 95, class_title: null, category_title: null },
+        { arm_id: 'placebo', arm_label: 'Placebo', value: 3, spread: 2, lower_limit: null, upper_limit: null, spread_type: 'Standard Deviation', participants: 97, class_title: null, category_title: null }
+      ]
+    }],
+    registered_outcomes: {
+      primary: [{ measure: 'LDL Change', description: '', timeFrame: '12 months' }],
+      secondary: []
+    }
+  });
+  var r12 = runPipeline(unitErr, []);
+  var unitFlags = r12.flags.filter(function(f) { return f.validator === 'UNIT_CHECKER' && f.severity === 'WARNING'; });
+  assert('Unit checker: spread(50) > 3*|value|(15) -> WARNING',
+    unitFlags.length > 0,
+    'WARNING flags: ' + unitFlags.length);
+
+  // ---- Test 13: TIMEPOINT_DRIFT - numeric mismatch ----
+  var drifted = makeTestExtraction({
+    outcomes: [{
+      outcome_id: 'OM_1', title: 'MACE', type: 'PRIMARY', timeframe: '24 months',
+      measure_type: 'COUNT', unit: 'Participants', dispersion_type: '',
+      data: [
+        { arm_id: 'drug_x', arm_label: 'Drug X', value: 15, spread: null, lower_limit: null, upper_limit: null, spread_type: '', participants: 95, class_title: null, category_title: null },
+        { arm_id: 'placebo', arm_label: 'Placebo', value: 25, spread: null, lower_limit: null, upper_limit: null, spread_type: '', participants: 97, class_title: null, category_title: null }
+      ]
+    }],
+    registered_outcomes: {
+      primary: [{ measure: 'MACE', description: '', timeFrame: '12 months' }],
+      secondary: []
+    }
+  });
+  var r13 = runPipeline(drifted, []);
+  var driftFlags = r13.flags.filter(function(f) { return f.validator === 'TIMEPOINT_DRIFT' && f.severity === 'CRITICAL'; });
+  assert('Timepoint drift: 12mo vs 24mo -> CRITICAL',
+    driftFlags.length > 0,
+    'CRITICAL flags: ' + driftFlags.length);
+
+  // ---- Test 14: Pipeline halts on CRITICAL ----
+  // ARM_SWAP should halt, so later validators should NOT run
+  var haltTest = makeTestExtraction({
+    arms: [
+      { arm_id: 'placebo', arm_label: 'Placebo Arm', arm_type: 'EXPERIMENTAL', n_randomized: 100, n_analyzed: 95 },
+      { arm_id: 'drug', arm_label: 'Drug Arm', arm_type: 'PLACEBO', n_randomized: 100, n_analyzed: 97 }
+    ]
+  });
+  var r14 = runPipeline(haltTest, []);
+  assert('Pipeline halt: CRITICAL at ARM_SWAP halts pipeline',
+    r14._halted === true && r14._halted_at === 'ARM_SWAP_DETECTOR',
+    'Halted: ' + r14._halted + ' at: ' + r14._halted_at);
+  var laterValidators = r14.flags.filter(function(f) { return f.validator === 'MULTIARM_ADJUSTER' || f.validator === 'REGISTRATION_TIMING'; });
+  assert('Pipeline halt: later validators did not run',
+    laterValidators.length === 0,
+    'Later validator flags: ' + laterValidators.length);
+
+  // ---- Test 15: Levenshtein edge cases ----
+  assert('Levenshtein: identical strings -> 1.0',
+    levenshteinSimilarity('hello', 'hello') === 1,
+    'Got: ' + levenshteinSimilarity('hello', 'hello'));
+  assert('Levenshtein: empty string -> 0',
+    levenshteinSimilarity('hello', '') === 0,
+    'Got: ' + levenshteinSimilarity('hello', ''));
+  assert('Levenshtein: null inputs -> 0',
+    levenshteinSimilarity(null, null) === 1, // both empty after trim
+    'Got: ' + levenshteinSimilarity(null, null));
+  assert('Levenshtein: one null -> 0',
+    levenshteinSimilarity(null, 'hello') === 0,
+    'Got: ' + levenshteinSimilarity(null, 'hello'));
+
+  // ---- Test 16: Duration parser ----
+  assert('Duration parser: "12 months" -> ~365.28d',
+    Math.abs(parseDuration('12 months') - 365.28) < 1,
+    'Got: ' + parseDuration('12 months'));
+  assert('Duration parser: "24 weeks" -> 168d',
+    parseDuration('24 weeks') === 168,
+    'Got: ' + parseDuration('24 weeks'));
+  assert('Duration parser: null -> null',
+    parseDuration(null) === null,
+    'Got: ' + parseDuration(null));
+
+  // ---- Render test results ----
+  var testArea = document.getElementById('testResultsArea');
+  testArea.style.display = 'block';
+  var container = document.getElementById('testResults');
+  container.innerHTML = '';
+
+  for (var i = 0; i < results.length; i++) {
+    var r = results[i];
+    var div = document.createElement('div');
+    div.className = 'test-result ' + (r.pass ? 'pass' : 'fail');
+    div.innerHTML = '<span class="test-result-icon">' + (r.pass ? '\u2714' : '\u2716') + '</span>' +
+      '<span><strong>' + escapeHtml(r.name) + '</strong>' + (r.detail ? ' <span style="opacity:0.7">(' + escapeHtml(r.detail) + ')</span>' : '') + '</span>';
+    container.appendChild(div);
+  }
+
+  var summary = document.createElement('div');
+  summary.className = 'test-summary ' + (failed === 0 ? 'all-pass' : 'has-fail');
+  summary.textContent = passed + '/' + (passed + failed) + ' tests passed' + (failed > 0 ? ' (' + failed + ' failed)' : ' -- All clear!');
+  container.appendChild(summary);
+}
+</script>
+</body>
+</html>
