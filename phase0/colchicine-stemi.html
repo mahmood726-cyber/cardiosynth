@@ -11,12 +11,58 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
+  /* Dark mode (default) */
+  --bg: #020617;
+  --surface: #0f172a;
+  --surface-raised: #1e293b;
+  --text: #f1f5f9;
+  --text-muted: #94a3b8;
+  --accent: #3b82f6;
+  --border: #1e293b;
+  --border-light: rgba(255,255,255,0.08);
+
+  /* Legacy aliases for compatibility */
   --blue-900: #1e3a5f;
   --blue-800: #1e40af;
   --blue-700: #1d4ed8;
   --blue-600: #2563eb;
   --blue-500: #3b82f6;
   --blue-100: #dbeafe;
+  --blue-50: #0f172a;
+  --gray-50: #0f172a;
+  --gray-100: #1e293b;
+  --gray-200: #334155;
+  --gray-300: #475569;
+  --gray-400: #94a3b8;
+  --gray-500: #94a3b8;
+  --gray-600: #cbd5e1;
+  --gray-700: #e2e8f0;
+  --gray-800: #f1f5f9;
+  --gray-900: #020617;
+  --green-700: #4ade80;
+  --green-600: #22c55e;
+  --green-100: rgba(34,197,94,0.15);
+  --green-50: rgba(34,197,94,0.08);
+  --red-700: #f87171;
+  --red-600: #ef4444;
+  --red-100: rgba(239,68,68,0.15);
+  --red-50: rgba(239,68,68,0.08);
+  --amber-600: #fbbf24;
+  --amber-100: rgba(234,179,8,0.15);
+  --amber-50: rgba(234,179,8,0.08);
+  --purple-600: #a855f7;
+  --purple-100: rgba(168,85,247,0.15);
+}
+body.light-mode {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-raised: #f1f5f9;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --accent: #2563eb;
+  --border: #e2e8f0;
+  --border-light: rgba(0,0,0,0.06);
+
   --blue-50: #eff6ff;
   --gray-50: #f9fafb;
   --gray-100: #f3f4f6;
@@ -45,14 +91,71 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background: var(--gray-100);
-  color: var(--gray-800);
+  background: var(--bg);
+  color: var(--text);
   line-height: 1.6;
+  transition: background-color 0.3s, color 0.3s;
 }
 
-/* ========== HEADER ========== */
+/* ========== GLASSMORPHISM ========== */
+.glass {
+  background: rgba(30,41,59,0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+body.light-mode .glass {
+  background: rgba(255,255,255,0.8);
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+/* ========== CONFIDENCE / EFFECT MEASURE SELECTORS ========== */
+.conf-selector, .em-selector {
+  display: flex; align-items: center; gap: 2px;
+  background: var(--surface); border-radius: 10px; padding: 2px;
+  border: 1px solid var(--border);
+}
+.conf-btn {
+  font-size: 11px; font-weight: 700; padding: 5px 14px; border-radius: 8px;
+  background: transparent; color: var(--text-muted); cursor: pointer;
+  border: none; transition: all 0.2s; white-space: nowrap;
+}
+.conf-btn:hover { color: var(--text); }
+.conf-btn.active { background: rgba(59,130,246,0.2); color: #60a5fa; }
+
+.theme-toggle-btn {
+  background: none; border: none; color: var(--text-muted); cursor: pointer;
+  font-size: 18px; padding: 4px 8px; transition: color 0.2s;
+}
+.theme-toggle-btn:hover { color: #fff; }
+
+/* ========== VISUAL ABSTRACT ========== */
+.va-card { background: #fff; color: #000; border-radius: 1.5rem; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+.va-header { background: #1e3a8a; color: #fff; padding: 2rem; text-align: center; }
+.va-header h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.25rem; }
+.va-header p { font-size: 0.85rem; opacity: 0.85; }
+.va-grid { display: grid; grid-template-columns: repeat(3, 1fr); }
+.va-section { padding: 2rem; border-right: 1px solid #e2e8f0; }
+.va-section:last-child { border-right: none; }
+.va-label { font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem; }
+.va-stat-main { font-size: 3.5rem; font-weight: 800; color: #1e40af; line-height: 1; margin-bottom: 0.5rem; }
+.va-value { font-size: 1.25rem; font-weight: 700; color: #1e293b; line-height: 1.2; }
+
+/* ========== NYT-STYLE NARRATIVE ========== */
+.nyt-report { padding: 2rem; }
+.nyt-headline { font-family: 'Georgia', 'Times New Roman', serif; font-size: 2.5rem; font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: var(--text); }
+.nyt-subhead { font-family: 'Georgia', serif; font-size: 1.1rem; color: var(--text-muted); line-height: 1.6; font-style: italic; margin-top: 0.75rem; }
+.nyt-body { font-family: 'Georgia', serif; font-size: 1.05rem; line-height: 1.85; color: var(--text-muted); }
+.nyt-stat-inline { font-family: 'SFMono-Regular', Consolas, monospace; font-weight: 700; color: var(--accent); background: rgba(59,130,246,0.1); padding: 2px 6px; border-radius: 4px; font-size: 0.95em; }
+.nyt-key-number { display: inline-flex; flex-direction: column; align-items: center; padding: 1.5rem 2rem; border-radius: 1.5rem; background: var(--surface); border: 1px solid var(--border); text-align: center; }
+.nyt-key-value { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 2.5rem; font-weight: 800; line-height: 1; }
+.nyt-key-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-muted); margin-top: 0.5rem; }
+.nyt-dropcap::first-letter { font-family: 'Georgia', serif; float: left; font-size: 4.5rem; line-height: 0.8; padding: 0.1em 0.15em 0 0; font-weight: 700; color: var(--accent); }
+.nyt-divider { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+
+/* ========== HEADER (always dark in both modes) ========== */
 .master-header {
-  background: linear-gradient(135deg, var(--blue-900) 0%, var(--blue-800) 100%);
+  background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
   color: #fff;
   padding: 20px 32px;
   display: flex;
@@ -105,17 +208,18 @@ body {
 
 /* ========== NAV TABS ========== */
 .nav-bar {
-  background: #fff;
-  border-bottom: 1px solid var(--gray-200);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
   display: flex;
   overflow-x: auto;
   padding: 0 24px;
+  transition: background-color 0.3s;
 }
 .nav-tab {
   padding: 12px 20px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--gray-500);
+  color: var(--text-muted);
   border: none;
   background: none;
   cursor: pointer;
@@ -123,8 +227,8 @@ body {
   white-space: nowrap;
   transition: all 0.15s;
 }
-.nav-tab:hover { color: var(--gray-700); background: var(--gray-50); }
-.nav-tab.active { color: var(--blue-700); border-bottom-color: var(--blue-600); }
+.nav-tab:hover { color: var(--text); background: var(--surface-raised); }
+.nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 
 /* ========== MAIN CONTAINER ========== */
 .main-container {
@@ -141,33 +245,37 @@ body {
 
 /* ========== CARDS ========== */
 .card {
-  background: #fff;
-  border: 1px solid var(--gray-200);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 12px;
   margin-bottom: 20px;
   overflow: hidden;
+  backdrop-filter: blur(10px);
+  transition: background-color 0.3s, border-color 0.3s;
 }
 .card-header {
   padding: 16px 20px;
   font-size: 15px;
   font-weight: 600;
-  color: var(--gray-800);
-  background: var(--gray-50);
-  border-bottom: 1px solid var(--gray-200);
+  color: var(--text);
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   gap: 8px;
+  transition: background-color 0.3s, color 0.3s;
 }
 .card-body { padding: 20px; }
 .card-body.no-pad { padding: 0; }
 
 /* ========== PIPELINE PROGRESS ========== */
 .pipeline-panel {
-  background: #fff;
-  border: 1px solid var(--gray-200);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 20px;
+  transition: background-color 0.3s;
 }
 .pipeline-steps {
   display: flex;
@@ -226,12 +334,12 @@ body {
 .table-scroll { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 thead th {
-  background: var(--gray-50);
-  border-bottom: 2px solid var(--gray-200);
+  background: var(--surface-raised);
+  border-bottom: 2px solid var(--border);
   padding: 10px 14px;
   text-align: left;
   font-weight: 600;
-  color: var(--gray-600);
+  color: var(--text-muted);
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -239,10 +347,10 @@ thead th {
   cursor: pointer;
   user-select: none;
 }
-thead th:hover { background: var(--gray-100); }
-tbody tr { border-bottom: 1px solid var(--gray-100); }
-tbody tr:hover { background: var(--blue-50); cursor: pointer; }
-tbody td { padding: 10px 14px; }
+thead th:hover { background: var(--surface); }
+tbody tr { border-bottom: 1px solid var(--border-light); }
+tbody tr:hover { background: rgba(59,130,246,0.06); cursor: pointer; }
+tbody td { padding: 10px 14px; color: var(--text); }
 .mono { font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace; font-size: 12px; }
 .text-right { text-align: right; }
 
@@ -268,13 +376,14 @@ tbody td { padding: 10px 14px; }
 }
 .stat-item {
   padding: 14px 18px;
-  background: var(--gray-50);
+  background: var(--surface-raised);
   border-radius: 10px;
-  border: 1px solid var(--gray-100);
+  border: 1px solid var(--border);
+  transition: background-color 0.3s;
 }
 .stat-label {
   font-size: 11px; font-weight: 600;
-  color: var(--gray-500);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 4px;
@@ -282,10 +391,10 @@ tbody td { padding: 10px 14px; }
 .stat-value {
   font-size: 20px;
   font-weight: 700;
-  color: var(--gray-800);
+  color: var(--text);
 }
 .stat-sub {
-  font-size: 11px; color: var(--gray-400);
+  font-size: 11px; color: var(--text-muted);
   margin-top: 2px;
 }
 
@@ -316,7 +425,7 @@ tbody td { padding: 10px 14px; }
 
 /* ========== ACCORDION ========== */
 .accordion-item {
-  border: 1px solid var(--gray-200);
+  border: 1px solid var(--border);
   border-radius: 10px;
   margin-bottom: 12px;
   overflow: hidden;
@@ -324,24 +433,24 @@ tbody td { padding: 10px 14px; }
 .accordion-header {
   display: flex; align-items: center; gap: 10px;
   padding: 14px 20px;
-  background: var(--gray-50);
+  background: var(--surface-raised);
   cursor: pointer;
   user-select: none;
   font-size: 14px;
   font-weight: 600;
-  color: var(--gray-700);
+  color: var(--text);
 }
-.accordion-header:hover { background: var(--gray-100); }
+.accordion-header:hover { background: var(--surface); }
 .accordion-header .chevron {
   transition: transform 0.2s;
   font-size: 12px;
-  color: var(--gray-400);
+  color: var(--text-muted);
 }
 .accordion-item.open .accordion-header .chevron { transform: rotate(90deg); }
 .accordion-body {
   display: none;
   padding: 16px 20px;
-  border-top: 1px solid var(--gray-200);
+  border-top: 1px solid var(--border);
 }
 .accordion-item.open .accordion-body { display: block; }
 
@@ -349,7 +458,7 @@ tbody td { padding: 10px 14px; }
 .modal-overlay {
   display: none;
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0,0,0,0.65);
   z-index: 1000;
   justify-content: center;
   align-items: flex-start;
@@ -358,36 +467,37 @@ tbody td { padding: 10px 14px; }
 }
 .modal-overlay.active { display: flex; }
 .modal-content {
-  background: #fff;
+  background: var(--surface);
   border-radius: 16px;
   max-width: 900px;
   width: 100%;
   max-height: 85vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  border: 1px solid var(--border);
 }
 .modal-header {
   display: flex; align-items: center; gap: 12px;
   padding: 18px 24px;
-  border-bottom: 1px solid var(--gray-200);
-  background: var(--gray-50);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-raised);
   border-radius: 16px 16px 0 0;
   position: sticky;
   top: 0;
   z-index: 1;
 }
-.modal-header h3 { font-size: 16px; font-weight: 700; color: var(--gray-800); flex: 1; }
+.modal-header h3 { font-size: 16px; font-weight: 700; color: var(--text); flex: 1; }
 .modal-close {
   width: 32px; height: 32px;
-  border: none; background: var(--gray-200); border-radius: 8px;
-  font-size: 18px; cursor: pointer; color: var(--gray-600);
+  border: none; background: var(--surface-raised); border-radius: 8px;
+  font-size: 18px; cursor: pointer; color: var(--text-muted);
   display: flex; align-items: center; justify-content: center;
 }
-.modal-close:hover { background: var(--gray-300); }
+.modal-close:hover { background: var(--border); }
 .modal-body { padding: 24px; }
 .modal-body pre {
-  background: var(--gray-50);
-  border: 1px solid var(--gray-200);
+  background: var(--gray-900);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 16px;
   font-size: 12px;
@@ -396,15 +506,16 @@ tbody td { padding: 10px 14px; }
   white-space: pre-wrap;
   word-break: break-word;
   font-family: 'SFMono-Regular', Consolas, monospace;
+  color: #a5f3fc;
 }
 
 /* ========== E156 ABSTRACT ========== */
 .e156-abstract {
   font-size: 15px;
   line-height: 1.8;
-  color: var(--gray-800);
-  background: var(--gray-50);
-  border: 1px solid var(--gray-200);
+  color: var(--text);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 24px;
 }
@@ -412,7 +523,7 @@ tbody td { padding: 10px 14px; }
   display: flex; gap: 16px; flex-wrap: wrap;
   margin-top: 16px;
   font-size: 12px;
-  color: var(--gray-500);
+  color: var(--text-muted);
 }
 
 /* ========== PROVENANCE ========== */
@@ -439,12 +550,12 @@ tbody td { padding: 10px 14px; }
   white-space: nowrap;
 }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-primary { background: var(--blue-600); color: #fff; }
-.btn-primary:hover:not(:disabled) { background: var(--blue-700); }
-.btn-secondary { background: var(--gray-100); color: var(--gray-700); border: 1px solid var(--gray-300); }
-.btn-secondary:hover:not(:disabled) { background: var(--gray-200); }
-.btn-success { background: var(--green-600); color: #fff; }
-.btn-success:hover:not(:disabled) { background: var(--green-700); }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: #1d4ed8; }
+.btn-secondary { background: var(--surface-raised); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover:not(:disabled) { background: var(--surface); }
+.btn-success { background: #22c55e; color: #fff; }
+.btn-success:hover:not(:disabled) { background: #16a34a; }
 .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
 
 /* ========== SPINNER ========== */
@@ -465,23 +576,23 @@ tbody td { padding: 10px 14px; }
 .empty-state {
   text-align: center;
   padding: 48px 24px;
-  color: var(--gray-400);
+  color: var(--text-muted);
 }
 .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
 .empty-state p { font-size: 14px; }
 
 /* ========== INFO / WARN BOXES ========== */
 .info-box {
-  background: var(--blue-50);
-  border: 1px solid var(--blue-100);
+  background: rgba(59,130,246,0.08);
+  border: 1px solid rgba(59,130,246,0.2);
   border-radius: 8px;
   padding: 12px 16px;
   font-size: 13px;
-  color: var(--blue-800);
+  color: var(--accent);
 }
 .warn-box {
-  background: var(--amber-50);
-  border: 1px solid var(--amber-100);
+  background: rgba(234,179,8,0.08);
+  border: 1px solid rgba(234,179,8,0.2);
   border-radius: 8px;
   padding: 12px 16px;
   font-size: 13px;
@@ -495,10 +606,10 @@ tbody td { padding: 10px 14px; }
 .transparency-section h3 {
   font-size: 15px;
   font-weight: 700;
-  color: var(--gray-800);
+  color: var(--text);
   margin-bottom: 12px;
   padding-bottom: 8px;
-  border-bottom: 2px solid var(--blue-100);
+  border-bottom: 2px solid var(--accent);
 }
 .prisma-flow {
   display: flex;
@@ -511,8 +622,8 @@ tbody td { padding: 10px 14px; }
 .incl-excl-status-excluded { color: var(--red-700); font-weight: 600; }
 .prov-badge {
   display: inline-block;
-  background: var(--gray-50);
-  border: 1px solid var(--gray-200);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 10px 14px;
   margin-bottom: 8px;
@@ -522,13 +633,13 @@ tbody td { padding: 10px 14px; }
 }
 .prov-badge .prov-field {
   font-weight: 700;
-  color: var(--blue-800);
+  color: var(--accent);
   font-size: 13px;
 }
 .prov-badge .prov-path {
   font-family: 'SFMono-Regular', Consolas, monospace;
   font-size: 11px;
-  color: var(--gray-500);
+  color: var(--text-muted);
   word-break: break-all;
 }
 .prov-badge .prov-check {
@@ -536,8 +647,8 @@ tbody td { padding: 10px 14px; }
   font-weight: 600;
 }
 .webr-panel {
-  background: var(--gray-50);
-  border: 1px solid var(--gray-200);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 20px;
 }
@@ -555,8 +666,8 @@ tbody td { padding: 10px 14px; }
   margin-bottom: 12px;
 }
 .webr-output {
-  background: #fff;
-  border: 1px solid var(--gray-200);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 16px;
   font-family: 'SFMono-Regular', Consolas, monospace;
@@ -566,6 +677,7 @@ tbody td { padding: 10px 14px; }
   max-height: 300px;
   overflow-y: auto;
   white-space: pre-wrap;
+  color: var(--text);
 }
 .record-excerpt-grid {
   display: grid;
@@ -574,15 +686,15 @@ tbody td { padding: 10px 14px; }
   margin-top: 12px;
 }
 .record-excerpt-grid .excerpt-col {
-  background: var(--gray-50);
-  border: 1px solid var(--gray-200);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 14px;
 }
 .record-excerpt-grid .excerpt-col h5 {
   font-size: 12px;
   font-weight: 700;
-  color: var(--blue-800);
+  color: var(--accent);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 8px;
@@ -591,50 +703,57 @@ tbody td { padding: 10px 14px; }
   display: flex;
   justify-content: space-between;
   padding: 4px 0;
-  border-bottom: 1px solid var(--gray-100);
+  border-bottom: 1px solid var(--border-light);
   font-size: 12px;
 }
 .excerpt-row:last-child { border-bottom: none; }
-.excerpt-row .excerpt-label { color: var(--gray-500); font-weight: 500; }
-.excerpt-row .excerpt-value { color: var(--gray-800); font-weight: 600; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 11px; }
+.excerpt-row .excerpt-label { color: var(--text-muted); font-weight: 500; }
+.excerpt-row .excerpt-value { color: var(--text); font-weight: 600; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 11px; }
 @media (max-width: 900px) {
   .record-excerpt-grid { grid-template-columns: 1fr; }
 }
 
 /* ========== CROSS-VALIDATION PANEL ========== */
 .cross-val-study { margin-bottom: 20px; }
-.cross-val-study h4 { font-size: 13px; font-weight: 700; color: var(--blue-800); margin-bottom: 8px; }
+.cross-val-study h4 { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
 .cross-val-study table { width: 100%; font-size: 12px; }
-.cross-val-study th { background: var(--gray-50); font-size: 11px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.3px; padding: 8px 10px; }
-.cross-val-study td { padding: 6px 10px; border-bottom: 1px solid var(--gray-100); }
-.cross-val-study td small { display: block; font-size: 10px; color: var(--gray-400); font-family: 'SFMono-Regular', Consolas, monospace; }
+.cross-val-study th { background: var(--surface-raised); font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; padding: 8px 10px; }
+.cross-val-study td { padding: 6px 10px; border-bottom: 1px solid var(--border-light); color: var(--text); }
+.cross-val-study td small { display: block; font-size: 10px; color: var(--text-muted); font-family: 'SFMono-Regular', Consolas, monospace; }
 .cross-val-study td.cv-match { color: var(--green-700); font-weight: 700; text-align: center; }
 .cross-val-study td.cv-mismatch { color: var(--red-700); font-weight: 700; text-align: center; background: var(--red-50); }
-.cross-val-study td.cv-unavailable { color: var(--gray-400); font-weight: 600; text-align: center; }
-a.ctgov-link { color: var(--blue-600); text-decoration: none; font-weight: 600; }
-a.ctgov-link:hover { text-decoration: underline; color: var(--blue-700); }
-.btn-ctgov { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: var(--blue-600); color: #fff; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; margin-bottom: 12px; }
-.btn-ctgov:hover { background: var(--blue-700); }
+.cross-val-study td.cv-unavailable { color: var(--text-muted); font-weight: 600; text-align: center; }
+a.ctgov-link { color: var(--accent); text-decoration: none; font-weight: 600; }
+a.ctgov-link:hover { text-decoration: underline; color: #60a5fa; }
+.btn-ctgov { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: var(--accent); color: #fff; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; margin-bottom: 12px; }
+.btn-ctgov:hover { background: #1d4ed8; }
 
 /* ========== VERSION DIFF ========== */
 .update-diff { margin-top: 12px; }
-.diff-entry { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; }
-.diff-entry .diff-version { font-weight: 700; color: var(--blue-800); font-size: 13px; margin-right: 12px; }
-.diff-entry .diff-date { font-size: 11px; color: var(--gray-400); }
-.diff-entry .diff-details { font-size: 12px; color: var(--gray-700); margin-top: 6px; line-height: 1.6; }
+.diff-entry { background: var(--surface-raised); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; }
+.diff-entry .diff-version { font-weight: 700; color: var(--accent); font-size: 13px; margin-right: 12px; }
+.diff-entry .diff-date { font-size: 11px; color: var(--text-muted); }
+.diff-entry .diff-details { font-size: 12px; color: var(--text); margin-top: 6px; line-height: 1.6; }
 .diff-entry .diff-details .diff-add { color: var(--green-700); font-weight: 600; }
 .diff-entry .diff-details .diff-remove { color: var(--red-700); font-weight: 600; }
 .diff-entry .diff-details .diff-change { color: var(--amber-600); font-weight: 600; }
 
 /* ========== PRINT STYLES ========== */
 @media print {
-  .master-header, .nav-bar, .btn, .btn-group, .pipeline-panel,
-  .pipeline-log, .modal-overlay { display: none !important; }
+  header, .master-header, .nav-bar, .btn, .btn-group, .pipeline-panel,
+  .pipeline-log, .modal-overlay, .theme-toggle-btn, .conf-selector,
+  .em-selector, button, nav { display: none !important; }
   .panel { display: block !important; }
   .main-container { padding: 0; max-width: 100%; }
-  .card { break-inside: avoid; border: 1px solid #ccc; margin-bottom: 12px; }
+  .card { break-inside: avoid; border: 1px solid #ccc; margin-bottom: 12px;
+    background: #fff !important; color: #000 !important; }
+  .card-header { background: #f5f5f5 !important; color: #000 !important; }
   .forest-container svg { max-width: 100%; }
-  body { background: #fff; font-size: 11px; }
+  body { background: white !important; color: black !important; }
+  .va-card { box-shadow: none; border: 2px solid #ccc; }
+}
+@media print {
+  .va-print-target { display: block !important; }
 }
 
 /* ========== RESPONSIVE ========== */
@@ -659,6 +778,17 @@ a.ctgov-link:hover { text-decoration: underline; color: var(--blue-700); }
     <div class="subtitle">CardioSynth Phase 0.8 &mdash; Automated CT.gov harvesting, extraction, validation, and meta-analysis</div>
   </div>
   <div class="header-badges">
+    <div class="conf-selector" title="Confidence level">
+      <button class="conf-btn" data-conf="0.90" onclick="setConfLevel(0.90)">90%</button>
+      <button class="conf-btn active" data-conf="0.95" onclick="setConfLevel(0.95)">95%</button>
+      <button class="conf-btn" data-conf="0.99" onclick="setConfLevel(0.99)">99%</button>
+    </div>
+    <div class="em-selector" title="Effect measure">
+      <button class="conf-btn active" data-em="RR" onclick="setEffectMeasure('RR')">RR</button>
+      <button class="conf-btn" data-em="OR" onclick="setEffectMeasure('OR')">OR</button>
+      <button class="conf-btn" data-em="RD" onclick="setEffectMeasure('RD')">RD</button>
+    </div>
+    <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Light/Dark Mode">&#9681;</button>
     <span class="hdr-badge hdr-badge-version" id="badgeVersion">v0.8.0</span>
     <span class="hdr-badge hdr-badge-studies" id="badgeStudies">0 studies</span>
     <span class="hdr-badge hdr-badge-cert-pass" id="badgeCert" style="display:none;">TruthCert PASS</span>
@@ -681,6 +811,8 @@ a.ctgov-link:hover { text-decoration: underline; color: var(--blue-700); }
   <button class="nav-tab" data-panel="panelBias" onclick="switchPanel(this)">Bias Panel</button>
   <button class="nav-tab" data-panel="panelProvenance" onclick="switchPanel(this)">Provenance</button>
   <button class="nav-tab" data-panel="panelE156" onclick="switchPanel(this)">E156 Abstract</button>
+  <button class="nav-tab" data-panel="panelVisualAbstract" onclick="switchPanel(this)">Visual Abstract</button>
+  <button class="nav-tab" data-panel="panelNarrative" onclick="switchPanel(this)" style="color:#a855f7">Scientific Output</button>
 </nav>
 
 <!-- ======================================================================= -->
@@ -991,6 +1123,34 @@ a.ctgov-link:hover { text-decoration: underline; color: var(--blue-700); }
       <div class="card-body">
         <div id="e156Output">
           <div class="empty-state"><div class="icon">&#128221;</div><p>Run the pipeline to auto-generate the E156 abstract.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== VISUAL ABSTRACT PANEL ===== -->
+  <div class="panel" id="panelVisualAbstract">
+    <div class="card">
+      <div class="card-header">Visual Abstract
+        <span style="margin-left:auto">
+          <button class="btn btn-secondary" style="padding:6px 16px;font-size:12px" onclick="printVisualAbstract()">Print Visual Abstract</button>
+        </span>
+      </div>
+      <div class="card-body" style="display:flex;justify-content:center">
+        <div id="vaCardContainer" style="max-width:700px;width:100%">
+          <div class="empty-state"><div class="icon">&#128196;</div><p>Run the pipeline to generate the Visual Abstract.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== NARRATIVE / SCIENTIFIC OUTPUT PANEL ===== -->
+  <div class="panel" id="panelNarrative">
+    <div class="card">
+      <div class="card-header" style="border-left:3px solid #a855f7">Scientific Output: NYT-Style Narrative Report</div>
+      <div class="card-body">
+        <div id="nytReportContainer">
+          <div class="empty-state"><div class="icon">&#128240;</div><p>Run the pipeline to generate the narrative report.</p></div>
         </div>
       </div>
     </div>
@@ -2085,6 +2245,9 @@ function fixedEffects(studies) {
 function derSimonianLaird(studies, options) {
   if (options === undefined) options = {};
   var hksj = options.hksj !== undefined ? options.hksj : true;
+  var confLevel = options.confLevel || 0.95;
+  var alpha = 1 - confLevel;
+  var zCrit = normalQuantile(1 - alpha / 2);
   var valid = studies.filter(function(s) { return s.yi !== null && s.vi !== null && !isNaN(s.yi) && !isNaN(s.vi) && s.vi > 0; });
   if (valid.length === 0) return { error: 'No valid studies' };
   var state = computeMAState(valid);
@@ -2096,8 +2259,8 @@ function derSimonianLaird(studies, options) {
   var se = state.seRE;
   var fe = fixedEffects(valid);
   var variance = 1 / sumWiStar;
-  var ci_lower = theta - 1.96 * se;
-  var ci_upper = theta + 1.96 * se;
+  var ci_lower = theta - zCrit * se;
+  var ci_upper = theta + zCrit * se;
   var hksjApplied = false, qStar = null, tCritVal = null;
 
   if (hksj && k >= 2) {
@@ -2106,7 +2269,7 @@ function derSimonianLaird(studies, options) {
     var hksjMultiplier = Math.max(1, qStar / (k - 1));
     if (hksjMultiplier > 1) { se = se * Math.sqrt(hksjMultiplier); }
     hksjApplied = true; // [P0-1 FIX] Always true when HKSJ path entered — t-quantile always used
-    tCritVal = tQuantile(0.975, k - 1);
+    tCritVal = tQuantile(1 - alpha / 2, k - 1);
     ci_lower = theta - tCritVal * se;
     ci_upper = theta + tCritVal * se;
   }
@@ -2114,7 +2277,7 @@ function derSimonianLaird(studies, options) {
   var pi_lower = null, pi_upper = null;
   if (k >= 3) {
     var piDF = k - 2;
-    var piTCrit = tQuantile(0.975, piDF);
+    var piTCrit = tQuantile(1 - alpha / 2, piDF);
     var piSE = Math.sqrt(variance + tau2);
     pi_lower = theta - piTCrit * piSE;
     pi_upper = theta + piTCrit * piSE;
@@ -2133,9 +2296,10 @@ function derSimonianLaird(studies, options) {
     ci_lower: ci_lower, ci_upper: ci_upper, tStat: tStat, pValue: pValue,
     tau2: tau2, tau: Math.sqrt(tau2), pi_lower: pi_lower, pi_upper: pi_upper,
     Q: fe.Q, df: k - 1, pQ: fe.pQ, I2: I2, I2_lower: I2CI.lower, I2_upper: I2CI.upper,
+    confLevel: confLevel,
     warning: dlWarning,
     hksj: hksjApplied, qStar: qStar,
-    weights: valid.map(function(s, i) { return { id: s.id || s.nctId || i, yi: s.yi, vi: s.vi, weight: wiStar[i], weightPercent: (wiStar[i] / sumWiStar) * 100 }; }),
+    weights: valid.map(function(s, i) { return { id: s.id || s.nctId || i, yi: s.yi, vi: s.vi, weight: wiStar[i], weightPercent: (wiStar[i] / sumWiStar) * 100, ai: s.ai, bi: s.bi, ci: s.ci, di: s.di, n: s.n }; }),
     fe: { theta: fe.theta, se: fe.se, ci_lower: fe.ci_lower, ci_upper: fe.ci_upper }
   };
 }
@@ -2150,6 +2314,27 @@ function escalcRR(ai, bi, ci, di, cc) {
   var p1 = a / n1, p2 = c / n2;
   var yi = Math.log(p1 / p2);
   var vi = (1 / a) - (1 / n1) + (1 / c) - (1 / n2);
+  return { yi: yi, vi: vi };
+}
+
+function escalcOR(ai, bi, ci, di, cc) {
+  if (cc === undefined) cc = 0;
+  var needCC = (ai === 0 || bi === 0 || ci === 0 || di === 0);
+  var adj = needCC ? (cc > 0 ? cc : 0.5) : 0;
+  var a = ai + adj, b = bi + adj, c = ci + adj, d = di + adj;
+  if (a <= 0 || b <= 0 || c <= 0 || d <= 0) return { yi: null, vi: null };
+  var yi = Math.log((a * d) / (b * c));
+  var vi = (1 / a) + (1 / b) + (1 / c) + (1 / d);
+  return { yi: yi, vi: vi };
+}
+
+function escalcRD(ai, bi, ci, di) {
+  var n1 = ai + bi, n2 = ci + di;
+  if (n1 <= 0 || n2 <= 0) return { yi: null, vi: null };
+  var p1 = ai / n1, p2 = ci / n2;
+  var yi = p1 - p2;
+  var vi = (p1 * (1 - p1)) / n1 + (p2 * (1 - p2)) / n2;
+  if (vi <= 0) vi = 1e-10;
   return { yi: yi, vi: vi };
 }
 
@@ -2173,6 +2358,8 @@ function leaveOneOut(studies, method) {
 
 function cumulativeMeta(studies, orderBy, method) {
   orderBy = orderBy || 'order';
+  var confLevel = STATE.confLevel || 0.95;
+  var zCrit = normalQuantile(1 - (1 - confLevel) / 2);
   var valid = studies.filter(function(s) { return s.yi !== null && s.vi !== null && !isNaN(s.yi) && !isNaN(s.vi) && s.vi > 0; });
   if (valid.length === 0) return [];
   var sorted = valid.slice().sort(function(a, b) { return (a[orderBy] || 0) - (b[orderBy] || 0); });
@@ -2181,11 +2368,11 @@ function cumulativeMeta(studies, orderBy, method) {
     if (i === 0) {
       results.push({ k: 1, addedStudy: sorted[i].id || sorted[i].nctId || 'Study 1',
         theta: sorted[i].yi, se: Math.sqrt(sorted[i].vi),
-        ci_lower: sorted[i].yi - 1.96 * Math.sqrt(sorted[i].vi),
-        ci_upper: sorted[i].yi + 1.96 * Math.sqrt(sorted[i].vi), tau2: 0, I2: 0 });
+        ci_lower: sorted[i].yi - zCrit * Math.sqrt(sorted[i].vi),
+        ci_upper: sorted[i].yi + zCrit * Math.sqrt(sorted[i].vi), tau2: 0, I2: 0 });
     } else {
       var subset = sorted.slice(0, i + 1);
-      var result = derSimonianLaird(subset);
+      var result = derSimonianLaird(subset, { confLevel: confLevel });
       results.push({ k: i + 1, addedStudy: sorted[i].id || sorted[i].nctId || ('Study ' + (i + 1)),
         theta: result.theta, se: result.se,
         ci_lower: result.ci_lower, ci_upper: result.ci_upper,
@@ -2202,8 +2389,13 @@ function cumulativeMeta(studies, orderBy, method) {
 
 function renderForestPlot(result, options) {
   if (options === undefined) options = {};
-  var isLogScale = options.logScale !== false;
-  var effectLabel = options.effectLabel || (isLogScale ? 'Risk Ratio' : 'Effect');
+  var useLogScale = options.logScale !== false;
+  var effectLabel = options.effectLabel || (useLogScale ? 'Risk Ratio' : 'Effect');
+  var confLevel = result.confLevel || STATE.confLevel || 0.95;
+  var alpha = 1 - confLevel;
+  var zCrit = normalQuantile(1 - alpha / 2);
+  var clLabel = Math.round(confLevel * 100) + '% CI';
+  var isDark = !document.body.classList.contains('light-mode');
 
   var weights = result.weights || [];
   var k = weights.length;
@@ -2214,8 +2406,8 @@ function renderForestPlot(result, options) {
   var headerH = 40, rowH = 28, gapBeforeSummary = 12, summaryRowH = 32, footerH = 80;
   var totalH = headerH + k * rowH + gapBeforeSummary + summaryRowH + footerH;
 
-  var allLower = weights.map(function(w) { return w.yi - 1.96 * Math.sqrt(w.vi); });
-  var allUpper = weights.map(function(w) { return w.yi + 1.96 * Math.sqrt(w.vi); });
+  var allLower = weights.map(function(w) { return w.yi - zCrit * Math.sqrt(w.vi); });
+  var allUpper = weights.map(function(w) { return w.yi + zCrit * Math.sqrt(w.vi); });
   var dataMin = Math.min.apply(null, allLower.concat([result.ci_lower, result.pi_lower || result.ci_lower]));
   var dataMax = Math.max.apply(null, allUpper.concat([result.ci_upper, result.pi_upper || result.ci_upper]));
   var range = dataMax - dataMin;
@@ -2225,22 +2417,30 @@ function renderForestPlot(result, options) {
   var plotX = marginLeft + labelColW + dataColW;
   function scaleX(v) { return plotX + ((v - dataMin) / (dataMax - dataMin)) * plotAreaW; }
 
+  var bgFill = isDark ? '#0f172a' : 'white';
+  var textFill = isDark ? '#e2e8f0' : '#374151';
+  var mutedFill = isDark ? '#94a3b8' : '#6b7280';
+  var lineFill = isDark ? '#334155' : '#d1d5db';
+  var accentFill = isDark ? '#60a5fa' : '#1e40af';
+
   var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + totalW + '" height="' + totalH + '" '
     + 'font-family="-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif" font-size="11">';
-  svg += '<rect width="' + totalW + '" height="' + totalH + '" fill="white"/>';
+  svg += '<rect width="' + totalW + '" height="' + totalH + '" fill="' + bgFill + '"/>';
 
   // Header
   var headerY = headerH - 8;
-  svg += '<text x="' + (marginLeft + 4) + '" y="' + headerY + '" font-weight="600" fill="#374151">Study</text>';
-  svg += '<text x="' + (marginLeft + labelColW + 4) + '" y="' + headerY + '" font-weight="600" fill="#374151">Events</text>';
-  svg += '<text x="' + (plotX + plotAreaW / 2) + '" y="' + headerY + '" text-anchor="middle" font-weight="600" fill="#374151">' + effectLabel + '</text>';
-  svg += '<text x="' + (plotX + plotAreaW + 4) + '" y="' + headerY + '" font-weight="600" fill="#374151">RR [95% CI]</text>';
-  svg += '<text x="' + (plotX + plotAreaW + ciColW + 4) + '" y="' + headerY + '" font-weight="600" fill="#374151">Weight</text>';
-  svg += '<line x1="' + marginLeft + '" y1="' + headerH + '" x2="' + (totalW - marginRight) + '" y2="' + headerH + '" stroke="#d1d5db" stroke-width="1"/>';
+  var emAbbr = effectLabel === 'Odds Ratio' ? 'OR' : effectLabel === 'Risk Difference' ? 'RD' : 'RR';
+  svg += '<text x="' + (marginLeft + 4) + '" y="' + headerY + '" font-weight="600" fill="' + textFill + '">Study</text>';
+  svg += '<text x="' + (marginLeft + labelColW + 4) + '" y="' + headerY + '" font-weight="600" fill="' + textFill + '">Events</text>';
+  svg += '<text x="' + (plotX + plotAreaW / 2) + '" y="' + headerY + '" text-anchor="middle" font-weight="600" fill="' + textFill + '">' + effectLabel + '</text>';
+  svg += '<text x="' + (plotX + plotAreaW + 4) + '" y="' + headerY + '" font-weight="600" fill="' + textFill + '">' + emAbbr + ' [' + clLabel + ']</text>';
+  svg += '<text x="' + (plotX + plotAreaW + ciColW + 4) + '" y="' + headerY + '" font-weight="600" fill="' + textFill + '">Weight</text>';
+  svg += '<line x1="' + marginLeft + '" y1="' + headerH + '" x2="' + (totalW - marginRight) + '" y2="' + headerH + '" stroke="' + lineFill + '" stroke-width="1"/>';
 
   // Null line
-  var nullX = scaleX(0);
-  svg += '<line x1="' + nullX + '" y1="' + headerH + '" x2="' + nullX + '" y2="' + (headerH + k * rowH + gapBeforeSummary + summaryRowH + 10) + '" stroke="#9ca3af" stroke-width="1" stroke-dasharray="4,3"/>';
+  var nullVal = useLogScale ? 0 : 0;
+  var nullX = scaleX(nullVal);
+  svg += '<line x1="' + nullX + '" y1="' + headerH + '" x2="' + nullX + '" y2="' + (headerH + k * rowH + gapBeforeSummary + summaryRowH + 10) + '" stroke="' + mutedFill + '" stroke-width="1" stroke-dasharray="4,3"/>';
 
   var maxWt = Math.max.apply(null, weights.map(function(w) { return w.weightPercent; }));
 
@@ -2249,9 +2449,9 @@ function renderForestPlot(result, options) {
     var w = weights[i];
     var y = headerH + (i + 0.5) * rowH;
     var se_i = Math.sqrt(w.vi);
-    var lo = w.yi - 1.96 * se_i;
-    var hi = w.yi + 1.96 * se_i;
-    var color = '#111827';
+    var lo = w.yi - zCrit * se_i;
+    var hi = w.yi + zCrit * se_i;
+    var color = textFill;
 
     svg += '<text x="' + (marginLeft + 4) + '" y="' + (y + 4) + '" fill="' + color + '">' + escHtml(String(w.id)) + '</text>';
 
@@ -2273,46 +2473,61 @@ function renderForestPlot(result, options) {
       svg += '<rect x="' + (cx - sqSize / 2) + '" y="' + (y - sqSize / 2) + '" width="' + sqSize + '" height="' + sqSize + '" fill="' + color + '"/>';
     }
 
-    var effText = Math.exp(w.yi).toFixed(2) + ' [' + Math.exp(lo).toFixed(2) + ', ' + Math.exp(hi).toFixed(2) + ']';
+    var effText = useLogScale
+      ? Math.exp(w.yi).toFixed(2) + ' [' + Math.exp(lo).toFixed(2) + ', ' + Math.exp(hi).toFixed(2) + ']'
+      : w.yi.toFixed(3) + ' [' + lo.toFixed(3) + ', ' + hi.toFixed(3) + ']';
     svg += '<text x="' + (plotX + plotAreaW + 4) + '" y="' + (y + 4) + '" font-size="10" fill="' + color + '">' + effText + '</text>';
     svg += '<text x="' + (plotX + plotAreaW + ciColW + 4) + '" y="' + (y + 4) + '" font-size="10" fill="' + color + '">' + w.weightPercent.toFixed(1) + '%</text>';
   }
 
   // Summary
   var summaryLineY = headerH + k * rowH + gapBeforeSummary / 2;
-  svg += '<line x1="' + marginLeft + '" y1="' + summaryLineY + '" x2="' + (totalW - marginRight) + '" y2="' + summaryLineY + '" stroke="#d1d5db" stroke-width="1"/>';
+  svg += '<line x1="' + marginLeft + '" y1="' + summaryLineY + '" x2="' + (totalW - marginRight) + '" y2="' + summaryLineY + '" stroke="' + lineFill + '" stroke-width="1"/>';
 
   var sy = headerH + k * rowH + gapBeforeSummary + summaryRowH / 2;
   var dCx = scaleX(result.theta), dL = scaleX(result.ci_lower), dR = scaleX(result.ci_upper), dHalf = 8;
 
   if (result.pi_lower !== null && result.pi_lower !== undefined) {
     var piL = scaleX(result.pi_lower), piR = scaleX(result.pi_upper);
-    svg += '<line x1="' + Math.max(plotX, piL) + '" y1="' + sy + '" x2="' + Math.min(plotX + plotAreaW, piR) + '" y2="' + sy + '" stroke="#1e40af" stroke-width="1.5" stroke-dasharray="6,3"/>';
+    svg += '<line x1="' + Math.max(plotX, piL) + '" y1="' + sy + '" x2="' + Math.min(plotX + plotAreaW, piR) + '" y2="' + sy + '" stroke="' + accentFill + '" stroke-width="1.5" stroke-dasharray="6,3"/>';
   }
 
-  svg += '<polygon points="' + dL + ',' + sy + ' ' + dCx + ',' + (sy - dHalf) + ' ' + dR + ',' + sy + ' ' + dCx + ',' + (sy + dHalf) + '" fill="#1e40af" opacity="0.85"/>';
-  svg += '<text x="' + (marginLeft + 4) + '" y="' + (sy + 4) + '" font-weight="700" fill="#1e40af">RE-DL HKSJ</text>';
+  svg += '<polygon points="' + dL + ',' + sy + ' ' + dCx + ',' + (sy - dHalf) + ' ' + dR + ',' + sy + ' ' + dCx + ',' + (sy + dHalf) + '" fill="' + accentFill + '" opacity="0.85"/>';
+  svg += '<text x="' + (marginLeft + 4) + '" y="' + (sy + 4) + '" font-weight="700" fill="' + accentFill + '">RE-DL HKSJ</text>';
 
-  var summEffText = Math.exp(result.theta).toFixed(2) + ' [' + Math.exp(result.ci_lower).toFixed(2) + ', ' + Math.exp(result.ci_upper).toFixed(2) + ']';
-  svg += '<text x="' + (plotX + plotAreaW + 4) + '" y="' + (sy + 4) + '" font-size="10" font-weight="600" fill="#1e40af">' + summEffText + '</text>';
-  svg += '<text x="' + (plotX + plotAreaW + ciColW + 4) + '" y="' + (sy + 4) + '" font-size="10" font-weight="600" fill="#1e40af">100%</text>';
+  var summEffText = useLogScale
+    ? Math.exp(result.theta).toFixed(2) + ' [' + Math.exp(result.ci_lower).toFixed(2) + ', ' + Math.exp(result.ci_upper).toFixed(2) + ']'
+    : result.theta.toFixed(3) + ' [' + result.ci_lower.toFixed(3) + ', ' + result.ci_upper.toFixed(3) + ']';
+  svg += '<text x="' + (plotX + plotAreaW + 4) + '" y="' + (sy + 4) + '" font-size="10" font-weight="600" fill="' + accentFill + '">' + summEffText + '</text>';
+  svg += '<text x="' + (plotX + plotAreaW + ciColW + 4) + '" y="' + (sy + 4) + '" font-size="10" font-weight="600" fill="' + accentFill + '">100%</text>';
 
   // X-axis
   var axisY = sy + dHalf + 16;
-  svg += '<line x1="' + plotX + '" y1="' + axisY + '" x2="' + (plotX + plotAreaW) + '" y2="' + axisY + '" stroke="#374151" stroke-width="1"/>';
-  var ticks = [0.1, 0.2, 0.5, 1, 2, 5, 10].map(function(v) { return Math.log(v); });
-  ticks.forEach(function(tv) {
-    if (tv >= dataMin && tv <= dataMax) {
-      var tx = scaleX(tv);
-      svg += '<line x1="' + tx + '" y1="' + axisY + '" x2="' + tx + '" y2="' + (axisY + 5) + '" stroke="#374151" stroke-width="1"/>';
-      svg += '<text x="' + tx + '" y="' + (axisY + 16) + '" text-anchor="middle" font-size="9" fill="#6b7280">' + Math.exp(tv).toFixed(tv < -0.5 || tv > 0.5 ? 1 : 2) + '</text>';
+  svg += '<line x1="' + plotX + '" y1="' + axisY + '" x2="' + (plotX + plotAreaW) + '" y2="' + axisY + '" stroke="' + textFill + '" stroke-width="1"/>';
+  if (useLogScale) {
+    var ticks = [0.1, 0.2, 0.5, 1, 2, 5, 10].map(function(v) { return Math.log(v); });
+    ticks.forEach(function(tv) {
+      if (tv >= dataMin && tv <= dataMax) {
+        var tx = scaleX(tv);
+        svg += '<line x1="' + tx + '" y1="' + axisY + '" x2="' + tx + '" y2="' + (axisY + 5) + '" stroke="' + textFill + '" stroke-width="1"/>';
+        svg += '<text x="' + tx + '" y="' + (axisY + 16) + '" text-anchor="middle" font-size="9" fill="' + mutedFill + '">' + Math.exp(tv).toFixed(tv < -0.5 || tv > 0.5 ? 1 : 2) + '</text>';
+      }
+    });
+  } else {
+    var rdRange = dataMax - dataMin;
+    var rdStep = rdRange > 0.4 ? 0.1 : rdRange > 0.2 ? 0.05 : 0.02;
+    var rdStart = Math.ceil(dataMin / rdStep) * rdStep;
+    for (var rv = rdStart; rv <= dataMax; rv += rdStep) {
+      var tx = scaleX(rv);
+      svg += '<line x1="' + tx + '" y1="' + axisY + '" x2="' + tx + '" y2="' + (axisY + 5) + '" stroke="' + textFill + '" stroke-width="1"/>';
+      svg += '<text x="' + tx + '" y="' + (axisY + 16) + '" text-anchor="middle" font-size="9" fill="' + mutedFill + '">' + rv.toFixed(2) + '</text>';
     }
-  });
-  svg += '<text x="' + (plotX + plotAreaW / 2) + '" y="' + (axisY + 30) + '" text-anchor="middle" font-size="10" fill="#6b7280">Favours colchicine    |    Favours control</text>';
+  }
+  svg += '<text x="' + (plotX + plotAreaW / 2) + '" y="' + (axisY + 30) + '" text-anchor="middle" font-size="10" fill="' + mutedFill + '">Favours colchicine    |    Favours control</text>';
 
   // Heterogeneity
   var hetY = axisY + 44;
-  svg += '<text x="' + (marginLeft + 4) + '" y="' + hetY + '" font-size="10" fill="#6b7280">Heterogeneity: I\u00B2 = '
+  svg += '<text x="' + (marginLeft + 4) + '" y="' + hetY + '" font-size="10" fill="' + mutedFill + '">Heterogeneity: I\u00B2 = '
     + (result.I2 !== undefined ? result.I2.toFixed(1) : '?') + '%; \u03C4\u00B2 = '
     + (result.tau2 !== undefined ? result.tau2.toFixed(4) : 'N/A') + '; Q = '
     + (result.Q !== undefined ? result.Q.toFixed(2) : '?') + ' (df=' + (result.df !== undefined ? result.df : '?')
@@ -2479,24 +2694,35 @@ function autoGRADE(synthesis, biasFlags) {
 // ==============================
 
 function generateE156(synthesis, biasData) {
-  var rr = Math.exp(synthesis.theta).toFixed(2);
-  var ciLo = Math.exp(synthesis.ci_lower).toFixed(2);
-  var ciHi = Math.exp(synthesis.ci_upper).toFixed(2);
+  var em = STATE.effectMeasure || 'RR';
+  var useLog = isLogScale(em);
+  var emLabel = getEffectLabel(em).toLowerCase();
+  var effectVal = useLog ? Math.exp(synthesis.theta).toFixed(2) : synthesis.theta.toFixed(3);
+  var ciLo = useLog ? Math.exp(synthesis.ci_lower).toFixed(2) : synthesis.ci_lower.toFixed(3);
+  var ciHi = useLog ? Math.exp(synthesis.ci_upper).toFixed(2) : synthesis.ci_upper.toFixed(3);
+  var cl = confLabelText();
   var k = synthesis.k;
   var I2 = synthesis.I2.toFixed(0);
 
   // [P0-4 FIX] Broadened scope — query includes chronic CAD, ACS, pericarditis, not just STEMI
   var s1 = 'Does colchicine reduce major adverse cardiovascular events in patients with coronary artery disease?';
   var s2 = 'We synthesised ' + k + ' randomised controlled trials from ClinicalTrials.gov structured results data, using dual-agent extraction with TruthCert validation.';
-  var s3 = 'DerSimonian-Laird random-effects meta-analysis with Hartung-Knapp-Sidik-Jonkman correction pooled log risk ratios and back-transformed to the natural scale.';
-  var s4 = 'The pooled risk ratio for MACE was ' + rr + ' (95% CI ' + ciLo + ' to ' + ciHi + '; I\u00B2=' + I2 + '%; ' + k + ' trials).';
-  var piText = synthesis.pi_lower !== null ?
-    'the 95% prediction interval was ' + Math.exp(synthesis.pi_lower).toFixed(2) + ' to ' + Math.exp(synthesis.pi_upper).toFixed(2) :
-    'prediction interval undefined (k<3)';
+  var scaleDesc = useLog ? ('pooled log ' + emLabel + 's and back-transformed to the natural scale') : ('pooled ' + emLabel + 's on the linear scale');
+  var s3 = 'DerSimonian-Laird random-effects meta-analysis with Hartung-Knapp-Sidik-Jonkman correction ' + scaleDesc + '.';
+  var s4 = 'The pooled ' + emLabel + ' for MACE was ' + effectVal + ' (' + cl + ' ' + ciLo + ' to ' + ciHi + '; I\u00B2=' + I2 + '%; ' + k + ' trials).';
+  var piText;
+  if (synthesis.pi_lower !== null) {
+    var piLo = useLog ? Math.exp(synthesis.pi_lower).toFixed(2) : synthesis.pi_lower.toFixed(3);
+    var piHi = useLog ? Math.exp(synthesis.pi_upper).toFixed(2) : synthesis.pi_upper.toFixed(3);
+    piText = 'the ' + cl.replace('CI', 'prediction interval') + ' was ' + piLo + ' to ' + piHi;
+  } else {
+    piText = 'prediction interval undefined (k<3)';
+  }
   var s5 = 'Leave-one-out analysis confirmed robustness to exclusion of any single trial; ' + piText + '.';
   // [P2-1 FIX] Pass actual bias flags instead of empty array
   var grade = autoGRADE(synthesis, biasData && biasData.flags ? biasData.flags : []);
-  var s6 = 'Colchicine ' + (parseFloat(rr) < 1 ? 'may reduce' : 'does not appear to reduce') + ' MACE after STEMI, though confidence is ' + grade.toLowerCase() + '.';
+  var beneficial = useLog ? parseFloat(effectVal) < 1 : parseFloat(effectVal) < 0;
+  var s6 = 'Colchicine ' + (beneficial ? 'may reduce' : 'does not appear to reduce') + ' MACE after STEMI, though confidence is ' + grade.toLowerCase() + '.';
   var s7 = 'This living synthesis is limited to ClinicalTrials.gov posted results; grey literature and individual patient data are excluded.';
 
   return [s1, s2, s3, s4, s5, s6, s7].join(' ');
@@ -2603,7 +2829,9 @@ var STATE = {
   searchLog: [],
   inclusionLog: [],
   prismaFlowCounts: null,
-  versionHistory: []
+  versionHistory: [],
+  confLevel: 0.95,
+  effectMeasure: 'RR'
 };
 
 var evidenceSortCol = null;
@@ -2977,7 +3205,7 @@ async function runFullPipeline() {
     }
 
     if (primaryStudies.length >= 2) {
-      STATE.primarySynthesis = derSimonianLaird(primaryStudies);
+      STATE.primarySynthesis = derSimonianLaird(primaryStudies, { confLevel: STATE.confLevel });
       STATE.primarySynthesis._studies = primaryStudies;
       pipeLog('Primary MA: k=' + STATE.primarySynthesis.k + ', RR=' + Math.exp(STATE.primarySynthesis.theta).toFixed(3));
     } else {
@@ -4177,16 +4405,21 @@ function renderProvenancePanel() {
 }
 
 function renderE156Panel() {
+  if (!STATE.primarySynthesis) return;
+  // Re-generate with current settings
+  STATE.e156Text = generateE156(STATE.primarySynthesis, STATE.biasData);
   if (!STATE.e156Text) return;
   var wordCount = STATE.e156Text.split(/\s+/).length;
   var sentenceCount = STATE.e156Text.split('. ').length;
+  var emLabel = getEffectLabel(STATE.effectMeasure);
 
   document.getElementById('e156Output').innerHTML =
     '<div class="e156-abstract">' + escHtml(STATE.e156Text) + '</div>' +
     '<div class="e156-meta">' +
     '<span>Words: ' + wordCount + '/156</span>' +
     '<span>Sentences: ' + sentenceCount + '/7</span>' +
-    '<span>Primary Estimand: MACE Risk Ratio</span>' +
+    '<span>Primary Estimand: MACE ' + emLabel + '</span>' +
+    '<span>Confidence Level: ' + Math.round(STATE.confLevel * 100) + '%</span>' +
     '<span>Generated: ' + (STATE.lastUpdated || '').substring(0, 19) + '</span>' +
     '</div>';
 }
@@ -4357,7 +4590,7 @@ function loadDemoData() {
   };
 
   // Primary synthesis
-  STATE.primarySynthesis = derSimonianLaird(demoStudies);
+  STATE.primarySynthesis = derSimonianLaird(demoStudies, { confLevel: STATE.confLevel });
   STATE.primarySynthesis._studies = demoStudies;
 
   // Cumulative
@@ -4458,6 +4691,387 @@ renderAllPanels = function() {
   originalRenderAll();
   saveState();
 };
+
+// ==============================
+// DARK / LIGHT MODE TOGGLE
+// ==============================
+
+function toggleTheme() {
+  var isLight = document.body.classList.toggle('light-mode');
+  try { localStorage.setItem('cardiosynth_theme', isLight ? 'light' : 'dark'); } catch(e) {}
+  // Update forest plot SVG backgrounds if synthesis exists
+  if (STATE.primarySynthesis) reRenderAfterSettingsChange();
+}
+
+// Restore theme on load
+(function() {
+  try {
+    var saved = localStorage.getItem('cardiosynth_theme');
+    if (saved === 'light') document.body.classList.add('light-mode');
+  } catch(e) {}
+})();
+
+
+// ==============================
+// CONFIDENCE LEVEL SELECTOR
+// ==============================
+
+function setConfLevel(level) {
+  STATE.confLevel = level;
+  document.querySelectorAll('.conf-selector .conf-btn').forEach(function(btn) {
+    btn.classList.toggle('active', parseFloat(btn.getAttribute('data-conf')) === level);
+  });
+  if (STATE.primarySynthesis) reRenderAfterSettingsChange();
+}
+
+
+// ==============================
+// EFFECT MEASURE TOGGLE
+// ==============================
+
+function setEffectMeasure(em) {
+  STATE.effectMeasure = em;
+  document.querySelectorAll('.em-selector .conf-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.getAttribute('data-em') === em);
+  });
+  if (STATE.primarySynthesis && STATE.primarySynthesis._studies) reRenderAfterSettingsChange();
+}
+
+function getEscalcFn(em) {
+  if (em === 'OR') return escalcOR;
+  if (em === 'RD') return escalcRD;
+  return escalcRR;
+}
+
+function getEffectLabel(em) {
+  if (em === 'OR') return 'Odds Ratio';
+  if (em === 'RD') return 'Risk Difference';
+  return 'Risk Ratio';
+}
+
+function isLogScale(em) {
+  return em !== 'RD';
+}
+
+function confLabelText() {
+  return Math.round(STATE.confLevel * 100) + '% CI';
+}
+
+
+// ==============================
+// RE-RENDER AFTER SETTINGS CHANGE
+// ==============================
+
+function reRenderAfterSettingsChange() {
+  // Re-compute primary synthesis with current effect measure and confidence level
+  if (!STATE.clearedExtractions || STATE.clearedExtractions.length === 0) return;
+
+  var escalcFn = getEscalcFn(STATE.effectMeasure);
+  var primaryStudies = [];
+
+  for (var i = 0; i < STATE.clearedExtractions.length; i++) {
+    var ext = STATE.clearedExtractions[i];
+    var maceOutcome = findOutcomeByKeywords(ext.outcomes, MACE_KEYWORDS);
+    if (!maceOutcome) {
+      for (var j = 0; j < ext.outcomes.length; j++) {
+        if (ext.outcomes[j].type === 'PRIMARY') { maceOutcome = ext.outcomes[j]; break; }
+      }
+    }
+    if (!maceOutcome) continue;
+    var binary = extractBinaryFromOutcome(maceOutcome, ext);
+    if (!binary) continue;
+    var eff = escalcFn(binary.ai, binary.bi, binary.ci, binary.di);
+    if (eff.yi === null) continue;
+    primaryStudies.push({
+      id: ext.nct, nctId: ext.nct, yi: eff.yi, vi: eff.vi,
+      ai: binary.ai, bi: binary.bi, ci: binary.ci, di: binary.di,
+      n: binary.n1 + binary.n2,
+      order: parseDate(ext.study_metadata.primary_completion_date) ? parseDate(ext.study_metadata.primary_completion_date).getTime() : 0,
+      title: ext.study_metadata.title, sponsor: ext.study_metadata.sponsor_name,
+      year: (ext.study_metadata.primary_completion_date || '').substring(0, 4)
+    });
+  }
+
+  if (primaryStudies.length >= 2) {
+    STATE.primarySynthesis = derSimonianLaird(primaryStudies, { confLevel: STATE.confLevel });
+    STATE.primarySynthesis._studies = primaryStudies;
+  }
+
+  // Re-render affected panels
+  renderPrimarySynthesis();
+  renderE156Panel();
+  renderVisualAbstract();
+  renderNarrativeReport();
+}
+
+
+// ==============================
+// VISUAL ABSTRACT
+// ==============================
+
+function renderVisualAbstract() {
+  var container = document.getElementById('vaCardContainer');
+  if (!STATE.primarySynthesis) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">&#128196;</div><p>Run the pipeline to generate the Visual Abstract.</p></div>';
+    return;
+  }
+
+  var syn = STATE.primarySynthesis;
+  var em = STATE.effectMeasure;
+  var useLog = isLogScale(em);
+  var effectVal = useLog ? Math.exp(syn.theta).toFixed(2) : syn.theta.toFixed(3);
+  var ciLo = useLog ? Math.exp(syn.ci_lower).toFixed(2) : syn.ci_lower.toFixed(3);
+  var ciHi = useLog ? Math.exp(syn.ci_upper).toFixed(2) : syn.ci_upper.toFixed(3);
+  var effectColor = (useLog ? parseFloat(effectVal) < 1 : parseFloat(effectVal) < 0) ? '#059669' : '#d97706';
+
+  var totalN = 0;
+  if (syn.weights) { for (var i = 0; i < syn.weights.length; i++) totalN += (syn.weights[i].n || 0); }
+  if (totalN === 0 && syn._studies) { for (var i = 0; i < syn._studies.length; i++) totalN += (syn._studies[i].n || 0); }
+
+  var allFlags = [];
+  STATE.truthCertReports.forEach(function(r) { allFlags = allFlags.concat(r.flags); });
+  var grade = autoGRADE(syn, allFlags);
+  var gradeColor = grade === 'HIGH' ? '#059669' : grade === 'MODERATE' ? '#2563eb' : grade === 'LOW' ? '#d97706' : '#dc2626';
+
+  var html = '<div class="va-card">';
+  html += '<div class="va-header">';
+  html += '<h2>Colchicine in Cardiovascular Disease</h2>';
+  html += '<p>Living Evidence Synthesis &mdash; CardioSynth</p>';
+  html += '</div>';
+  html += '<div class="va-grid">';
+
+  // Studies section
+  html += '<div class="va-section">';
+  html += '<div class="va-label">Studies</div>';
+  html += '<div class="va-stat-main">' + syn.k + '</div>';
+  html += '<div class="va-value">randomised controlled trials</div>';
+  html += '<div class="va-value" style="font-size:0.85rem;color:#64748b">N = ' + totalN.toLocaleString() + ' participants</div>';
+  html += '</div>';
+
+  // Primary outcome section
+  html += '<div class="va-section">';
+  html += '<div class="va-label">Primary Outcome</div>';
+  html += '<div class="va-stat-main" style="color:' + effectColor + '">' + effectVal + '</div>';
+  html += '<div class="va-value">' + getEffectLabel(em) + ' for MACE</div>';
+  html += '<div class="va-value" style="font-size:0.85rem;color:#64748b">' + confLabelText() + ': ' + ciLo + ' to ' + ciHi + '</div>';
+  html += '</div>';
+
+  // Certainty section
+  html += '<div class="va-section">';
+  html += '<div class="va-label">Certainty</div>';
+  html += '<div class="va-stat-main" style="color:' + gradeColor + '">' + grade + '</div>';
+  html += '<div class="va-value">GRADE assessment</div>';
+  html += '<div class="va-value" style="font-size:0.85rem;color:#64748b">I' + String.fromCharCode(178) + ' = ' + syn.I2.toFixed(1) + '%, ' + String.fromCharCode(964) + String.fromCharCode(178) + ' = ' + syn.tau2.toFixed(3) + '</div>';
+  html += '</div>';
+
+  html += '</div>'; // va-grid
+  html += '<div style="padding:1.5rem;background:#f8fafc;text-align:center;font-size:0.75rem;color:#64748b">';
+  html += 'CardioSynth v0.8.0 | ClinicalTrials.gov only | TruthCert validated | Last updated: ' + (STATE.lastUpdated || '').substring(0, 10);
+  html += '</div>';
+  html += '</div>'; // va-card
+
+  container.innerHTML = html;
+}
+
+function printVisualAbstract() {
+  var vaCard = document.querySelector('#vaCardContainer .va-card');
+  if (!vaCard) { alert('Generate the Visual Abstract first by running the pipeline.'); return; }
+  var printWin = window.open('', '_blank');
+  printWin.document.write('<!DOCTYPE html><html><head><title>Visual Abstract - CardioSynth</title>');
+  printWin.document.write('<style>');
+  printWin.document.write('body{margin:40px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#fff}');
+  printWin.document.write('.va-card{background:#fff;color:#000;border-radius:1.5rem;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.15);max-width:700px;margin:0 auto}');
+  printWin.document.write('.va-header{background:#1e3a8a;color:#fff;padding:2rem;text-align:center}');
+  printWin.document.write('.va-header h2{font-size:1.5rem;font-weight:800;margin:0 0 0.25rem 0}');
+  printWin.document.write('.va-header p{font-size:0.85rem;opacity:0.85;margin:0}');
+  printWin.document.write('.va-grid{display:grid;grid-template-columns:repeat(3,1fr)}');
+  printWin.document.write('.va-section{padding:2rem;border-right:1px solid #e2e8f0}');
+  printWin.document.write('.va-section:last-child{border-right:none}');
+  printWin.document.write('.va-label{font-size:0.75rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem}');
+  printWin.document.write('.va-stat-main{font-size:3.5rem;font-weight:800;color:#1e40af;line-height:1;margin-bottom:0.5rem}');
+  printWin.document.write('.va-value{font-size:1.25rem;font-weight:700;color:#1e293b;line-height:1.2}');
+  printWin.document.write('</style></head><body>');
+  printWin.document.write(vaCard.outerHTML);
+  printWin.document.write('</body></html>');
+  printWin.document.close();
+  printWin.focus();
+  setTimeout(function() { printWin.print(); }, 300);
+}
+
+
+// ==============================
+// NYT-STYLE NARRATIVE REPORT
+// ==============================
+
+function generateNarrativeReport(synthesis, biasData) {
+  if (!synthesis) return '';
+
+  var em = STATE.effectMeasure;
+  var useLog = isLogScale(em);
+  var effectVal = useLog ? Math.exp(synthesis.theta).toFixed(2) : synthesis.theta.toFixed(3);
+  var ciLo = useLog ? Math.exp(synthesis.ci_lower).toFixed(2) : synthesis.ci_lower.toFixed(3);
+  var ciHi = useLog ? Math.exp(synthesis.ci_upper).toFixed(2) : synthesis.ci_upper.toFixed(3);
+  var direction = (useLog ? parseFloat(effectVal) < 1 : parseFloat(effectVal) < 0) ? 'reduction' : 'no clear reduction';
+  var allFlags = [];
+  STATE.truthCertReports.forEach(function(r) { allFlags = allFlags.concat(r.flags); });
+  var certaintyWord = autoGRADE(synthesis, allFlags).toLowerCase();
+
+  var totalN = 0;
+  if (synthesis._studies) { for (var i = 0; i < synthesis._studies.length; i++) totalN += (synthesis._studies[i].n || 0); }
+
+  var emLabel = getEffectLabel(em).toLowerCase();
+  var cl = confLabelText();
+
+  var para1 = 'Across ' + synthesis.k + ' randomised controlled trials identified through ClinicalTrials.gov, '
+    + 'colchicine was associated with a pooled ' + emLabel + ' of '
+    + '<span class="nyt-stat-inline">' + effectVal + ' (' + cl + ' ' + ciLo + ' to ' + ciHi + ')</span> '
+    + 'for major adverse cardiovascular events. ';
+
+  if (totalN > 0) {
+    para1 += 'These trials collectively enrolled ' + totalN.toLocaleString() + ' participants.';
+  }
+
+  var para2 = 'Heterogeneity was ' + (synthesis.I2 > 50 ? 'substantial' : synthesis.I2 > 25 ? 'moderate' : 'low')
+    + ' (I' + String.fromCharCode(178) + ' = ' + synthesis.I2.toFixed(1) + '%), '
+    + 'with between-study variance ' + String.fromCharCode(964) + String.fromCharCode(178) + ' = ' + synthesis.tau2.toFixed(4) + '. ';
+
+  if (synthesis.pi_lower !== null && synthesis.pi_lower !== undefined) {
+    var piLo = useLog ? Math.exp(synthesis.pi_lower).toFixed(2) : synthesis.pi_lower.toFixed(3);
+    var piHi = useLog ? Math.exp(synthesis.pi_upper).toFixed(2) : synthesis.pi_upper.toFixed(3);
+    para2 += 'The prediction interval (' + piLo + ' to ' + piHi + ') indicates that '
+      + (useLog && parseFloat(piHi) > 1 ? 'the true effect in a future study could plausibly favour either direction.' : 'future studies may show consistent effects.');
+  }
+
+  var para3 = 'The overall GRADE certainty of evidence was rated '
+    + '<span class="nyt-stat-inline">' + certaintyWord + '</span>. '
+    + 'This living synthesis is limited to ClinicalTrials.gov posted results; '
+    + 'grey literature, conference abstracts, and individual patient data are excluded.';
+
+  return { para1: para1, para2: para2, para3: para3,
+    effectVal: effectVal, I2: synthesis.I2.toFixed(0), k: synthesis.k,
+    emLabel: emLabel, cl: cl, ciLo: ciLo, ciHi: ciHi };
+}
+
+function renderNarrativeReport() {
+  var container = document.getElementById('nytReportContainer');
+  if (!STATE.primarySynthesis) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">&#128240;</div><p>Run the pipeline to generate the narrative report.</p></div>';
+    return;
+  }
+
+  var report = generateNarrativeReport(STATE.primarySynthesis, STATE.biasData);
+  if (!report) return;
+
+  var direction = (isLogScale(STATE.effectMeasure) ? parseFloat(report.effectVal) < 1 : parseFloat(report.effectVal) < 0);
+  var headline = direction
+    ? 'Colchicine Shows Promise for Cardiovascular Prevention'
+    : 'Colchicine Effect on Cardiovascular Outcomes Remains Uncertain';
+
+  var html = '<div class="nyt-report">';
+  html += '<h1 class="nyt-headline">' + headline + '</h1>';
+  html += '<p class="nyt-subhead">A living meta-analysis of ' + report.k + ' trials enrolling '
+    + (STATE.primarySynthesis._studies ? STATE.primarySynthesis._studies.reduce(function(s,t){return s+(t.n||0);},0).toLocaleString() : '?')
+    + ' patients: pooled ' + report.emLabel + ' ' + report.effectVal
+    + ' (' + report.cl + ' ' + report.ciLo + ' to ' + report.ciHi + ')</p>';
+  html += '<hr class="nyt-divider">';
+  html += '<div class="nyt-body nyt-dropcap"><p>' + report.para1 + '</p></div>';
+  html += '<div class="nyt-body" style="margin-top:1rem"><p>' + report.para2 + '</p></div>';
+
+  // Key numbers
+  html += '<div style="display:flex;gap:1.5rem;justify-content:center;margin:2rem 0;flex-wrap:wrap">';
+  html += '<div class="nyt-key-number"><div class="nyt-key-value" style="color:var(--accent)">' + report.effectVal + '</div><div class="nyt-key-label">Pooled ' + getEffectLabel(STATE.effectMeasure) + '</div></div>';
+  html += '<div class="nyt-key-number"><div class="nyt-key-value" style="color:#d97706">' + report.I2 + '%</div><div class="nyt-key-label">I' + String.fromCharCode(178) + '</div></div>';
+  html += '<div class="nyt-key-number"><div class="nyt-key-value" style="color:#059669">' + report.k + '</div><div class="nyt-key-label">Trials</div></div>';
+  html += '</div>';
+
+  html += '<div class="nyt-body" style="margin-top:1rem"><p>' + report.para3 + '</p></div>';
+  html += '</div>';
+
+  container.innerHTML = html;
+}
+
+
+// ==============================
+// UPDATE renderAllPanels TO INCLUDE NEW PANELS
+// ==============================
+
+var _originalRenderAllPanels = renderAllPanels;
+renderAllPanels = function() {
+  _originalRenderAllPanels();
+  renderVisualAbstract();
+  renderNarrativeReport();
+};
+
+
+// ==============================
+// UPDATE FOREST PLOT TO RESPECT SETTINGS
+// ==============================
+
+var _originalRenderPrimarySynthesis = renderPrimarySynthesis;
+renderPrimarySynthesis = function() {
+  var syn = STATE.primarySynthesis;
+  if (!syn) {
+    document.getElementById('primaryForest').innerHTML = '<div class="info-box">No primary synthesis available. Insufficient studies with extractable MACE data.</div>';
+    return;
+  }
+
+  var em = STATE.effectMeasure;
+  var useLog = isLogScale(em);
+  var emLabel = getEffectLabel(em);
+  var cl = confLabelText();
+
+  // Forest plot with dynamic settings
+  var forestSvg = renderForestPlot(syn, { logScale: useLog, effectLabel: emLabel });
+  document.getElementById('primaryForest').innerHTML = forestSvg;
+
+  // GRADE badge
+  var allFlags = [];
+  STATE.truthCertReports.forEach(function(r) { allFlags = allFlags.concat(r.flags); });
+  var grade = autoGRADE(syn, allFlags);
+  var gradeClass = grade === 'HIGH' ? 'grade-high' : grade === 'MODERATE' ? 'grade-moderate' : grade === 'LOW' ? 'grade-low' : 'grade-very-low';
+  document.getElementById('gradeContainer').innerHTML = '<span class="grade-badge ' + gradeClass + '">' + grade + ' confidence</span>';
+
+  // Stats grid with dynamic CI label
+  var effectDisplay = useLog ? Math.exp(syn.theta).toFixed(3) : syn.theta.toFixed(4);
+  var ciLoDisplay = useLog ? Math.exp(syn.ci_lower).toFixed(2) : syn.ci_lower.toFixed(4);
+  var ciHiDisplay = useLog ? Math.exp(syn.ci_upper).toFixed(2) : syn.ci_upper.toFixed(4);
+  var piText;
+  if (syn.pi_lower !== null) {
+    piText = useLog
+      ? Math.exp(syn.pi_lower).toFixed(2) + ' to ' + Math.exp(syn.pi_upper).toFixed(2)
+      : syn.pi_lower.toFixed(4) + ' to ' + syn.pi_upper.toFixed(4);
+  } else { piText = 'k < 3'; }
+  var pText = syn.pValue < 0.001 ? '<0.001' : syn.pValue.toFixed(4);
+  var pQText = syn.pQ < 0.001 ? '<0.001' : syn.pQ.toFixed(3);
+
+  document.getElementById('primaryStats').innerHTML =
+    '<div class="stat-item"><div class="stat-label">Pooled ' + emLabel + '</div><div class="stat-value">' + effectDisplay + '</div><div class="stat-sub">' + cl + ': ' + ciLoDisplay + ' to ' + ciHiDisplay + '</div></div>' +
+    '<div class="stat-item"><div class="stat-label">Studies (k)</div><div class="stat-value">' + syn.k + '</div></div>' +
+    '<div class="stat-item"><div class="stat-label">p-Value</div><div class="stat-value">' + pText + '</div></div>' +
+    '<div class="stat-item"><div class="stat-label">Prediction Interval</div><div class="stat-value" style="font-size:14px">' + piText + '</div></div>' +
+    '<div class="stat-item"><div class="stat-label">I\u00B2</div><div class="stat-value">' + syn.I2.toFixed(1) + '%</div><div class="stat-sub">' + syn.I2_lower.toFixed(0) + '% to ' + syn.I2_upper.toFixed(0) + '%</div></div>' +
+    '<div class="stat-item"><div class="stat-label">\u03C4\u00B2</div><div class="stat-value">' + syn.tau2.toFixed(4) + '</div></div>' +
+    '<div class="stat-item"><div class="stat-label">Q (p)</div><div class="stat-value">' + syn.Q.toFixed(2) + '</div><div class="stat-sub">df=' + syn.df + ', p=' + pQText + '</div></div>' +
+    '<div class="stat-item"><div class="stat-label">HKSJ Applied</div><div class="stat-value">' + (syn.hksj ? 'Yes' : 'No') + '</div></div>' +
+    (syn.warning ? '<div class="stat-item" style="grid-column:1/-1"><div class="stat-label" style="color:var(--amber-600)">Warning</div><div class="stat-value" style="font-size:12px;color:var(--amber-600)">' + escHtml(syn.warning) + '</div></div>' : '');
+
+  // LOO
+  if (syn._studies && syn._studies.length >= 2) {
+    var loo = leaveOneOut(syn._studies);
+    var looHtml = '<table><thead><tr><th>Omitted</th><th class="text-right">' + emLabel + '</th><th class="text-right">' + cl + '</th><th class="text-right">I\u00B2</th></tr></thead><tbody>';
+    loo.forEach(function(l) {
+      var lEffect = useLog ? Math.exp(l.theta).toFixed(3) : l.theta.toFixed(4);
+      var lCiLo = useLog ? Math.exp(l.ci_lower).toFixed(2) : l.ci_lower.toFixed(4);
+      var lCiHi = useLog ? Math.exp(l.ci_upper).toFixed(2) : l.ci_upper.toFixed(4);
+      looHtml += '<tr><td class="mono">' + escHtml(l.omitted) + '</td><td class="text-right">' + lEffect + '</td>'
+        + '<td class="text-right">' + lCiLo + ' to ' + lCiHi + '</td>'
+        + '<td class="text-right">' + l.I2.toFixed(1) + '%</td></tr>';
+    });
+    looHtml += '</tbody></table>';
+    document.getElementById('looResults').innerHTML = looHtml;
+  }
+};
+
 
 // Keyboard shortcut: Escape closes modal
 document.addEventListener('keydown', function(e) {
