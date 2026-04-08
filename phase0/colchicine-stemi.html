@@ -601,6 +601,31 @@ tbody td { padding: 10px 14px; }
   .record-excerpt-grid { grid-template-columns: 1fr; }
 }
 
+/* ========== CROSS-VALIDATION PANEL ========== */
+.cross-val-study { margin-bottom: 20px; }
+.cross-val-study h4 { font-size: 13px; font-weight: 700; color: var(--blue-800); margin-bottom: 8px; }
+.cross-val-study table { width: 100%; font-size: 12px; }
+.cross-val-study th { background: var(--gray-50); font-size: 11px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.3px; padding: 8px 10px; }
+.cross-val-study td { padding: 6px 10px; border-bottom: 1px solid var(--gray-100); }
+.cross-val-study td small { display: block; font-size: 10px; color: var(--gray-400); font-family: 'SFMono-Regular', Consolas, monospace; }
+.cross-val-study td.cv-match { color: var(--green-700); font-weight: 700; text-align: center; }
+.cross-val-study td.cv-mismatch { color: var(--red-700); font-weight: 700; text-align: center; background: var(--red-50); }
+.cross-val-study td.cv-unavailable { color: var(--gray-400); font-weight: 600; text-align: center; }
+a.ctgov-link { color: var(--blue-600); text-decoration: none; font-weight: 600; }
+a.ctgov-link:hover { text-decoration: underline; color: var(--blue-700); }
+.btn-ctgov { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: var(--blue-600); color: #fff; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; margin-bottom: 12px; }
+.btn-ctgov:hover { background: var(--blue-700); }
+
+/* ========== VERSION DIFF ========== */
+.update-diff { margin-top: 12px; }
+.diff-entry { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; }
+.diff-entry .diff-version { font-weight: 700; color: var(--blue-800); font-size: 13px; margin-right: 12px; }
+.diff-entry .diff-date { font-size: 11px; color: var(--gray-400); }
+.diff-entry .diff-details { font-size: 12px; color: var(--gray-700); margin-top: 6px; line-height: 1.6; }
+.diff-entry .diff-details .diff-add { color: var(--green-700); font-weight: 600; }
+.diff-entry .diff-details .diff-remove { color: var(--red-700); font-weight: 600; }
+.diff-entry .diff-details .diff-change { color: var(--amber-600); font-weight: 600; }
+
 /* ========== PRINT STYLES ========== */
 @media print {
   .master-header, .nav-bar, .btn, .btn-group, .pipeline-panel,
@@ -745,6 +770,30 @@ tbody td { padding: 10px 14px; }
           </table>
         </div>
         <div id="inclExclEmpty" class="empty-state" style="padding:24px"><p>Run the pipeline to see inclusion/exclusion decisions.</p></div>
+      </div>
+    </div>
+
+    <!-- Cross-Validation: Registry vs Extracted -->
+    <div class="card">
+      <div class="card-header">Cross-Validation: Registry vs Extracted
+        <span style="margin-left:auto;font-size:12px;color:var(--gray-400)" id="crossValCount"></span>
+      </div>
+      <div class="card-body">
+        <div id="crossValContent">
+          <div class="empty-state"><div class="icon">&#128269;</div><p>Run the pipeline to see cross-validation of extracted data against CT.gov registry values.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Living Update History -->
+    <div class="card">
+      <div class="card-header">Living Update History
+        <span style="margin-left:auto;font-size:12px;color:var(--gray-400)" id="versionHistoryCount"></span>
+      </div>
+      <div class="card-body">
+        <div id="versionHistoryContent">
+          <div class="empty-state"><div class="icon">&#128197;</div><p>Version history will appear after the first pipeline run.</p></div>
+        </div>
       </div>
     </div>
 
@@ -2553,7 +2602,8 @@ var STATE = {
   lastUpdated: null,
   searchLog: [],
   inclusionLog: [],
-  prismaFlowCounts: null
+  prismaFlowCounts: null,
+  versionHistory: []
 };
 
 var evidenceSortCol = null;
@@ -3035,6 +3085,7 @@ async function runFullPipeline() {
     setPipeStep('e156', 'done');
     setPipeProgress(100);
 
+    recordVersionHistory();
     STATE.lastUpdated = new Date().toISOString();
     STATE.pipelineRunning = false;
     setPipeStatus('Pipeline complete. ' + cleared.length + ' studies synthesised.');
@@ -3139,7 +3190,7 @@ function renderEvidenceMap() {
     tr.onclick = function() { showStudyModal(row); };
     var verdictTag = row.verdict === 'PASS' ? 'tag-pass' : row.verdict === 'WARN' ? 'tag-warn' : 'tag-fail';
     tr.innerHTML =
-      '<td class="mono">' + escHtml(row.nct) + '</td>' +
+      '<td class="mono">' + nctLinkHtml(row.nct) + '</td>' +
       '<td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + escHtml(row.title) + '">' + escHtml(row.title) + '</td>' +
       '<td class="text-right">' + (row.n || '-') + '</td>' +
       '<td>' + (row.year || '-') + '</td>' +
@@ -3161,9 +3212,10 @@ function sortEvidenceTable(col) {
 function showStudyModal(row) {
   var ext = row._ext;
   var report = row._report;
-  var html = '<h4 style="margin-bottom:12px;font-size:15px">' + escHtml(ext.study_metadata.title) + '</h4>';
+  var html = '<a href="' + ctgovResultsLink(ext.nct) + '" target="_blank" rel="noopener" class="btn-ctgov">&#128279; View on CT.gov</a>';
+  html += '<h4 style="margin-bottom:12px;font-size:15px">' + escHtml(ext.study_metadata.title) + '</h4>';
   html += '<div class="stat-grid" style="margin-bottom:16px">';
-  html += '<div class="stat-item"><div class="stat-label">NCT ID</div><div class="stat-value" style="font-size:14px">' + escHtml(ext.nct) + '</div></div>';
+  html += '<div class="stat-item"><div class="stat-label">NCT ID</div><div class="stat-value" style="font-size:14px">' + nctLinkHtml(ext.nct) + '</div></div>';
   html += '<div class="stat-item"><div class="stat-label">Enrollment</div><div class="stat-value" style="font-size:14px">' + escHtml(String(ext.study_metadata.enrollment_actual || '-')) + '</div></div>';
   // [P1-5 FIX] escHtml on phase — raw API string could contain HTML
   html += '<div class="stat-item"><div class="stat-label">Phase</div><div class="stat-value" style="font-size:14px">' + escHtml(String(ext.study_metadata.phase || '-')) + '</div></div>';
@@ -3195,6 +3247,8 @@ function renderTransparencyPanel() {
   renderSearchStrategy();
   renderPrismaFlow();
   renderInclusionExclusionLog();
+  renderCrossValidationPanel();
+  renderVersionHistoryPanel();
   updateWebRCode();
 }
 
@@ -3353,7 +3407,7 @@ function renderInclusionExclusionLog() {
     var statusClass = entry.status === 'INCLUDED' ? 'incl-excl-status-included' : 'incl-excl-status-excluded';
     var verdictTag = entry.verdict === 'PASS' ? 'tag-pass' : entry.verdict === 'WARN' ? 'tag-warn' : entry.verdict === 'CRITICAL' ? 'tag-fail' : 'tag-info';
     tr.innerHTML =
-      '<td class="mono">' + escHtml(entry.nct) + '</td>' +
+      '<td class="mono">' + nctLinkHtml(entry.nct) + '</td>' +
       '<td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + escHtml(entry.title) + '">' + escHtml(entry.title) + '</td>' +
       '<td class="' + statusClass + '">' + entry.status + '</td>' +
       '<td style="font-size:11px;max-width:260px">' + escHtml(entry.reason) + '</td>' +
@@ -3362,6 +3416,251 @@ function renderInclusionExclusionLog() {
     tbody.appendChild(tr);
   });
   document.getElementById('inclExclCount').textContent = included + ' included, ' + excluded + ' excluded';
+}
+
+// ==============================
+// DEEP-LINK PROVENANCE HELPER
+// ==============================
+
+function ctgovResultsLink(nct) {
+  return 'https://clinicaltrials.gov/study/' + encodeURIComponent(nct) + '?tab=results';
+}
+
+function ctgovOutcomesLink(nct) {
+  return 'https://clinicaltrials.gov/study/' + encodeURIComponent(nct) + '?tab=results#outcome-measures';
+}
+
+function nctLinkHtml(nct) {
+  return '<a href="' + ctgovResultsLink(nct) + '" target="_blank" rel="noopener" class="ctgov-link">' + escHtml(nct) + '</a>';
+}
+
+// ==============================
+// CROSS-VALIDATION: REGISTRY vs EXTRACTED
+// ==============================
+
+function buildCrossValidation(extraction) {
+  var raw = extraction._rawExcerpts || {};
+  var checks = [];
+
+  // Enrollment
+  var regEnrollment = raw.enrollment ? raw.enrollment.value : null;
+  var extEnrollment = extraction.study_metadata.enrollment_actual;
+  checks.push({
+    field: 'Enrollment',
+    registry: regEnrollment != null ? String(regEnrollment) : null,
+    registryPath: 'protocolSection.designModule.enrollmentInfo.count',
+    extracted: extEnrollment != null ? String(extEnrollment) : null,
+    match: regEnrollment != null && extEnrollment != null ? String(regEnrollment) === String(extEnrollment) : null
+  });
+
+  // Title
+  var regTitle = raw.title ? raw.title.value : null;
+  var extTitle = extraction.study_metadata.title || null;
+  checks.push({
+    field: 'Brief Title',
+    registry: regTitle,
+    registryPath: 'protocolSection.identificationModule.briefTitle',
+    extracted: extTitle,
+    match: regTitle && extTitle ? regTitle === extTitle : null
+  });
+
+  // Arm labels
+  var regArms = raw.arms && raw.arms.value ? raw.arms.value : [];
+  (extraction.arms || []).forEach(function(arm, i) {
+    checks.push({
+      field: 'Arm ' + (i + 1) + ' label',
+      registry: regArms[i] ? regArms[i].label : null,
+      registryPath: 'protocolSection.armsInterventionsModule.armGroups[' + i + '].label',
+      extracted: arm.arm_label || null,
+      match: regArms[i] && arm.arm_label ? regArms[i].label === arm.arm_label : null
+    });
+  });
+
+  // Primary outcome title
+  var regPrimOut = raw.primaryOutcome ? raw.primaryOutcome.value : null;
+  var extPrimOut = null;
+  (extraction.outcomes || []).forEach(function(o) {
+    if (o.type === 'PRIMARY' && !extPrimOut) extPrimOut = o.title || null;
+  });
+  if (regPrimOut || extPrimOut) {
+    checks.push({
+      field: 'Primary outcome title',
+      registry: regPrimOut,
+      registryPath: 'resultsSection.outcomeMeasuresModule.outcomeMeasures[0].title',
+      extracted: extPrimOut,
+      match: regPrimOut && extPrimOut ? regPrimOut.trim().toLowerCase() === extPrimOut.trim().toLowerCase() : null
+    });
+  }
+
+  // Outcome measurements (raw values)
+  if (raw.measurements && raw.measurements.length > 0) {
+    raw.measurements.forEach(function(om, oi) {
+      var extOutcome = (extraction.outcomes || [])[oi];
+      (om.rawValues || []).forEach(function(rv) {
+        var extData = null;
+        if (extOutcome && extOutcome.data) {
+          for (var d = 0; d < extOutcome.data.length; d++) {
+            if (extOutcome.data[d].arm_id === rv.groupId || extOutcome.data[d].groupId === rv.groupId) {
+              extData = extOutcome.data[d];
+              break;
+            }
+          }
+        }
+        var regVal = rv.value != null ? String(rv.value) : null;
+        var extVal = extData && extData.value != null ? String(extData.value) : null;
+        var isMatch = null;
+        if (regVal != null && extVal != null) {
+          var regNum = parseFloat(regVal);
+          var extNum = parseFloat(extVal);
+          if (isFinite(regNum) && isFinite(extNum)) {
+            isMatch = regNum === 0 && extNum === 0 ? true : Math.abs(regNum - extNum) / Math.max(Math.abs(regNum), 1e-10) <= 0.01;
+          } else {
+            isMatch = regVal === extVal;
+          }
+        }
+        checks.push({
+          field: (om.title || 'Outcome ' + (oi + 1)) + ' (' + (rv.groupId || '?') + ')',
+          registry: regVal,
+          registryPath: 'outcomeMeasures[' + oi + ']...measurements[groupId=' + (rv.groupId || '') + '].value',
+          extracted: extVal,
+          match: isMatch
+        });
+      });
+    });
+  }
+
+  return checks;
+}
+
+function renderCrossValidationPanel() {
+  var container = document.getElementById('crossValContent');
+  var countEl = document.getElementById('crossValCount');
+  if (!STATE.extractions || STATE.extractions.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">&#128269;</div><p>Run the pipeline to see cross-validation of extracted data against CT.gov registry values.</p></div>';
+    countEl.textContent = '';
+    return;
+  }
+
+  var html = '<div class="info-box" style="margin-bottom:16px">Each extracted data point is compared against the raw CT.gov API response. Green = match, Red = mismatch (&gt;1% numeric or string difference), Gray = value unavailable.</div>';
+  var totalChecks = 0, totalMatches = 0, totalMismatches = 0;
+
+  for (var e = 0; e < STATE.extractions.length; e++) {
+    var ext = STATE.extractions[e];
+    var checks = buildCrossValidation(ext);
+    html += '<div class="cross-val-study">';
+    html += '<h4>' + nctLinkHtml(ext.nct) + ' &mdash; ' + escHtml(ext.study_metadata.title || '') + '</h4>';
+    html += '<table><thead><tr><th>Data Point</th><th>CT.gov Registry Value</th><th>Extracted Value</th><th>Match</th></tr></thead><tbody>';
+
+    for (var c = 0; c < checks.length; c++) {
+      var ck = checks[c];
+      totalChecks++;
+      var regDisplay = ck.registry != null ? escHtml(ck.registry) + ' <small>' + escHtml(ck.registryPath) + '</small>' : '<span style="color:var(--gray-400)">N/A</span>';
+      var extDisplay = ck.extracted != null ? escHtml(ck.extracted) : '<span style="color:var(--gray-400)">N/A</span>';
+      var matchClass, matchSymbol;
+      if (ck.match === true) { matchClass = 'cv-match'; matchSymbol = '&#10003;'; totalMatches++; }
+      else if (ck.match === false) { matchClass = 'cv-mismatch'; matchSymbol = '&#10007;'; totalMismatches++; }
+      else { matchClass = 'cv-unavailable'; matchSymbol = '?'; }
+
+      // Make registry value link to CT.gov
+      if (ck.registry != null) {
+        regDisplay = '<a href="' + ctgovResultsLink(ext.nct) + '" target="_blank" rel="noopener" class="ctgov-link" style="font-weight:normal">' + escHtml(ck.registry) + '</a> <small>' + escHtml(ck.registryPath) + '</small>';
+      }
+
+      html += '<tr><td>' + escHtml(ck.field) + '</td><td>' + regDisplay + '</td><td>' + extDisplay + '</td><td class="' + matchClass + '">' + matchSymbol + '</td></tr>';
+    }
+    html += '</tbody></table></div>';
+  }
+
+  container.innerHTML = html;
+  countEl.textContent = totalMatches + '/' + totalChecks + ' match' + (totalMismatches > 0 ? ', ' + totalMismatches + ' discrepancies' : '');
+}
+
+// ==============================
+// LIVING UPDATE VERSION HISTORY
+// ==============================
+
+function recordVersionHistory() {
+  if (!STATE.primarySynthesis) return;
+  var syn = STATE.primarySynthesis;
+  var studyIds = [];
+  if (syn._studies) {
+    for (var i = 0; i < syn._studies.length; i++) {
+      studyIds.push(syn._studies[i].id || syn._studies[i].nctId || '');
+    }
+  }
+  var gradeRating = '';
+  if (STATE.biasData && syn) {
+    var allFlags = [];
+    for (var i = 0; i < STATE.truthCertReports.length; i++) {
+      allFlags = allFlags.concat(STATE.truthCertReports[i].flags || []);
+    }
+    gradeRating = autoGRADE(syn, allFlags);
+  }
+  STATE.versionHistory = STATE.versionHistory || [];
+  STATE.versionHistory.push({
+    version: 'v' + (STATE.versionHistory.length + 1),
+    timestamp: new Date().toISOString(),
+    k: syn.k,
+    pooledRR: Math.exp(syn.theta),
+    pooledCI: [Math.exp(syn.ci_lower), Math.exp(syn.ci_upper)],
+    I2: syn.I2,
+    tau2: syn.tau2,
+    studyIds: studyIds,
+    gradeRating: gradeRating
+  });
+}
+
+function buildVersionDiff(v1, v2) {
+  var newStudies = v2.studyIds.filter(function(id) { return v1.studyIds.indexOf(id) === -1; });
+  var removedStudies = v1.studyIds.filter(function(id) { return v2.studyIds.indexOf(id) === -1; });
+  var parts = [];
+  if (newStudies.length > 0) parts.push('<span class="diff-add">+' + newStudies.length + ' trial' + (newStudies.length > 1 ? 's' : '') + ' (' + newStudies.map(function(s) { return escHtml(s); }).join(', ') + ')</span>');
+  if (removedStudies.length > 0) parts.push('<span class="diff-remove">-' + removedStudies.length + ' trial' + (removedStudies.length > 1 ? 's' : '') + ' (' + removedStudies.map(function(s) { return escHtml(s); }).join(', ') + ')</span>');
+  parts.push('<span class="diff-change">pooled RR ' + v1.pooledRR.toFixed(2) + ' &rarr; ' + v2.pooledRR.toFixed(2) + '</span>');
+  parts.push('I' + String.fromCharCode(178) + ' ' + v1.I2.toFixed(0) + '% &rarr; ' + v2.I2.toFixed(0) + '%');
+  if (v1.gradeRating !== v2.gradeRating) parts.push('<span class="diff-change">GRADE: ' + escHtml(v1.gradeRating) + ' &rarr; ' + escHtml(v2.gradeRating) + '</span>');
+  return parts.join(', ');
+}
+
+function renderVersionHistoryPanel() {
+  var container = document.getElementById('versionHistoryContent');
+  var countEl = document.getElementById('versionHistoryCount');
+  var history = STATE.versionHistory || [];
+  if (history.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">&#128197;</div><p>Version history will appear after the first pipeline run.</p></div>';
+    countEl.textContent = '';
+    return;
+  }
+
+  var html = '';
+  if (history.length === 1) {
+    var v = history[0];
+    html += '<div class="diff-entry">';
+    html += '<span class="diff-version">' + escHtml(v.version) + '</span>';
+    html += '<span class="diff-date">' + escHtml((v.timestamp || '').substring(0, 19).replace('T', ' ')) + '</span>';
+    html += '<div class="diff-details">Initial run: k=' + v.k + ', pooled RR=' + v.pooledRR.toFixed(2) + ' (' + v.pooledCI[0].toFixed(2) + ' to ' + v.pooledCI[1].toFixed(2) + '), I' + String.fromCharCode(178) + '=' + v.I2.toFixed(0) + '%' + (v.gradeRating ? ', GRADE: ' + escHtml(v.gradeRating) : '') + '</div>';
+    html += '</div>';
+  } else {
+    for (var i = history.length - 1; i >= 1; i--) {
+      var prev = history[i - 1];
+      var curr = history[i];
+      html += '<div class="diff-entry">';
+      html += '<span class="diff-version">' + escHtml(prev.version) + ' &rarr; ' + escHtml(curr.version) + '</span>';
+      html += '<span class="diff-date">' + escHtml((curr.timestamp || '').substring(0, 19).replace('T', ' ')) + '</span>';
+      html += '<div class="diff-details">' + buildVersionDiff(prev, curr) + '</div>';
+      html += '</div>';
+    }
+    // Also show the initial run
+    var v0 = history[0];
+    html += '<div class="diff-entry" style="opacity:0.7">';
+    html += '<span class="diff-version">' + escHtml(v0.version) + '</span>';
+    html += '<span class="diff-date">' + escHtml((v0.timestamp || '').substring(0, 19).replace('T', ' ')) + '</span>';
+    html += '<div class="diff-details">Initial run: k=' + v0.k + ', pooled RR=' + v0.pooledRR.toFixed(2) + '</div>';
+    html += '</div>';
+  }
+
+  container.innerHTML = html;
+  countEl.textContent = history.length + ' version' + (history.length !== 1 ? 's' : '');
 }
 
 function showRecordExcerpt(nct) {
@@ -3393,7 +3692,8 @@ function showRecordExcerpt(nct) {
     if (STATE.truthCertReports[i].nct === nct) { report = STATE.truthCertReports[i]; break; }
   }
 
-  var html = '<h4 style="margin-bottom:12px;font-size:15px">' + escHtml(ext.study_metadata.title) + '</h4>';
+  var html = '<a href="' + ctgovResultsLink(nct) + '" target="_blank" rel="noopener" class="btn-ctgov">&#128279; View on CT.gov</a>';
+  html += '<h4 style="margin-bottom:12px;font-size:15px">' + escHtml(ext.study_metadata.title) + '</h4>';
 
   // Raw API Excerpts vs Extracted Values side-by-side
   var rawExc = ext._rawExcerpts;
@@ -4078,6 +4378,7 @@ function loadDemoData() {
 
   // E156
   STATE.e156Text = generateE156(STATE.primarySynthesis, STATE.biasData);
+  recordVersionHistory();
   STATE.lastUpdated = new Date().toISOString();
 
   // Pipeline steps all done
@@ -4110,7 +4411,8 @@ function saveState() {
       lastUpdated: STATE.lastUpdated,
       searchLog: STATE.searchLog,
       inclusionLog: STATE.inclusionLog,
-      prismaFlowCounts: STATE.prismaFlowCounts
+      prismaFlowCounts: STATE.prismaFlowCounts,
+      versionHistory: STATE.versionHistory
     };
     localStorage.setItem('cardiosynth_dashboard_state', JSON.stringify(stateToSave));
   } catch (e) {
@@ -4128,7 +4430,7 @@ function loadState() {
     var ALLOWED = ['harvested','extractions','truthCertReports','clearedExtractions',
       'primarySynthesis','secondarySyntheses','cumulativeData','biasData',
       'provenanceBundle','e156Text','lastUpdated','pipelineRunning',
-      'searchLog','inclusionLog','prismaFlowCounts'];
+      'searchLog','inclusionLog','prismaFlowCounts','versionHistory'];
     ALLOWED.forEach(function(ak) { if (Object.prototype.hasOwnProperty.call(saved, ak)) STATE[ak] = saved[ak]; });
     return true;
   } catch (e) {
