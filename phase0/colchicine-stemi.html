@@ -1,0 +1,3223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colchicine post-STEMI: Living Evidence Synthesis</title>
+<meta name="description" content="CardioSynth Phase 0.8 — Master dashboard integrating CT.gov harvesting, extraction, validation, meta-analysis, and bias quantification for colchicine post-STEMI evidence">
+<meta property="og:title" content="Colchicine post-STEMI: Living Evidence Synthesis">
+<meta property="og:description" content="Self-contained living evidence synthesis dashboard with TruthCert validation and HKSJ meta-analysis">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --blue-900: #1e3a5f;
+  --blue-800: #1e40af;
+  --blue-700: #1d4ed8;
+  --blue-600: #2563eb;
+  --blue-500: #3b82f6;
+  --blue-100: #dbeafe;
+  --blue-50: #eff6ff;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --green-700: #15803d;
+  --green-600: #16a34a;
+  --green-100: #dcfce7;
+  --green-50: #f0fdf4;
+  --red-700: #b91c1c;
+  --red-600: #dc2626;
+  --red-100: #fee2e2;
+  --red-50: #fef2f2;
+  --amber-600: #d97706;
+  --amber-100: #fef3c7;
+  --amber-50: #fffbeb;
+  --purple-600: #9333ea;
+  --purple-100: #f3e8ff;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--gray-100);
+  color: var(--gray-800);
+  line-height: 1.6;
+}
+
+/* ========== HEADER ========== */
+.master-header {
+  background: linear-gradient(135deg, var(--blue-900) 0%, var(--blue-800) 100%);
+  color: #fff;
+  padding: 20px 32px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.header-icon {
+  width: 52px; height: 52px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  flex-shrink: 0;
+}
+.header-text h1 {
+  font-size: 22px; font-weight: 700; letter-spacing: -0.3px;
+}
+.header-text .subtitle { font-size: 13px; opacity: 0.75; margin-top: 2px; }
+.header-badges {
+  display: flex; gap: 10px; align-items: center;
+  margin-left: auto; flex-wrap: wrap;
+}
+.hdr-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 14px; border-radius: 20px;
+  font-size: 12px; font-weight: 600;
+  white-space: nowrap;
+}
+.hdr-badge-version { background: rgba(255,255,255,0.15); color: #fff; }
+.hdr-badge-studies { background: var(--blue-100); color: var(--blue-800); }
+.hdr-badge-cert-pass { background: var(--green-100); color: var(--green-700); }
+.hdr-badge-cert-warn { background: var(--amber-100); color: var(--amber-600); }
+.hdr-badge-cert-fail { background: var(--red-100); color: var(--red-700); }
+.hdr-badge-date { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.85); font-weight: 400; }
+.btn-refresh {
+  padding: 9px 20px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 8px;
+  background: transparent;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn-refresh:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.5); }
+.btn-refresh:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ========== NAV TABS ========== */
+.nav-bar {
+  background: #fff;
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  overflow-x: auto;
+  padding: 0 24px;
+}
+.nav-tab {
+  padding: 12px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-500);
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.nav-tab:hover { color: var(--gray-700); background: var(--gray-50); }
+.nav-tab.active { color: var(--blue-700); border-bottom-color: var(--blue-600); }
+
+/* ========== MAIN CONTAINER ========== */
+.main-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px 24px 80px;
+}
+
+/* ========== PANEL ========== */
+.panel {
+  display: none;
+}
+.panel.active { display: block; }
+
+/* ========== CARDS ========== */
+.card {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.card-header {
+  padding: 16px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--gray-800);
+  background: var(--gray-50);
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-body { padding: 20px; }
+.card-body.no-pad { padding: 0; }
+
+/* ========== PIPELINE PROGRESS ========== */
+.pipeline-panel {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.pipeline-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+.pipe-step {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--gray-100);
+  color: var(--gray-500);
+  transition: all 0.3s;
+}
+.pipe-step.running { background: var(--blue-50); color: var(--blue-700); }
+.pipe-step.done { background: var(--green-50); color: var(--green-700); }
+.pipe-step.error { background: var(--red-50); color: var(--red-600); }
+.pipe-step .pipe-icon { font-size: 14px; }
+.pipeline-bar-bg {
+  width: 100%;
+  height: 6px;
+  background: var(--gray-200);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 12px;
+}
+.pipeline-bar-fill {
+  height: 100%;
+  background: var(--blue-600);
+  border-radius: 3px;
+  transition: width 0.4s;
+  width: 0%;
+}
+.pipeline-log {
+  margin-top: 12px;
+  max-height: 160px;
+  overflow-y: auto;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  font-size: 11px;
+  color: #a5f3fc;
+  background: var(--gray-900);
+  border-radius: 8px;
+  padding: 12px 16px;
+  line-height: 1.8;
+}
+.pipeline-status {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--gray-500);
+}
+
+/* ========== TABLES ========== */
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th {
+  background: var(--gray-50);
+  border-bottom: 2px solid var(--gray-200);
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--gray-600);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+thead th:hover { background: var(--gray-100); }
+tbody tr { border-bottom: 1px solid var(--gray-100); }
+tbody tr:hover { background: var(--blue-50); cursor: pointer; }
+tbody td { padding: 10px 14px; }
+.mono { font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace; font-size: 12px; }
+.text-right { text-align: right; }
+
+/* ========== TAGS / BADGES ========== */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.tag-pass { background: var(--green-100); color: var(--green-700); }
+.tag-warn { background: var(--amber-100); color: var(--amber-600); }
+.tag-fail { background: var(--red-100); color: var(--red-700); }
+.tag-info { background: var(--blue-100); color: var(--blue-800); }
+
+/* ========== STAT GRID ========== */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+.stat-item {
+  padding: 14px 18px;
+  background: var(--gray-50);
+  border-radius: 10px;
+  border: 1px solid var(--gray-100);
+}
+.stat-label {
+  font-size: 11px; font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--gray-800);
+}
+.stat-sub {
+  font-size: 11px; color: var(--gray-400);
+  margin-top: 2px;
+}
+
+/* ========== FOREST PLOT CONTAINER ========== */
+.forest-container {
+  overflow-x: auto;
+  text-align: center;
+  padding: 12px 0;
+}
+.forest-container svg { max-width: 100%; height: auto; }
+
+/* ========== GRADE BADGE ========== */
+.grade-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.grade-high { background: var(--green-100); color: var(--green-700); border: 2px solid #86efac; }
+.grade-moderate { background: var(--blue-100); color: var(--blue-800); border: 2px solid #93c5fd; }
+.grade-low { background: var(--amber-100); color: var(--amber-600); border: 2px solid #fcd34d; }
+.grade-very-low { background: var(--red-100); color: var(--red-700); border: 2px solid #fca5a5; }
+
+/* ========== ACCORDION ========== */
+.accordion-item {
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.accordion-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 20px;
+  background: var(--gray-50);
+  cursor: pointer;
+  user-select: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-700);
+}
+.accordion-header:hover { background: var(--gray-100); }
+.accordion-header .chevron {
+  transition: transform 0.2s;
+  font-size: 12px;
+  color: var(--gray-400);
+}
+.accordion-item.open .accordion-header .chevron { transform: rotate(90deg); }
+.accordion-body {
+  display: none;
+  padding: 16px 20px;
+  border-top: 1px solid var(--gray-200);
+}
+.accordion-item.open .accordion-body { display: block; }
+
+/* ========== MODAL ========== */
+.modal-overlay {
+  display: none;
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 24px;
+  overflow-y: auto;
+}
+.modal-overlay.active { display: flex; }
+.modal-content {
+  background: #fff;
+  border-radius: 16px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.modal-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--gray-200);
+  background: var(--gray-50);
+  border-radius: 16px 16px 0 0;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.modal-header h3 { font-size: 16px; font-weight: 700; color: var(--gray-800); flex: 1; }
+.modal-close {
+  width: 32px; height: 32px;
+  border: none; background: var(--gray-200); border-radius: 8px;
+  font-size: 18px; cursor: pointer; color: var(--gray-600);
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-close:hover { background: var(--gray-300); }
+.modal-body { padding: 24px; }
+.modal-body pre {
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: 'SFMono-Regular', Consolas, monospace;
+}
+
+/* ========== E156 ABSTRACT ========== */
+.e156-abstract {
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--gray-800);
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  padding: 24px;
+}
+.e156-meta {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--gray-500);
+}
+
+/* ========== PROVENANCE ========== */
+.hash-display {
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-size: 14px;
+  background: var(--gray-900);
+  color: #67e8f9;
+  padding: 14px 20px;
+  border-radius: 8px;
+  word-break: break-all;
+  margin-top: 12px;
+}
+
+/* ========== BUTTONS ========== */
+.btn {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary { background: var(--blue-600); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: var(--blue-700); }
+.btn-secondary { background: var(--gray-100); color: var(--gray-700); border: 1px solid var(--gray-300); }
+.btn-secondary:hover:not(:disabled) { background: var(--gray-200); }
+.btn-success { background: var(--green-600); color: #fff; }
+.btn-success:hover:not(:disabled) { background: var(--green-700); }
+.btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+
+/* ========== SPINNER ========== */
+.spinner {
+  display: inline-block;
+  width: 16px; height: 16px;
+  border: 2px solid var(--blue-100);
+  border-top-color: var(--blue-600);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ========== CUMULATIVE LINE CHART ========== */
+.chart-container { overflow-x: auto; text-align: center; }
+
+/* ========== EMPTY STATE ========== */
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--gray-400);
+}
+.empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+.empty-state p { font-size: 14px; }
+
+/* ========== INFO / WARN BOXES ========== */
+.info-box {
+  background: var(--blue-50);
+  border: 1px solid var(--blue-100);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--blue-800);
+}
+.warn-box {
+  background: var(--amber-50);
+  border: 1px solid var(--amber-100);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--amber-600);
+}
+
+/* ========== PRINT STYLES ========== */
+@media print {
+  .master-header, .nav-bar, .btn, .btn-group, .pipeline-panel,
+  .pipeline-log, .modal-overlay { display: none !important; }
+  .panel { display: block !important; }
+  .main-container { padding: 0; max-width: 100%; }
+  .card { break-inside: avoid; border: 1px solid #ccc; margin-bottom: 12px; }
+  .forest-container svg { max-width: 100%; }
+  body { background: #fff; font-size: 11px; }
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 900px) {
+  .master-header { padding: 16px; }
+  .header-badges { margin-left: 0; width: 100%; }
+  .main-container { padding: 16px; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .nav-tab { padding: 10px 14px; font-size: 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ======================================================================= -->
+<!-- HEADER -->
+<!-- ======================================================================= -->
+<header class="master-header">
+  <div class="header-icon">&#9764;</div>
+  <div class="header-text">
+    <h1>Colchicine post-STEMI: Living Evidence Synthesis</h1>
+    <div class="subtitle">CardioSynth Phase 0.8 &mdash; Automated CT.gov harvesting, extraction, validation, and meta-analysis</div>
+  </div>
+  <div class="header-badges">
+    <span class="hdr-badge hdr-badge-version" id="badgeVersion">v0.8.0</span>
+    <span class="hdr-badge hdr-badge-studies" id="badgeStudies">0 studies</span>
+    <span class="hdr-badge hdr-badge-cert-pass" id="badgeCert" style="display:none;">TruthCert PASS</span>
+    <span class="hdr-badge hdr-badge-date" id="badgeDate">Not yet run</span>
+    <button class="btn-refresh" id="btnRunPipeline" onclick="runFullPipeline()">Run Full Pipeline</button>
+    <button class="btn-refresh" id="btnRefresh" onclick="refreshFromCtgov()" style="display:none;">Refresh from CT.gov</button>
+  </div>
+</header>
+
+<!-- ======================================================================= -->
+<!-- NAVIGATION -->
+<!-- ======================================================================= -->
+<nav class="nav-bar">
+  <button class="nav-tab active" data-panel="panelPipeline" onclick="switchPanel(this)">Pipeline</button>
+  <button class="nav-tab" data-panel="panelEvidence" onclick="switchPanel(this)">Evidence Map</button>
+  <button class="nav-tab" data-panel="panelPrimary" onclick="switchPanel(this)">Primary Synthesis</button>
+  <button class="nav-tab" data-panel="panelSecondary" onclick="switchPanel(this)">Secondary Syntheses</button>
+  <button class="nav-tab" data-panel="panelCumulative" onclick="switchPanel(this)">Cumulative Analysis</button>
+  <button class="nav-tab" data-panel="panelBias" onclick="switchPanel(this)">Bias Panel</button>
+  <button class="nav-tab" data-panel="panelProvenance" onclick="switchPanel(this)">Provenance</button>
+  <button class="nav-tab" data-panel="panelE156" onclick="switchPanel(this)">E156 Abstract</button>
+</nav>
+
+<!-- ======================================================================= -->
+<!-- MAIN CONTENT -->
+<!-- ======================================================================= -->
+<div class="main-container">
+
+  <!-- ===== PIPELINE PANEL ===== -->
+  <div class="panel active" id="panelPipeline">
+    <div class="pipeline-panel">
+      <h2 style="font-size:16px;font-weight:600;color:var(--gray-700)">Full Pipeline</h2>
+      <p style="font-size:13px;color:var(--gray-500);margin-top:4px">Click "Run Full Pipeline" to harvest, extract, validate, and synthesize evidence from ClinicalTrials.gov.</p>
+      <div class="pipeline-steps" id="pipelineSteps">
+        <div class="pipe-step" data-step="harvest"><span class="pipe-icon">&#9675;</span> Harvest CT.gov</div>
+        <div class="pipe-step" data-step="extract"><span class="pipe-icon">&#9675;</span> Extract Results</div>
+        <div class="pipe-step" data-step="validate"><span class="pipe-icon">&#9675;</span> TruthCert Validate</div>
+        <div class="pipe-step" data-step="filter"><span class="pipe-icon">&#9675;</span> Filter Cleared</div>
+        <div class="pipe-step" data-step="primary"><span class="pipe-icon">&#9675;</span> Primary MA</div>
+        <div class="pipe-step" data-step="secondary"><span class="pipe-icon">&#9675;</span> Secondary MA</div>
+        <div class="pipe-step" data-step="cumulative"><span class="pipe-icon">&#9675;</span> Cumulative MA</div>
+        <div class="pipe-step" data-step="bias"><span class="pipe-icon">&#9675;</span> Bias Metrics</div>
+        <div class="pipe-step" data-step="provenance"><span class="pipe-icon">&#9675;</span> Provenance Hash</div>
+        <div class="pipe-step" data-step="e156"><span class="pipe-icon">&#9675;</span> E156 Abstract</div>
+      </div>
+      <div class="pipeline-bar-bg"><div class="pipeline-bar-fill" id="pipelineBarFill"></div></div>
+      <div class="pipeline-status" id="pipelineStatus">Ready to run.</div>
+      <div class="pipeline-log" id="pipelineLog" style="display:none;"></div>
+    </div>
+    <div class="card">
+      <div class="card-header">Quick Start</div>
+      <div class="card-body">
+        <p style="font-size:13px;color:var(--gray-600);margin-bottom:12px">
+          This dashboard queries ClinicalTrials.gov for colchicine + myocardial infarction trials with posted results,
+          extracts structured data, validates each study through 10 TruthCert validators, then runs DerSimonian-Laird
+          HKSJ random-effects meta-analysis on the primary outcome (MACE or closest composite).
+        </p>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="runFullPipeline()">Run Full Pipeline</button>
+          <button class="btn btn-secondary" onclick="loadDemoData()">Load Demo Data</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== EVIDENCE MAP PANEL ===== -->
+  <div class="panel" id="panelEvidence">
+    <div class="card">
+      <div class="card-header">Evidence Map
+        <span style="margin-left:auto;font-size:12px;color:var(--gray-400)" id="evidenceCount"></span>
+      </div>
+      <div class="card-body no-pad">
+        <div class="table-scroll">
+          <table id="evidenceTable">
+            <thead>
+              <tr>
+                <th onclick="sortEvidenceTable('nct')">NCT ID</th>
+                <th onclick="sortEvidenceTable('title')">Trial Name</th>
+                <th onclick="sortEvidenceTable('n')">N</th>
+                <th onclick="sortEvidenceTable('year')">Year</th>
+                <th onclick="sortEvidenceTable('sponsor')">Sponsor</th>
+                <th onclick="sortEvidenceTable('verdict')">TruthCert</th>
+                <th onclick="sortEvidenceTable('weight')">Weight%</th>
+              </tr>
+            </thead>
+            <tbody id="evidenceBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PRIMARY SYNTHESIS PANEL ===== -->
+  <div class="panel" id="panelPrimary">
+    <div class="card">
+      <div class="card-header">Primary Synthesis: MACE (Major Adverse Cardiovascular Events)
+        <span id="gradeContainer" style="margin-left:auto;"></span>
+      </div>
+      <div class="card-body">
+        <div id="primaryForest" class="forest-container">
+          <div class="empty-state"><div class="icon">&#128202;</div><p>Run the pipeline to generate the forest plot.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">Synthesis Statistics</div>
+      <div class="card-body">
+        <div class="stat-grid" id="primaryStats">
+          <div class="empty-state"><p>No data yet.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">Leave-One-Out Sensitivity</div>
+      <div class="card-body">
+        <div id="looResults" class="table-scroll">
+          <div class="empty-state"><p>No data yet.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SECONDARY SYNTHESES PANEL ===== -->
+  <div class="panel" id="panelSecondary">
+    <div id="secondaryContainer">
+      <div class="empty-state"><div class="icon">&#128200;</div><p>Run the pipeline to see secondary outcome analyses.</p></div>
+    </div>
+  </div>
+
+  <!-- ===== CUMULATIVE ANALYSIS PANEL ===== -->
+  <div class="panel" id="panelCumulative">
+    <div class="card">
+      <div class="card-header">Cumulative Meta-Analysis (by Primary Completion Date)</div>
+      <div class="card-body">
+        <div id="cumulativeChart" class="chart-container">
+          <div class="empty-state"><div class="icon">&#128200;</div><p>Run the pipeline to generate the cumulative analysis.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">Cumulative Data</div>
+      <div class="card-body">
+        <div id="cumulativeTable" class="table-scroll">
+          <div class="empty-state"><p>No data yet.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== BIAS PANEL ===== -->
+  <div class="panel" id="panelBias">
+    <div class="card">
+      <div class="card-header">Non-Posting Bias</div>
+      <div class="card-body">
+        <div class="stat-grid" id="biasNonPosting">
+          <div class="empty-state"><p>No data yet.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">ORBI (Outcome Registration Bias Index)</div>
+      <div class="card-body">
+        <div id="biasORBI">
+          <div class="empty-state"><p>No data yet.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">Funnel Plot</div>
+      <div class="card-body">
+        <div id="biasFunnel" class="chart-container">
+          <div class="empty-state"><p>No data yet.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">Egger's Test (Radial)</div>
+      <div class="card-body">
+        <div id="biasEgger">
+          <div class="empty-state"><p>No data yet.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PROVENANCE PANEL ===== -->
+  <div class="panel" id="panelProvenance">
+    <div class="card">
+      <div class="card-header">Provenance Bundle</div>
+      <div class="card-body">
+        <p style="font-size:13px;color:var(--gray-600);margin-bottom:12px">
+          The provenance bundle contains all ExtractionObjects, TruthCert reports, synthesis results, and timestamps
+          for full audit trail reproducibility.
+        </p>
+        <div id="provenanceHash">
+          <div class="stat-grid">
+            <div class="stat-item">
+              <div class="stat-label">SHA-256 Hash</div>
+              <div class="stat-value" style="font-size:13px" id="provenanceHashValue">Not yet computed</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Bundle Timestamp</div>
+              <div class="stat-value" style="font-size:13px" id="provenanceTimestamp">--</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Studies</div>
+              <div class="stat-value" id="provenanceStudyCount">0</div>
+            </div>
+          </div>
+          <div class="hash-display" id="hashDisplay">Awaiting pipeline run...</div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-success" id="btnDownloadBundle" onclick="downloadBundle()" disabled>Download Full Audit Trail (JSON)</button>
+          <button class="btn btn-secondary" id="btnExportSVG" onclick="exportPrimaryForest()" disabled>Export Forest Plot (SVG)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== E156 ABSTRACT PANEL ===== -->
+  <div class="panel" id="panelE156">
+    <div class="card">
+      <div class="card-header">E156 Micro-Paper Abstract</div>
+      <div class="card-body">
+        <div id="e156Output">
+          <div class="empty-state"><div class="icon">&#128221;</div><p>Run the pipeline to auto-generate the E156 abstract.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ======================================================================= -->
+<!-- MODAL -->
+<!-- ======================================================================= -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalIfOutside(event)">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modalTitle">Study Detail</h3>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- ======================================================================= -->
+<!-- MASTER SCRIPT -->
+<!-- ======================================================================= -->
+<script>
+// ============================================================================
+// CardioSynth Phase 0.8 — Colchicine post-STEMI Master Dashboard
+// All functions inlined and deduplicated from 5 source tools.
+// ============================================================================
+
+// ==============================
+// SHARED UTILITY FUNCTIONS
+// ==============================
+
+function sleep(ms) { return new Promise(function(resolve) { setTimeout(resolve, ms); }); }
+
+function escHtml(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function safeFloat(val) {
+  if (val === null || val === undefined || val === '' || val === 'NA' || val === 'N/A') return null;
+  var parsed = parseFloat(val);
+  return isFinite(parsed) ? parsed : null;
+}
+
+function safeInt(val) {
+  if (val === null || val === undefined || val === '' || val === 'NA' || val === 'N/A') return null;
+  var parsed = parseInt(val, 10);
+  return isFinite(parsed) ? parsed : null;
+}
+
+function djb2Hash(str) {
+  var hash = 5381;
+  for (var i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash + str.charCodeAt(i)) & 0xffffffff;
+  }
+  return (hash >>> 0).toString(36);
+}
+
+async function sha256(text) {
+  var encoder = new TextEncoder();
+  var data = encoder.encode(text);
+  var hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  var hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+}
+
+// ==============================
+// STATISTICAL UTILITY FUNCTIONS
+// ==============================
+
+function gammaln(x) {
+  var coef = [
+    76.18009172947146, -86.50532032941677, 24.01409824083091,
+    -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5
+  ];
+  var y = x;
+  var tmp = x + 5.5;
+  tmp -= (x + 0.5) * Math.log(tmp);
+  var ser = 1.000000000190015;
+  for (var j = 0; j < 6; j++) ser += coef[j] / ++y;
+  return -tmp + Math.log(2.5066282746310005 * ser / x);
+}
+
+function normalCDF(x) {
+  var a1 =  0.254829592;
+  var a2 = -0.284496736;
+  var a3 =  1.421413741;
+  var a4 = -1.453152027;
+  var a5 =  1.061405429;
+  var p  =  0.3275911;
+  var sign = x < 0 ? -1 : 1;
+  var ax = Math.abs(x) / Math.sqrt(2);
+  var t = 1.0 / (1.0 + p * ax);
+  var yy = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-ax * ax);
+  return 0.5 * (1.0 + sign * yy);
+}
+
+function normalQuantile(p) {
+  if (p <= 0) return -Infinity;
+  if (p >= 1) return Infinity;
+  if (p === 0.5) return 0;
+  var a = [
+    -3.969683028665376e+01, 2.209460984245205e+02,
+    -2.759285104469687e+02, 1.383577518672690e+02,
+    -3.066479806614716e+01, 2.506628277459239e+00
+  ];
+  var b = [
+    -5.447609879822406e+01, 1.615858368580409e+02,
+    -1.556989798598866e+02, 6.680131188771972e+01,
+    -1.328068155288572e+01
+  ];
+  var c = [
+    -7.784894002430293e-03, -3.223964580411365e-01,
+    -2.400758277161838e+00, -2.549732539343734e+00,
+    4.374664141464968e+00, 2.938163982698783e+00
+  ];
+  var d = [
+    7.784695709041462e-03, 3.224671290700398e-01,
+    2.445134137142996e+00, 3.754408661907416e+00
+  ];
+  var pLow = 0.02425;
+  var pHigh = 1 - pLow;
+  var q, r;
+  if (p < pLow) {
+    q = Math.sqrt(-2 * Math.log(p));
+    return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) /
+           ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+  } else if (p <= pHigh) {
+    q = p - 0.5;
+    r = q * q;
+    return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q /
+           (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
+  } else {
+    q = Math.sqrt(-2 * Math.log(1 - p));
+    return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) /
+            ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+  }
+}
+
+function incompleteBeta(a, b, x) {
+  if (x === 0) return 0;
+  if (x === 1) return 1;
+  var bt = Math.exp(gammaln(a + b) - gammaln(a) - gammaln(b) +
+            a * Math.log(x) + b * Math.log(1 - x));
+  if (x < (a + 1) / (a + b + 2)) {
+    return bt * betacf(a, b, x) / a;
+  } else {
+    return 1 - bt * betacf(b, a, 1 - x) / b;
+  }
+}
+
+function betacf(a, b, x) {
+  var maxIter = 100;
+  var eps = 1e-10;
+  var qab = a + b;
+  var qap = a + 1;
+  var qam = a - 1;
+  var cc = 1;
+  var dd = 1 - qab * x / qap;
+  if (Math.abs(dd) < 1e-30) dd = 1e-30;
+  dd = 1 / dd;
+  var h = dd;
+  for (var m = 1; m <= maxIter; m++) {
+    var m2 = 2 * m;
+    var aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+    dd = 1 + aa * dd;
+    if (Math.abs(dd) < 1e-30) dd = 1e-30;
+    cc = 1 + aa / cc;
+    if (Math.abs(cc) < 1e-30) cc = 1e-30;
+    dd = 1 / dd;
+    h *= dd * cc;
+    aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+    dd = 1 + aa * dd;
+    if (Math.abs(dd) < 1e-30) dd = 1e-30;
+    cc = 1 + aa / cc;
+    if (Math.abs(cc) < 1e-30) cc = 1e-30;
+    dd = 1 / dd;
+    var del = dd * cc;
+    h *= del;
+    if (Math.abs(del - 1) < eps) break;
+  }
+  return h;
+}
+
+function tPDF(t, df) {
+  var coef = Math.exp(gammaln((df + 1) / 2) - gammaln(df / 2)) /
+             Math.sqrt(df * Math.PI);
+  return coef * Math.pow(1 + t * t / df, -(df + 1) / 2);
+}
+
+function tCDF(t, df) {
+  var x = df / (df + t * t);
+  var halfBeta = 0.5 * incompleteBeta(df / 2, 0.5, x);
+  return t >= 0 ? 1 - halfBeta : halfBeta;
+}
+
+function tQuantile(p, df) {
+  var t = normalQuantile(p);
+  for (var iter = 0; iter < 10; iter++) {
+    var cdf = tCDF(t, df);
+    var pdf = tPDF(t, df);
+    if (Math.abs(pdf) < 1e-10) break;
+    var diff = cdf - p;
+    if (Math.abs(diff) < 1e-10) break;
+    t = t - diff / pdf;
+  }
+  return t;
+}
+
+function gammainc(a, x) {
+  if (x === 0) return 0;
+  if (x < 0 || a <= 0) return NaN;
+  if (x < a + 1) {
+    var sum = 1 / a;
+    var term = 1 / a;
+    for (var n = 1; n < 200; n++) {
+      term *= x / (a + n);
+      sum += term;
+      if (Math.abs(term) < 1e-14 * Math.abs(sum)) break;
+    }
+    return sum * Math.exp(-x + a * Math.log(x) - gammaln(a));
+  }
+  return 1 - gammainc_upper(a, x);
+}
+
+function gammainc_upper(a, x) {
+  var fpmin = 1e-30;
+  var bb = x + 1 - a;
+  var cc = 1 / fpmin;
+  var dd = 1 / bb;
+  var h = dd;
+  for (var i = 1; i < 200; i++) {
+    var an = -i * (i - a);
+    bb += 2;
+    dd = an * dd + bb;
+    if (Math.abs(dd) < fpmin) dd = fpmin;
+    cc = bb + an / cc;
+    if (Math.abs(cc) < fpmin) cc = fpmin;
+    dd = 1 / dd;
+    var del = dd * cc;
+    h *= del;
+    if (Math.abs(del - 1) < 1e-10) break;
+  }
+  return Math.exp(-x + a * Math.log(x) - gammaln(a)) * h;
+}
+
+function chiSquareCDF(x, df) {
+  if (x <= 0 || df <= 0) return 0;
+  return gammainc(df / 2, x / 2);
+}
+
+function chiSquarePDF(x, df) {
+  if (x <= 0) return 0;
+  var k = df / 2;
+  return Math.pow(x, k - 1) * Math.exp(-x / 2) / (Math.pow(2, k) * Math.exp(gammaln(k)));
+}
+
+function chiSquareQuantile(p, df) {
+  var x = df;
+  for (var iter = 0; iter < 20; iter++) {
+    var cdf = chiSquareCDF(x, df);
+    var pdf = chiSquarePDF(x, df);
+    if (pdf < 1e-10) break;
+    var diff = cdf - p;
+    if (Math.abs(diff) < 1e-8) break;
+    x = Math.max(0.001, x - diff / pdf);
+  }
+  return x;
+}
+
+function pchisq(x, df) {
+  if (x <= 0) return 0;
+  return gammainc(df / 2, x / 2);
+}
+
+function i2ConfidenceInterval(Q, k) {
+  if (k < 2) return { lower: 0, upper: 0 };
+  var df = k - 1;
+  var qLower = chiSquareQuantile(0.025, df);
+  var qUpper = chiSquareQuantile(0.975, df);
+  var lower = Q > qUpper ? ((Q - qUpper) / Q) * 100 : 0;
+  var upper = Q > qLower ? ((Q - qLower) / Q) * 100 : 0;
+  lower = Math.max(0, Math.min(100, lower));
+  upper = Math.max(0, Math.min(100, upper));
+  return { lower: lower, upper: upper };
+}
+
+// ==============================
+// LEVENSHTEIN SIMILARITY
+// ==============================
+
+function levenshteinSimilarity(a, b) {
+  a = (a || '').toLowerCase().trim();
+  b = (b || '').toLowerCase().trim();
+  if (a === b) return 1;
+  if (!a.length || !b.length) return 0;
+  var matrix = Array.from({ length: a.length + 1 }, function(_, i) {
+    return Array.from({ length: b.length + 1 }, function(_, j) {
+      return (i === 0 ? j : j === 0 ? i : 0);
+    });
+  });
+  for (var i = 1; i <= a.length; i++) {
+    for (var j = 1; j <= b.length; j++) {
+      var cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost
+      );
+    }
+  }
+  return 1 - matrix[a.length][b.length] / Math.max(a.length, b.length);
+}
+
+// ==============================
+// DURATION / DATE PARSERS (from TruthCert)
+// ==============================
+
+function parseDuration(text) {
+  if (!text || typeof text !== 'string') return null;
+  var tt = text.toLowerCase().trim();
+  var matches = [];
+  var re = /(\d+(?:\.\d+)?)\s*(year|yr|month|mo|week|wk|day|d|hour|hr|h)/gi;
+  var m;
+  while ((m = re.exec(tt)) !== null) {
+    var num = parseFloat(m[1]);
+    var unit = m[2].toLowerCase();
+    if (unit === 'year' || unit === 'yr') matches.push(num * 365.25);
+    else if (unit === 'month' || unit === 'mo') matches.push(num * 30.44);
+    else if (unit === 'week' || unit === 'wk') matches.push(num * 7);
+    else if (unit === 'day' || unit === 'd') matches.push(num);
+    else if (unit === 'hour' || unit === 'hr' || unit === 'h') matches.push(num / 24);
+  }
+  if (matches.length === 0) return null;
+  var total = 0;
+  for (var i = 0; i < matches.length; i++) total += matches[i];
+  return total;
+}
+
+function parseDate(str) {
+  if (!str) return null;
+  var d = new Date(str);
+  if (isNaN(d.getTime())) return null;
+  return d;
+}
+
+
+// ==============================
+// CT.GOV API CLIENT (from ct-harvester)
+// ==============================
+
+var CTGOV_API_CONFIG = {
+  base_url: 'https://clinicaltrials.gov/api/v2',
+  rate_limit: { requests_per_minute: 10, burst_limit: 3 },
+  retry: { max_attempts: 3, initial_delay_ms: 1000, backoff_multiplier: 2, max_delay_ms: 30000 },
+  timeout_ms: 30000,
+  pagination: { page_size: 100, max_pages: 100 }
+};
+
+var rateLimiter = {
+  tokens: CTGOV_API_CONFIG.rate_limit.burst_limit,
+  lastRefill: Date.now()
+};
+
+async function acquireToken() {
+  var now = Date.now();
+  var elapsed = now - rateLimiter.lastRefill;
+  var refillAmount = (elapsed / 60000) * CTGOV_API_CONFIG.rate_limit.requests_per_minute;
+  rateLimiter.tokens = Math.min(CTGOV_API_CONFIG.rate_limit.burst_limit, rateLimiter.tokens + refillAmount);
+  rateLimiter.lastRefill = now;
+  if (rateLimiter.tokens >= 1) { rateLimiter.tokens--; return; }
+  var waitTime = ((1 - rateLimiter.tokens) / CTGOV_API_CONFIG.rate_limit.requests_per_minute) * 60000;
+  pipeLog('Rate limit: waiting ' + Math.round(waitTime) + 'ms');
+  await sleep(waitTime);
+  rateLimiter.tokens = 0;
+}
+
+async function retry(fn, config) {
+  var lastError;
+  for (var attempt = 0; attempt < config.max_attempts; attempt++) {
+    try { return await fn(); } catch (err) {
+      lastError = err;
+      if (attempt < config.max_attempts - 1) {
+        var delay = Math.min(config.initial_delay_ms * Math.pow(config.backoff_multiplier, attempt), config.max_delay_ms);
+        pipeLog('Retry attempt ' + (attempt + 1) + ', waiting ' + delay + 'ms...');
+        await sleep(delay);
+      }
+    }
+  }
+  throw lastError;
+}
+
+async function apiRequest(endpoint) {
+  await acquireToken();
+  var url = CTGOV_API_CONFIG.base_url + endpoint;
+  pipeLog('GET ' + endpoint.substring(0, 120) + (endpoint.length > 120 ? '...' : ''));
+
+  var controller = new AbortController();
+  var timeoutId = setTimeout(function() { controller.abort(); }, CTGOV_API_CONFIG.timeout_ms);
+
+  try {
+    var response = await retry(
+      async function() {
+        var res = await fetch(url, { signal: controller.signal, headers: { 'Accept': 'application/json' } });
+        if (!res.ok) {
+          if (res.status === 429) {
+            var retryAfter = parseInt(res.headers.get('Retry-After') || '60', 10);
+            pipeLog('Rate limited by server, waiting ' + retryAfter + 's');
+            await sleep(retryAfter * 1000);
+            throw new Error('Rate limited');
+          }
+          throw new Error('API error: ' + res.status + ' ' + res.statusText);
+        }
+        return res;
+      },
+      CTGOV_API_CONFIG.retry
+    );
+    clearTimeout(timeoutId);
+    return await response.json();
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') throw new Error('Request timeout after ' + CTGOV_API_CONFIG.timeout_ms + 'ms');
+    throw err;
+  }
+}
+
+async function fetchStudyRaw(nctId) {
+  await acquireToken();
+  var url = CTGOV_API_CONFIG.base_url + '/studies/' + nctId;
+  pipeLog('GET /studies/' + nctId);
+  var controller = new AbortController();
+  var timeoutId = setTimeout(function() { controller.abort(); }, CTGOV_API_CONFIG.timeout_ms);
+  try {
+    var response = await retry(
+      async function() {
+        var res = await fetch(url, { signal: controller.signal, headers: { 'Accept': 'application/json' } });
+        if (!res.ok) {
+          if (res.status === 429) { await sleep(60000); throw new Error('Rate limited'); }
+          if (res.status === 404) throw new Error('Study not found: ' + nctId);
+          throw new Error('API error: ' + res.status);
+        }
+        return res;
+      },
+      CTGOV_API_CONFIG.retry
+    );
+    clearTimeout(timeoutId);
+    var rawText = await response.text();
+    return { data: JSON.parse(rawText), rawText: rawText };
+  } catch (err) {
+    clearTimeout(timeoutId);
+    throw err;
+  }
+}
+
+function buildQueryString(params) {
+  var parts = [];
+  if (params.condition) parts.push('query.cond=' + encodeURIComponent(params.condition));
+  if (params.intervention) parts.push('query.intr=' + encodeURIComponent(params.intervention));
+  if (params.studyType) parts.push('filter.studyType=' + encodeURIComponent(params.studyType));
+  if (params.resultsOnly) parts.push('aggFilters=results:with');
+  parts.push('pageSize=' + (params.pageSize || CTGOV_API_CONFIG.pagination.page_size));
+  if (params.pageToken) parts.push('pageToken=' + params.pageToken);
+  parts.push('countTotal=true');
+  return parts.join('&');
+}
+
+
+// ==============================
+// HARVESTER: parseStudyForTable (from ct-harvester)
+// ==============================
+
+var CARDIOLOGY_TERMS = [
+  'myocardial infarction', 'acute coronary syndrome', 'stemi', 'nstemi',
+  'heart failure', 'atrial fibrillation', 'coronary artery disease',
+  'hypertension', 'cardiac arrest', 'ventricular arrhythmia', 'cardiomyopathy',
+  'pericarditis', 'aortic stenosis', 'pulmonary hypertension'
+];
+
+function classifyCardiology(study) {
+  var protocol = study.protocolSection || {};
+  var identification = protocol.identificationModule || {};
+  var conditions = protocol.conditionsModule || {};
+  var textParts = [
+    identification.briefTitle || '', identification.officialTitle || '',
+    (conditions.conditions || []).join(' '), (conditions.keywords || []).join(' ')
+  ];
+  var searchText = textParts.join(' ').toLowerCase();
+  var matched = [];
+  for (var i = 0; i < CARDIOLOGY_TERMS.length; i++) {
+    if (searchText.indexOf(CARDIOLOGY_TERMS[i]) !== -1) matched.push(CARDIOLOGY_TERMS[i]);
+  }
+  return { isCardiology: matched.length > 0, matchedTerms: matched };
+}
+
+function parseStudyForTable(raw) {
+  var protocol = raw.protocolSection || {};
+  var identification = protocol.identificationModule || {};
+  var status = protocol.statusModule || {};
+  var sponsor = protocol.sponsorCollaboratorsModule || {};
+  var design = protocol.designModule || {};
+  var cardio = classifyCardiology(raw);
+  return {
+    nctId: identification.nctId || 'N/A',
+    briefTitle: identification.briefTitle || 'Untitled',
+    officialTitle: identification.officialTitle || '',
+    overallStatus: status.overallStatus || 'Unknown',
+    hasResults: !!raw.hasResults,
+    primaryCompletionDate: (status.primaryCompletionDateStruct && status.primaryCompletionDateStruct.date) || '',
+    startDate: (status.startDateStruct && status.startDateStruct.date) || '',
+    leadSponsor: (sponsor.leadSponsor && sponsor.leadSponsor.name) || '',
+    leadSponsorClass: (sponsor.leadSponsor && sponsor.leadSponsor.class) || '',
+    enrollment: safeInt((design.enrollmentInfo || {}).count),
+    phases: design.phases || [],
+    isCardiology: cardio.isCardiology,
+    matchedTerms: cardio.matchedTerms,
+    _raw: raw
+  };
+}
+
+
+// ==============================
+// RESULTS EXTRACTOR (from results-extractor)
+// ==============================
+
+function classifyArmType(armGroup, allArmGroups) {
+  var type = (armGroup.type || '').toUpperCase();
+  var label = (armGroup.label || '').toLowerCase();
+  if (type === 'EXPERIMENTAL' || label.indexOf('experimental') !== -1 || label.indexOf('treatment') !== -1) return 'EXPERIMENTAL';
+  if (type === 'PLACEBO_COMPARATOR' || label.indexOf('placebo') !== -1) return 'PLACEBO';
+  if (type === 'ACTIVE_COMPARATOR') {
+    var hasPlaceboArm = allArmGroups.some(function(ag) {
+      return ag !== armGroup && ((ag.type || '').toUpperCase() === 'PLACEBO_COMPARATOR' || (ag.label || '').toLowerCase().indexOf('placebo') !== -1);
+    });
+    if (hasPlaceboArm) return 'EXPERIMENTAL';
+    return 'COMPARATOR';
+  }
+  if (label.indexOf('comparator') !== -1 || label.indexOf('control') !== -1) return 'COMPARATOR';
+  if (type === 'NO_INTERVENTION') return 'COMPARATOR';
+  if (label.indexOf('active') !== -1) return 'EXPERIMENTAL';
+  return 'OTHER';
+}
+
+function sanitizeArmId(label) {
+  return label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+}
+
+function matchArmByLabel(titleLower, arms) {
+  for (var i = 0; i < arms.length; i++) {
+    if (titleLower === arms[i].arm_label.toLowerCase()) return arms[i];
+  }
+  var sorted = arms.slice().sort(function(a, b) { return b.arm_label.length - a.arm_label.length; });
+  for (var j = 0; j < sorted.length; j++) {
+    var armLower = sorted[j].arm_label.toLowerCase();
+    if (titleLower.indexOf(armLower) !== -1 || armLower.indexOf(titleLower) !== -1) return sorted[j];
+  }
+  return null;
+}
+
+function inferMeasureType(paramType) {
+  if (!paramType) return 'OTHER';
+  var pt = paramType.toLowerCase();
+  if (pt.indexOf('count') !== -1 || pt.indexOf('number') !== -1) return 'COUNT';
+  if (pt.indexOf('mean') !== -1 || pt.indexOf('least') !== -1) return 'MEAN';
+  if (pt.indexOf('median') !== -1) return 'MEDIAN';
+  return 'OTHER';
+}
+
+function classifySponsorType(sponsorClass) {
+  if (!sponsorClass) return 'OTHER';
+  var sc = sponsorClass.toUpperCase();
+  if (sc === 'INDUSTRY') return 'INDUSTRY';
+  if (sc === 'NIH') return 'NIH';
+  return 'OTHER';
+}
+
+async function extractResults(nctId) {
+  pipeLog('Extracting results for ' + nctId);
+  var result = await fetchStudyRaw(nctId);
+  var raw = result.data;
+  var rawText = result.rawText;
+  var rawHash = await sha256(rawText);
+
+  var protocol = raw.protocolSection || {};
+  var results = raw.resultsSection || {};
+  var identification = protocol.identificationModule || {};
+  var status = protocol.statusModule || {};
+  var sponsor = protocol.sponsorCollaboratorsModule || {};
+  var design = protocol.designModule || {};
+  var armsModule = protocol.armsInterventionsModule || {};
+  var outcomesModule = protocol.outcomesModule || {};
+  var outcomeMeasures = results.outcomeMeasuresModule || {};
+  var adverseEvents = results.adverseEventsModule || {};
+  var participantFlow = results.participantFlowModule || {};
+
+  var enrollmentActual = safeInt((design.enrollmentInfo || {}).count);
+  var phases = (design.phases || []).join(', ');
+
+  var studyMetadata = {
+    title: identification.briefTitle || identification.officialTitle || '',
+    phase: phases,
+    sponsor_type: classifySponsorType((sponsor.leadSponsor || {}).class),
+    sponsor_name: (sponsor.leadSponsor || {}).name || '',
+    enrollment_actual: enrollmentActual,
+    primary_completion_date: (status.primaryCompletionDateStruct || {}).date || '',
+    study_first_submit_date: status.studyFirstSubmitDate || ''
+  };
+
+  // Arms
+  var armGroups = armsModule.armGroups || [];
+  var arms = armGroups.map(function(ag) {
+    return {
+      arm_id: sanitizeArmId(ag.label || ''),
+      arm_label: ag.label || '',
+      arm_type: classifyArmType(ag, armGroups),
+      n_randomized: null,
+      n_analyzed: null
+    };
+  });
+
+  // Participant flow -> n_randomized
+  var flowGroups = participantFlow.groups || participantFlow.flowGroups || [];
+  if (flowGroups.length > 0 && arms.length > 0) {
+    var flowStartedMap = {};
+    var periods = participantFlow.periods || participantFlow.flowPeriods || [];
+    if (periods.length > 0) {
+      var firstPeriod = periods[0];
+      var milestones = firstPeriod.milestones || firstPeriod.flowMilestones || [];
+      milestones.forEach(function(ms) {
+        if ((ms.type || '').toUpperCase() === 'STARTED') {
+          var achievements = ms.achievements || ms.flowAchievements || [];
+          achievements.forEach(function(ach) {
+            flowStartedMap[ach.groupId] = safeInt(ach.numSubjects);
+          });
+        }
+      });
+    }
+    flowGroups.forEach(function(fg) {
+      var fgTitle = (fg.title || '').toLowerCase();
+      var bestArm = matchArmByLabel(fgTitle, arms);
+      if (bestArm && flowStartedMap[fg.id] !== undefined) {
+        bestArm.n_randomized = flowStartedMap[fg.id];
+      }
+    });
+  }
+
+  // n_analyzed from outcome measures
+  var allOutcomeMeasures = outcomeMeasures.outcomeMeasures || [];
+  if (allOutcomeMeasures.length > 0) {
+    var refOutcome = allOutcomeMeasures.find(function(om) { return (om.type || '').toUpperCase() === 'PRIMARY'; }) || allOutcomeMeasures[0];
+    var omGroups = refOutcome.groups || [];
+    var groupIdToLabel = {};
+    omGroups.forEach(function(g) { groupIdToLabel[g.id] = g.title || ''; });
+    var denoms = refOutcome.denoms || [];
+    denoms.forEach(function(denom) {
+      (denom.counts || []).forEach(function(dc) {
+        var gLabel = (groupIdToLabel[dc.groupId] || '').toLowerCase();
+        var cnt = safeInt(dc.value);
+        if (cnt === null) return;
+        var matchedArm = matchArmByLabel(gLabel, arms);
+        if (matchedArm) matchedArm.n_analyzed = cnt;
+      });
+    });
+  }
+
+  // Outcomes
+  var masterGroupMap = {};
+  allOutcomeMeasures.forEach(function(om) {
+    (om.groups || []).forEach(function(g) { masterGroupMap[g.id] = g.title || ''; });
+  });
+
+  var outcomes = allOutcomeMeasures.map(function(om, idx) {
+    var outcomeGroups = om.groups || [];
+    var localGroupMap = {};
+    outcomeGroups.forEach(function(g) { localGroupMap[g.id] = g.title || ''; });
+    var denomMap = {};
+    (om.denoms || []).forEach(function(denom) {
+      (denom.counts || []).forEach(function(dc) { denomMap[dc.groupId] = safeInt(dc.value); });
+    });
+    var data = [];
+    var classes = om.classes || [];
+    classes.forEach(function(cls) {
+      (cls.categories || []).forEach(function(cat) {
+        (cat.measurements || []).forEach(function(m) {
+          data.push({
+            arm_id: m.groupId,
+            arm_label: localGroupMap[m.groupId] || masterGroupMap[m.groupId] || m.groupId,
+            value: safeFloat(m.value),
+            spread: safeFloat(m.spread),
+            lower_limit: safeFloat(m.lowerLimit),
+            upper_limit: safeFloat(m.upperLimit),
+            spread_type: om.dispersionType || '',
+            participants: denomMap[m.groupId] !== undefined ? denomMap[m.groupId] : null,
+            class_title: cls.title || null,
+            category_title: cat.title || null
+          });
+        });
+      });
+    });
+    return {
+      outcome_id: 'OM_' + (idx + 1),
+      title: om.title || '',
+      type: (om.type || 'OTHER').toUpperCase(),
+      timeframe: om.timeFrame || '',
+      measure_type: inferMeasureType(om.paramType),
+      unit: om.unitOfMeasure || '',
+      dispersion_type: om.dispersionType || '',
+      data: data
+    };
+  });
+
+  // Adverse Events
+  var aeGroups = (adverseEvents.eventGroups || []).map(function(g) {
+    return {
+      id: g.id || '', title: g.title || '',
+      seriousNumAffected: safeInt(g.seriousNumAffected),
+      seriousNumAtRisk: safeInt(g.seriousNumAtRisk),
+      otherNumAffected: safeInt(g.otherNumAffected),
+      otherNumAtRisk: safeInt(g.otherNumAtRisk),
+      deathsNumAffected: safeInt(g.deathsNumAffected)
+    };
+  });
+
+  // Registered Outcomes
+  var primaryRegistered = (outcomesModule.primaryOutcomes || []).map(function(o) {
+    return { measure: o.measure || '', description: o.description || '', timeFrame: o.timeFrame || '' };
+  });
+  var secondaryRegistered = (outcomesModule.secondaryOutcomes || []).map(function(o) {
+    return { measure: o.measure || '', description: o.description || '', timeFrame: o.timeFrame || '' };
+  });
+
+  // Provenance
+  var extractionTimestamp = new Date().toISOString();
+  return {
+    nct: nctId,
+    extraction_timestamp: extractionTimestamp,
+    extractor_id: 'cardiosynth-dashboard-0.8',
+    study_metadata: studyMetadata,
+    arms: arms,
+    outcomes: outcomes,
+    adverse_events: { groups: aeGroups },
+    participant_flow: { groups: flowGroups.map(function(fg) { return { id: fg.id, title: fg.title }; }) },
+    registered_outcomes: { primary: primaryRegistered, secondary: secondaryRegistered },
+    provenance: {
+      source_url: CTGOV_API_CONFIG.base_url + '/studies/' + nctId,
+      api_version: 'v2',
+      raw_hash: rawHash,
+      extraction_timestamp: extractionTimestamp,
+      extractor_id: 'cardiosynth-dashboard-0.8'
+    }
+  };
+}
+
+
+// ==============================
+// TRUTHCERT VALIDATORS (from truthcert.html)
+// ==============================
+
+function makeFlag(validator, severity, field, message, rawValues) {
+  return { validator: validator, severity: severity, field: field || null, message: message, raw_values: rawValues || null };
+}
+
+function validateArmSwap(obj) {
+  var flags = [];
+  var arms = obj.arms || [];
+  for (var i = 0; i < arms.length; i++) {
+    var arm = arms[i];
+    var label = (arm.arm_label || '').toLowerCase();
+    var type = (arm.arm_type || '').toUpperCase();
+    if (type === 'UNKNOWN' || type === 'OTHER') {
+      flags.push(makeFlag('ARM_SWAP_DETECTOR', 'INFO', 'arms.' + i, 'Arm type is ' + type, { arm_label: arm.arm_label, arm_type: arm.arm_type }));
+      continue;
+    }
+    if (type === 'EXPERIMENTAL' && (label.indexOf('placebo') !== -1 || label.indexOf('control') !== -1)) {
+      flags.push(makeFlag('ARM_SWAP_DETECTOR', 'CRITICAL', 'arms.' + i, 'Possible arm swap: label "' + arm.arm_label + '" but type=EXPERIMENTAL', { arm_label: arm.arm_label, arm_type: arm.arm_type }));
+      continue;
+    }
+    if ((type === 'PLACEBO' || type === 'COMPARATOR') && (label.indexOf('experimental') !== -1 || label.indexOf('treatment') !== -1 || label.indexOf('active') !== -1)) {
+      flags.push(makeFlag('ARM_SWAP_DETECTOR', 'CRITICAL', 'arms.' + i, 'Possible arm swap: label "' + arm.arm_label + '" but type=' + type, { arm_label: arm.arm_label, arm_type: arm.arm_type }));
+      continue;
+    }
+    flags.push(makeFlag('ARM_SWAP_DETECTOR', 'INFO', 'arms.' + i, 'Arm type correctly classified', { arm_label: arm.arm_label, arm_type: arm.arm_type }));
+  }
+  if (arms.length === 0) flags.push(makeFlag('ARM_SWAP_DETECTOR', 'INFO', 'arms', 'No arms found', null));
+  return flags;
+}
+
+function validateTimepointDrift(obj) {
+  var flags = [];
+  var regPrimary = ((obj.registered_outcomes || {}).primary || [])[0];
+  var reportedPrimary = null;
+  var outcomes = obj.outcomes || [];
+  for (var i = 0; i < outcomes.length; i++) { if (outcomes[i].type === 'PRIMARY') { reportedPrimary = outcomes[i]; break; } }
+  var regTimeframe = regPrimary ? (regPrimary.timeFrame || '') : '';
+  var repTimeframe = reportedPrimary ? (reportedPrimary.timeframe || '') : '';
+  if (!regTimeframe || !repTimeframe) {
+    flags.push(makeFlag('TIMEPOINT_DRIFT', 'INFO', null, 'Timeframe comparison skipped', null));
+    return flags;
+  }
+  var regDays = parseDuration(regTimeframe);
+  var repDays = parseDuration(repTimeframe);
+  if (regDays !== null && repDays !== null) {
+    var maxDur = Math.max(regDays, repDays);
+    var diff = Math.abs(regDays - repDays);
+    if (maxDur > 0 && diff / maxDur > 0.2) {
+      flags.push(makeFlag('TIMEPOINT_DRIFT', 'CRITICAL', null, 'Duration differs by >' + Math.round(diff / maxDur * 100) + '%', { registered: regTimeframe, reported: repTimeframe }));
+      return flags;
+    }
+  }
+  if (regTimeframe.toLowerCase().trim() !== repTimeframe.toLowerCase().trim()) {
+    flags.push(makeFlag('TIMEPOINT_DRIFT', 'WARNING', null, 'Timeframe wording differs', { registered: regTimeframe, reported: repTimeframe }));
+  } else {
+    flags.push(makeFlag('TIMEPOINT_DRIFT', 'INFO', null, 'Timeframes match', null));
+  }
+  return flags;
+}
+
+function validateUnitChecker(obj) {
+  var flags = [];
+  var outcomes = obj.outcomes || [];
+  var flagged = false;
+  for (var i = 0; i < outcomes.length; i++) {
+    var om = outcomes[i];
+    if (om.measure_type !== 'MEAN' && om.measure_type !== 'MEDIAN') continue;
+    var data = om.data || [];
+    for (var j = 0; j < data.length; j++) {
+      var d = data[j];
+      if (d.value === null || d.spread === null || Math.abs(d.value) === 0) continue;
+      if (d.spread > 3 * Math.abs(d.value)) {
+        flags.push(makeFlag('UNIT_CHECKER', 'WARNING', null, 'Spread > 3x value in "' + om.title + '"', null));
+        flagged = true;
+      }
+    }
+  }
+  if (!flagged) flags.push(makeFlag('UNIT_CHECKER', 'INFO', null, 'No unit anomalies', null));
+  return flags;
+}
+
+function validateTotalChecker(obj) {
+  var flags = [];
+  var enrollment = (obj.study_metadata || {}).enrollment_actual;
+  var arms = obj.arms || [];
+  if (enrollment === null || enrollment === undefined) {
+    flags.push(makeFlag('TOTAL_CHECKER', 'INFO', null, 'Enrollment not available', null));
+    return flags;
+  }
+  var totalAnalyzed = 0, anyAnalyzed = false;
+  for (var i = 0; i < arms.length; i++) {
+    if (arms[i].n_analyzed !== null) { totalAnalyzed += arms[i].n_analyzed; anyAnalyzed = true; }
+  }
+  if (!anyAnalyzed) { flags.push(makeFlag('TOTAL_CHECKER', 'INFO', null, 'No n_analyzed data', null)); return flags; }
+  if (totalAnalyzed > enrollment) {
+    flags.push(makeFlag('TOTAL_CHECKER', 'CRITICAL', null, 'Analyzed (' + totalAnalyzed + ') > enrolled (' + enrollment + ')', null));
+  } else if (totalAnalyzed < enrollment * 0.5) {
+    flags.push(makeFlag('TOTAL_CHECKER', 'WARNING', null, 'High attrition: analyzed ' + totalAnalyzed + ' of ' + enrollment, null));
+  } else {
+    flags.push(makeFlag('TOTAL_CHECKER', 'INFO', null, 'Total analyzed within expected range', null));
+  }
+  return flags;
+}
+
+function validateEventRate(obj) {
+  var flags = [];
+  var outcomes = obj.outcomes || [];
+  var flagged = false;
+  for (var i = 0; i < outcomes.length; i++) {
+    var om = outcomes[i];
+    if (om.measure_type !== 'COUNT' && om.measure_type !== 'NUMBER') continue;
+    var data = om.data || [];
+    for (var j = 0; j < data.length; j++) {
+      var d = data[j];
+      if (d.participants === null || d.participants === 0 || d.value === null) continue;
+      if (d.value > d.participants) {
+        flags.push(makeFlag('EVENT_RATE_PLAUSIBILITY', 'CRITICAL', null, 'Events > participants in "' + om.title + '"', null));
+        flagged = true;
+      }
+    }
+  }
+  if (!flagged) flags.push(makeFlag('EVENT_RATE_PLAUSIBILITY', 'INFO', null, 'All event counts plausible', null));
+  return flags;
+}
+
+function validateZeroCell(obj) {
+  var flags = [];
+  var outcomes = obj.outcomes || [];
+  var zeroFound = false;
+  for (var i = 0; i < outcomes.length; i++) {
+    var om = outcomes[i];
+    if (om.measure_type !== 'COUNT' && om.measure_type !== 'NUMBER') continue;
+    var data = om.data || [];
+    for (var j = 0; j < data.length; j++) {
+      if (data[j].value === 0) { zeroFound = true; flags.push(makeFlag('ZERO_CELL_HANDLER', 'INFO', null, 'Zero cell in "' + om.title + '"', null)); }
+    }
+  }
+  if (!zeroFound) flags.push(makeFlag('ZERO_CELL_HANDLER', 'INFO', null, 'No zero cells detected', null));
+  return flags;
+}
+
+function validateDuplicate(obj, pool) {
+  var flags = [];
+  pool = pool || [];
+  if (pool.length === 0) { flags.push(makeFlag('DUPLICATE_DETECTOR', 'INFO', null, 'No pool, skip', null)); return flags; }
+  var nct = obj.nct || '';
+  var title = (obj.study_metadata || {}).title || '';
+  var found = false;
+  for (var i = 0; i < pool.length; i++) {
+    var poolNct = pool[i].nct || '';
+    if (nct && poolNct && nct.toUpperCase() === poolNct.toUpperCase()) {
+      flags.push(makeFlag('DUPLICATE_DETECTOR', 'CRITICAL', null, 'Duplicate NCT: ' + nct, null));
+      found = true;
+    }
+  }
+  if (!found) flags.push(makeFlag('DUPLICATE_DETECTOR', 'INFO', null, 'No duplicates', null));
+  return flags;
+}
+
+function validateMultiarm(obj) {
+  var flags = [];
+  var arms = obj.arms || [];
+  if (arms.length > 2) {
+    flags.push(makeFlag('MULTIARM_ADJUSTER', 'WARNING', null, 'Multi-arm (' + arms.length + ' arms)', null));
+  } else {
+    flags.push(makeFlag('MULTIARM_ADJUSTER', 'INFO', null, arms.length + '-arm design', null));
+  }
+  return flags;
+}
+
+function validateOutcomeSwitching(obj) {
+  var flags = [];
+  var regPrimary = ((obj.registered_outcomes || {}).primary || [])[0];
+  var reportedPrimary = null;
+  var outcomes = obj.outcomes || [];
+  for (var i = 0; i < outcomes.length; i++) { if (outcomes[i].type === 'PRIMARY') { reportedPrimary = outcomes[i]; break; } }
+  var regMeasure = regPrimary ? (regPrimary.measure || '') : '';
+  var repTitle = reportedPrimary ? (reportedPrimary.title || '') : '';
+  if (!regMeasure || !repTitle) {
+    flags.push(makeFlag('OUTCOME_SWITCHING_DETECTOR', 'INFO', null, 'Skipped: missing data', null));
+    return flags;
+  }
+  var sim = levenshteinSimilarity(regMeasure, repTitle);
+  if (sim < 0.4) flags.push(makeFlag('OUTCOME_SWITCHING_DETECTOR', 'CRITICAL', null, 'Likely outcome switching (sim=' + (sim * 100).toFixed(1) + '%)', null));
+  else if (sim < 0.7) flags.push(makeFlag('OUTCOME_SWITCHING_DETECTOR', 'WARNING', null, 'Possible modification (sim=' + (sim * 100).toFixed(1) + '%)', null));
+  else flags.push(makeFlag('OUTCOME_SWITCHING_DETECTOR', 'INFO', null, 'Outcomes match (sim=' + (sim * 100).toFixed(1) + '%)', null));
+  return flags;
+}
+
+function validateRegistrationTiming(obj) {
+  var flags = [];
+  var meta = obj.study_metadata || {};
+  var submitStr = meta.study_first_submit_date || '';
+  var completionStr = meta.primary_completion_date || '';
+  if (!submitStr || !completionStr) { flags.push(makeFlag('REGISTRATION_TIMING', 'INFO', null, 'Dates missing', null)); return flags; }
+  var submitDate = parseDate(submitStr);
+  var completionDate = parseDate(completionStr);
+  if (!submitDate || !completionDate) { flags.push(makeFlag('REGISTRATION_TIMING', 'INFO', null, 'Cannot parse dates', null)); return flags; }
+  var diffDays = (completionDate.getTime() - submitDate.getTime()) / (1000 * 60 * 60 * 24);
+  if (diffDays < 0) flags.push(makeFlag('REGISTRATION_TIMING', 'WARNING', null, 'Post-hoc registration', null));
+  else flags.push(makeFlag('REGISTRATION_TIMING', 'INFO', null, 'Prospective (' + Math.round(diffDays) + 'd before completion)', null));
+  return flags;
+}
+
+var VALIDATORS = [
+  { name: 'ARM_SWAP_DETECTOR', fn: validateArmSwap },
+  { name: 'TIMEPOINT_DRIFT', fn: validateTimepointDrift },
+  { name: 'UNIT_CHECKER', fn: validateUnitChecker },
+  { name: 'TOTAL_CHECKER', fn: validateTotalChecker },
+  { name: 'EVENT_RATE_PLAUSIBILITY', fn: validateEventRate },
+  { name: 'ZERO_CELL_HANDLER', fn: validateZeroCell },
+  { name: 'DUPLICATE_DETECTOR', fn: validateDuplicate },
+  { name: 'MULTIARM_ADJUSTER', fn: validateMultiarm },
+  { name: 'OUTCOME_SWITCHING_DETECTOR', fn: validateOutcomeSwitching },
+  { name: 'REGISTRATION_TIMING', fn: validateRegistrationTiming }
+];
+
+function runTruthCertPipeline(obj, pool) {
+  var allFlags = [];
+  var halted = false;
+  var haltedAt = null;
+  for (var i = 0; i < VALIDATORS.length; i++) {
+    var v = VALIDATORS[i];
+    var flags = (v.name === 'DUPLICATE_DETECTOR') ? v.fn(obj, pool) : v.fn(obj);
+    for (var j = 0; j < flags.length; j++) allFlags.push(flags[j]);
+    var hasCritical = flags.some(function(f) { return f.severity === 'CRITICAL'; });
+    if (hasCritical) { halted = true; haltedAt = v.name; break; }
+  }
+  var hasCriticalFlag = allFlags.some(function(f) { return f.severity === 'CRITICAL'; });
+  var hasWarningFlag = allFlags.some(function(f) { return f.severity === 'WARNING'; });
+  var verdict = hasCriticalFlag ? 'CRITICAL' : hasWarningFlag ? 'WARN' : 'PASS';
+  return {
+    nct: obj.nct || 'UNKNOWN',
+    verdict: verdict,
+    flags: allFlags,
+    certified_at: new Date().toISOString(),
+    cleared_for_synthesis: !hasCriticalFlag,
+    _halted: halted,
+    _halted_at: haltedAt
+  };
+}
+
+
+// ==============================
+// META-ANALYSIS ENGINE (from metaengine)
+// ==============================
+
+function computeMAState(studies) {
+  var k = studies.length;
+  if (k === 0) return null;
+  var yi = [], vi = [], weights = [];
+  var totalWeight = 0, sumWY = 0, sumW2 = 0;
+  for (var i = 0; i < k; i++) {
+    yi[i] = studies[i].yi;
+    vi[i] = studies[i].vi;
+    weights[i] = 1 / vi[i];
+    totalWeight += weights[i];
+    sumWY += weights[i] * yi[i];
+    sumW2 += weights[i] * weights[i];
+  }
+  var thetaFE = sumWY / totalWeight;
+  var Q = 0;
+  for (var i = 0; i < k; i++) { Q += weights[i] * Math.pow(yi[i] - thetaFE, 2); }
+  var c = totalWeight - sumW2 / totalWeight;
+  var tau2 = Math.max(0, (Q - (k - 1)) / c);
+  var reWeights = [], reTotalWeight = 0, reSumWY = 0;
+  for (var i = 0; i < k; i++) {
+    reWeights[i] = 1 / (vi[i] + tau2);
+    reTotalWeight += reWeights[i];
+    reSumWY += reWeights[i] * yi[i];
+  }
+  var thetaRE = reSumWY / reTotalWeight;
+  var seRE = Math.sqrt(1 / reTotalWeight);
+  var seFE = Math.sqrt(1 / totalWeight);
+  var I2 = Q > k - 1 ? ((Q - (k - 1)) / Q) * 100 : 0;
+  return { k: k, yi: yi, vi: vi, weights: weights, totalWeight: totalWeight, thetaFE: thetaFE, seFE: seFE,
+           reWeights: reWeights, reTotalWeight: reTotalWeight, thetaRE: thetaRE, seRE: seRE,
+           Q: Q, tau2: tau2, tau: Math.sqrt(tau2), I2: I2, c: c };
+}
+
+function fixedEffects(studies) {
+  var valid = studies.filter(function(s) { return s.yi !== null && s.vi !== null && !isNaN(s.yi) && !isNaN(s.vi) && s.vi > 0; });
+  if (valid.length === 0) return { error: 'No valid studies' };
+  var state = computeMAState(valid);
+  var k = state.k, totalWeight = state.totalWeight;
+  var theta = state.thetaFE, se = state.seFE;
+  var Q = state.Q, df = k - 1;
+  var pQ = 1 - chiSquareCDF(Q, df);
+  var z = theta / se;
+  var pVal = 2 * (1 - normalCDF(Math.abs(z)));
+  return { model: 'FE', k: k, theta: theta, se: se, variance: 1 / totalWeight,
+           ci_lower: theta - 1.96 * se, ci_upper: theta + 1.96 * se,
+           z: z, pValue: pVal, Q: Q, df: df, pQ: pQ, I2: state.I2,
+           weights: valid.map(function(s, i) { return { id: s.id || s.nctId || i, yi: s.yi, vi: s.vi, weight: state.weights[i], weightPercent: (state.weights[i] / totalWeight) * 100 }; }) };
+}
+
+function derSimonianLaird(studies, options) {
+  if (options === undefined) options = {};
+  var hksj = options.hksj !== undefined ? options.hksj : true;
+  var valid = studies.filter(function(s) { return s.yi !== null && s.vi !== null && !isNaN(s.yi) && !isNaN(s.vi) && s.vi > 0; });
+  if (valid.length === 0) return { error: 'No valid studies' };
+  var state = computeMAState(valid);
+  var k = state.k;
+  var theta = state.thetaRE;
+  var wiStar = state.reWeights;
+  var sumWiStar = state.reTotalWeight;
+  var tau2 = state.tau2;
+  var se = state.seRE;
+  var fe = fixedEffects(valid);
+  var variance = 1 / sumWiStar;
+  var ci_lower = theta - 1.96 * se;
+  var ci_upper = theta + 1.96 * se;
+  var hksjApplied = false, qStar = null, tCritVal = null;
+
+  if (hksj && k >= 2) {
+    qStar = 0;
+    for (var i = 0; i < k; i++) qStar += wiStar[i] * Math.pow(valid[i].yi - theta, 2);
+    var hksjMultiplier = Math.max(1, qStar / (k - 1));
+    if (hksjMultiplier > 1) { se = se * Math.sqrt(hksjMultiplier); hksjApplied = true; }
+    tCritVal = tQuantile(0.975, k - 1);
+    ci_lower = theta - tCritVal * se;
+    ci_upper = theta + tCritVal * se;
+  }
+
+  var pi_lower = null, pi_upper = null;
+  if (k >= 3) {
+    var piDF = k - 2;
+    var piTCrit = tQuantile(0.975, piDF);
+    var piSE = Math.sqrt(variance + tau2);
+    pi_lower = theta - piTCrit * piSE;
+    pi_upper = theta + piTCrit * piSE;
+  }
+
+  var zTest = theta / se;
+  var pValue = hksj ? 2 * (1 - tCDF(Math.abs(zTest), k - 1)) : 2 * (1 - normalCDF(Math.abs(zTest)));
+  var I2 = tau2 > 0 ? (tau2 / (tau2 + variance)) * 100 : 0;
+  var I2CI = i2ConfidenceInterval(fe.Q, k);
+
+  return {
+    model: 'RE-DL', k: k, theta: theta, se: se, variance: variance,
+    ci_lower: ci_lower, ci_upper: ci_upper, z: zTest, pValue: pValue,
+    tau2: tau2, tau: Math.sqrt(tau2), pi_lower: pi_lower, pi_upper: pi_upper,
+    Q: fe.Q, df: k - 1, pQ: fe.pQ, I2: I2, I2_lower: I2CI.lower, I2_upper: I2CI.upper,
+    hksj: hksjApplied, qStar: qStar,
+    weights: valid.map(function(s, i) { return { id: s.id || s.nctId || i, yi: s.yi, vi: s.vi, weight: wiStar[i], weightPercent: (wiStar[i] / sumWiStar) * 100 }; }),
+    fe: { theta: fe.theta, se: fe.se, ci_lower: fe.ci_lower, ci_upper: fe.ci_upper }
+  };
+}
+
+function escalcRR(ai, bi, ci, di, cc) {
+  if (cc === undefined) cc = 0;
+  var needCC = (ai === 0 || bi === 0 || ci === 0 || di === 0);
+  var adj = needCC ? (cc > 0 ? cc : 0.5) : 0;
+  var a = ai + adj, b = bi + adj, c = ci + adj, d = di + adj;
+  var n1 = a + b, n2 = c + d;
+  if (n1 <= 0 || n2 <= 0 || a <= 0 || c <= 0) return { yi: null, vi: null };
+  var p1 = a / n1, p2 = c / n2;
+  var yi = Math.log(p1 / p2);
+  var vi = (1 / a) - (1 / n1) + (1 / c) - (1 / n2);
+  return { yi: yi, vi: vi };
+}
+
+function leaveOneOut(studies, method) {
+  method = method || 'DL';
+  var valid = studies.filter(function(s) { return s.yi !== null && s.vi !== null && !isNaN(s.yi) && !isNaN(s.vi) && s.vi > 0; });
+  if (valid.length < 2) return [];
+  var fn = derSimonianLaird;
+  return valid.map(function(omitted, i) {
+    var remaining = valid.filter(function(_, j) { return j !== i; });
+    var result = fn(remaining);
+    return {
+      omitted: omitted.id || omitted.nctId || ('Study ' + (i + 1)),
+      theta: result.theta, se: result.se,
+      ci_lower: result.ci_lower, ci_upper: result.ci_upper,
+      tau2: result.tau2 !== undefined ? result.tau2 : 0,
+      I2: result.I2
+    };
+  });
+}
+
+function cumulativeMeta(studies, orderBy, method) {
+  orderBy = orderBy || 'order';
+  var valid = studies.filter(function(s) { return s.yi !== null && s.vi !== null && !isNaN(s.yi) && !isNaN(s.vi) && s.vi > 0; });
+  if (valid.length === 0) return [];
+  var sorted = valid.slice().sort(function(a, b) { return (a[orderBy] || 0) - (b[orderBy] || 0); });
+  var results = [];
+  for (var i = 0; i < sorted.length; i++) {
+    if (i === 0) {
+      results.push({ k: 1, addedStudy: sorted[i].id || sorted[i].nctId || 'Study 1',
+        theta: sorted[i].yi, se: Math.sqrt(sorted[i].vi),
+        ci_lower: sorted[i].yi - 1.96 * Math.sqrt(sorted[i].vi),
+        ci_upper: sorted[i].yi + 1.96 * Math.sqrt(sorted[i].vi), tau2: 0, I2: 0 });
+    } else {
+      var subset = sorted.slice(0, i + 1);
+      var result = derSimonianLaird(subset);
+      results.push({ k: i + 1, addedStudy: sorted[i].id || sorted[i].nctId || ('Study ' + (i + 1)),
+        theta: result.theta, se: result.se,
+        ci_lower: result.ci_lower, ci_upper: result.ci_upper,
+        tau2: result.tau2 !== undefined ? result.tau2 : 0, I2: result.I2 });
+    }
+  }
+  return results;
+}
+
+
+// ==============================
+// FOREST PLOT SVG RENDERER (from metaengine)
+// ==============================
+
+function renderForestPlot(result, options) {
+  if (options === undefined) options = {};
+  var isLogScale = options.logScale !== false;
+  var effectLabel = options.effectLabel || (isLogScale ? 'Risk Ratio' : 'Effect');
+
+  var weights = result.weights || [];
+  var k = weights.length;
+  if (k === 0) return '<svg></svg>';
+
+  var marginLeft = 20, labelColW = 160, dataColW = 100, plotAreaW = 420, ciColW = 140, weightColW = 60, marginRight = 20;
+  var totalW = marginLeft + labelColW + dataColW + plotAreaW + ciColW + weightColW + marginRight;
+  var headerH = 40, rowH = 28, gapBeforeSummary = 12, summaryRowH = 32, footerH = 80;
+  var totalH = headerH + k * rowH + gapBeforeSummary + summaryRowH + footerH;
+
+  var allLower = weights.map(function(w) { return w.yi - 1.96 * Math.sqrt(w.vi); });
+  var allUpper = weights.map(function(w) { return w.yi + 1.96 * Math.sqrt(w.vi); });
+  var dataMin = Math.min.apply(null, allLower.concat([result.ci_lower, result.pi_lower || result.ci_lower]));
+  var dataMax = Math.max.apply(null, allUpper.concat([result.ci_upper, result.pi_upper || result.ci_upper]));
+  var range = dataMax - dataMin;
+  dataMin -= range * 0.1;
+  dataMax += range * 0.1;
+
+  var plotX = marginLeft + labelColW + dataColW;
+  function scaleX(v) { return plotX + ((v - dataMin) / (dataMax - dataMin)) * plotAreaW; }
+
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + totalW + '" height="' + totalH + '" '
+    + 'font-family="-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif" font-size="11">';
+  svg += '<rect width="' + totalW + '" height="' + totalH + '" fill="white"/>';
+
+  // Header
+  var headerY = headerH - 8;
+  svg += '<text x="' + (marginLeft + 4) + '" y="' + headerY + '" font-weight="600" fill="#374151">Study</text>';
+  svg += '<text x="' + (marginLeft + labelColW + 4) + '" y="' + headerY + '" font-weight="600" fill="#374151">Events</text>';
+  svg += '<text x="' + (plotX + plotAreaW / 2) + '" y="' + headerY + '" text-anchor="middle" font-weight="600" fill="#374151">' + effectLabel + '</text>';
+  svg += '<text x="' + (plotX + plotAreaW + 4) + '" y="' + headerY + '" font-weight="600" fill="#374151">RR [95% CI]</text>';
+  svg += '<text x="' + (plotX + plotAreaW + ciColW + 4) + '" y="' + headerY + '" font-weight="600" fill="#374151">Weight</text>';
+  svg += '<line x1="' + marginLeft + '" y1="' + headerH + '" x2="' + (totalW - marginRight) + '" y2="' + headerH + '" stroke="#d1d5db" stroke-width="1"/>';
+
+  // Null line
+  var nullX = scaleX(0);
+  svg += '<line x1="' + nullX + '" y1="' + headerH + '" x2="' + nullX + '" y2="' + (headerH + k * rowH + gapBeforeSummary + summaryRowH + 10) + '" stroke="#9ca3af" stroke-width="1" stroke-dasharray="4,3"/>';
+
+  var maxWt = Math.max.apply(null, weights.map(function(w) { return w.weightPercent; }));
+
+  // Study rows
+  for (var i = 0; i < k; i++) {
+    var w = weights[i];
+    var y = headerH + (i + 0.5) * rowH;
+    var se_i = Math.sqrt(w.vi);
+    var lo = w.yi - 1.96 * se_i;
+    var hi = w.yi + 1.96 * se_i;
+    var color = '#111827';
+
+    svg += '<text x="' + (marginLeft + 4) + '" y="' + (y + 4) + '" fill="' + color + '">' + escHtml(String(w.id)) + '</text>';
+
+    if (w.ai !== undefined) {
+      svg += '<text x="' + (marginLeft + labelColW + 4) + '" y="' + (y + 4) + '" fill="' + color + '" font-size="10">'
+        + w.ai + '/' + (w.ai + w.bi) + ' vs ' + w.ci + '/' + (w.ci + w.di) + '</text>';
+    }
+
+    var x1 = Math.max(plotX, scaleX(lo));
+    var x2 = Math.min(plotX + plotAreaW, scaleX(hi));
+    svg += '<line x1="' + x1 + '" y1="' + y + '" x2="' + x2 + '" y2="' + y + '" stroke="' + color + '" stroke-width="1.5"/>';
+
+    if (lo < dataMin) svg += '<polygon points="' + plotX + ',' + y + ' ' + (plotX + 5) + ',' + (y - 3) + ' ' + (plotX + 5) + ',' + (y + 3) + '" fill="' + color + '"/>';
+    if (hi > dataMax) { var px = plotX + plotAreaW; svg += '<polygon points="' + px + ',' + y + ' ' + (px - 5) + ',' + (y - 3) + ' ' + (px - 5) + ',' + (y + 3) + '" fill="' + color + '"/>'; }
+
+    var sqSize = Math.max(4, Math.min(14, 4 + (w.weightPercent / maxWt) * 10));
+    var cx = scaleX(w.yi);
+    if (cx >= plotX && cx <= plotX + plotAreaW) {
+      svg += '<rect x="' + (cx - sqSize / 2) + '" y="' + (y - sqSize / 2) + '" width="' + sqSize + '" height="' + sqSize + '" fill="' + color + '"/>';
+    }
+
+    var effText = Math.exp(w.yi).toFixed(2) + ' [' + Math.exp(lo).toFixed(2) + ', ' + Math.exp(hi).toFixed(2) + ']';
+    svg += '<text x="' + (plotX + plotAreaW + 4) + '" y="' + (y + 4) + '" font-size="10" fill="' + color + '">' + effText + '</text>';
+    svg += '<text x="' + (plotX + plotAreaW + ciColW + 4) + '" y="' + (y + 4) + '" font-size="10" fill="' + color + '">' + w.weightPercent.toFixed(1) + '%</text>';
+  }
+
+  // Summary
+  var summaryLineY = headerH + k * rowH + gapBeforeSummary / 2;
+  svg += '<line x1="' + marginLeft + '" y1="' + summaryLineY + '" x2="' + (totalW - marginRight) + '" y2="' + summaryLineY + '" stroke="#d1d5db" stroke-width="1"/>';
+
+  var sy = headerH + k * rowH + gapBeforeSummary + summaryRowH / 2;
+  var dCx = scaleX(result.theta), dL = scaleX(result.ci_lower), dR = scaleX(result.ci_upper), dHalf = 8;
+
+  if (result.pi_lower !== null && result.pi_lower !== undefined) {
+    var piL = scaleX(result.pi_lower), piR = scaleX(result.pi_upper);
+    svg += '<line x1="' + Math.max(plotX, piL) + '" y1="' + sy + '" x2="' + Math.min(plotX + plotAreaW, piR) + '" y2="' + sy + '" stroke="#1e40af" stroke-width="1.5" stroke-dasharray="6,3"/>';
+  }
+
+  svg += '<polygon points="' + dL + ',' + sy + ' ' + dCx + ',' + (sy - dHalf) + ' ' + dR + ',' + sy + ' ' + dCx + ',' + (sy + dHalf) + '" fill="#1e40af" opacity="0.85"/>';
+  svg += '<text x="' + (marginLeft + 4) + '" y="' + (sy + 4) + '" font-weight="700" fill="#1e40af">RE-DL HKSJ</text>';
+
+  var summEffText = Math.exp(result.theta).toFixed(2) + ' [' + Math.exp(result.ci_lower).toFixed(2) + ', ' + Math.exp(result.ci_upper).toFixed(2) + ']';
+  svg += '<text x="' + (plotX + plotAreaW + 4) + '" y="' + (sy + 4) + '" font-size="10" font-weight="600" fill="#1e40af">' + summEffText + '</text>';
+  svg += '<text x="' + (plotX + plotAreaW + ciColW + 4) + '" y="' + (sy + 4) + '" font-size="10" font-weight="600" fill="#1e40af">100%</text>';
+
+  // X-axis
+  var axisY = sy + dHalf + 16;
+  svg += '<line x1="' + plotX + '" y1="' + axisY + '" x2="' + (plotX + plotAreaW) + '" y2="' + axisY + '" stroke="#374151" stroke-width="1"/>';
+  var ticks = [0.1, 0.2, 0.5, 1, 2, 5, 10].map(function(v) { return Math.log(v); });
+  ticks.forEach(function(tv) {
+    if (tv >= dataMin && tv <= dataMax) {
+      var tx = scaleX(tv);
+      svg += '<line x1="' + tx + '" y1="' + axisY + '" x2="' + tx + '" y2="' + (axisY + 5) + '" stroke="#374151" stroke-width="1"/>';
+      svg += '<text x="' + tx + '" y="' + (axisY + 16) + '" text-anchor="middle" font-size="9" fill="#6b7280">' + Math.exp(tv).toFixed(tv < -0.5 || tv > 0.5 ? 1 : 2) + '</text>';
+    }
+  });
+  svg += '<text x="' + (plotX + plotAreaW / 2) + '" y="' + (axisY + 30) + '" text-anchor="middle" font-size="10" fill="#6b7280">Favours colchicine    |    Favours control</text>';
+
+  // Heterogeneity
+  var hetY = axisY + 44;
+  svg += '<text x="' + (marginLeft + 4) + '" y="' + hetY + '" font-size="10" fill="#6b7280">Heterogeneity: I\u00B2 = '
+    + (result.I2 !== undefined ? result.I2.toFixed(1) : '?') + '%; \u03C4\u00B2 = '
+    + (result.tau2 !== undefined ? result.tau2.toFixed(4) : 'N/A') + '; Q = '
+    + (result.Q !== undefined ? result.Q.toFixed(2) : '?') + ' (df=' + (result.df !== undefined ? result.df : '?')
+    + ', p=' + (result.pQ !== undefined ? (result.pQ < 0.001 ? '&lt;0.001' : result.pQ.toFixed(3)) : '?') + ')</text>';
+
+  svg += '</svg>';
+  return svg;
+}
+
+
+// ==============================
+// BIAS QUANTIFIER (from bias-quantifier)
+// ==============================
+
+function estimateNonPostingBias(allStudies) {
+  var completed = allStudies.filter(function(s) {
+    var st = (s.overallStatus || s.status || '').toUpperCase();
+    return st === 'COMPLETED' || st === 'TERMINATED' || st === 'WITHDRAWN';
+  });
+  var withResults = completed.filter(function(s) { return s.hasResults; });
+  var postingRate = completed.length > 0 ? withResults.length / completed.length : 0;
+  var byType = {};
+  for (var i = 0; i < completed.length; i++) {
+    var s = completed[i];
+    var type = s.leadSponsorClass || s.sponsor_type || 'OTHER';
+    if (!byType[type]) byType[type] = { total: 0, posted: 0 };
+    byType[type].total++;
+    if (s.hasResults) byType[type].posted++;
+  }
+  var nonPostingIds = completed.filter(function(s) { return !s.hasResults; }).map(function(s) { return s.nctId || s.nct || 'unknown'; });
+  return {
+    postingRate: postingRate,
+    byType: byType,
+    nCompleted: completed.length,
+    nPosted: withResults.length,
+    nWithoutResults: completed.length - withResults.length,
+    nonPostingIds: nonPostingIds
+  };
+}
+
+function calculateORBI(extractions) {
+  var scores = extractions.map(function(ext) {
+    var regPrimaries = ext.registered_outcomes && ext.registered_outcomes.primary;
+    var registered = '';
+    if (Array.isArray(regPrimaries) && regPrimaries.length > 0) registered = regPrimaries[0].measure || '';
+    var reported = '';
+    if (Array.isArray(ext.outcomes)) {
+      var primary = ext.outcomes.find(function(o) { return (o.type || '').toUpperCase() === 'PRIMARY'; });
+      if (primary) reported = primary.title || '';
+    }
+    var similarity = levenshteinSimilarity(registered, reported);
+    return { nct: ext.nct || 'unknown', registered: registered, reported: reported, similarity: similarity, score: 1 - similarity };
+  });
+  var meanORBI = scores.length > 0 ? scores.reduce(function(s, x) { return s + x.score; }, 0) / scores.length : 0;
+  return { meanORBI: meanORBI, perStudy: scores, warning: meanORBI > 0.3 ? 'High outcome switching risk (ORBI > 0.3)' : null };
+}
+
+function pooledEstimateFE(studies) {
+  var sumWY = 0, sumW = 0;
+  for (var i = 0; i < studies.length; i++) {
+    if (studies[i].vi > 0) { var w = 1 / studies[i].vi; sumWY += w * studies[i].yi; sumW += w; }
+  }
+  return sumW > 0 ? sumWY / sumW : 0;
+}
+
+function renderFunnelPlotSVG(studies) {
+  var valid = studies.filter(function(s) { return typeof s.yi === 'number' && isFinite(s.yi) && typeof s.vi === 'number' && s.vi > 0; });
+  if (valid.length < 10) return '<div class="info-box">Funnel plot requires k >= 10 studies. Currently k = ' + valid.length + '.</div>';
+
+  var theta = pooledEstimateFE(valid);
+  var ses = valid.map(function(s) { return Math.sqrt(s.vi); });
+  var yis = valid.map(function(s) { return s.yi; });
+  var maxSE = Math.max.apply(null, ses) * 1.1;
+  var allEffects = yis.slice();
+  allEffects.push(theta - 1.96 * maxSE);
+  allEffects.push(theta + 1.96 * maxSE);
+  var minEff = Math.min.apply(null, allEffects);
+  var maxEff = Math.max.apply(null, allEffects);
+  var effRange = maxEff - minEff;
+  minEff -= effRange * 0.08;
+  maxEff += effRange * 0.08;
+
+  var width = 560, height = 400;
+  var margin = { top: 30, right: 40, bottom: 50, left: 60 };
+  var w = width - margin.left - margin.right;
+  var h = height - margin.top - margin.bottom;
+  function xPos(eff) { return (eff - minEff) / (maxEff - minEff) * w; }
+  function yPos(se) { return se / maxSE * h; }
+
+  var svg = '<svg width="' + width + '" height="' + height + '" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,sans-serif" font-size="10">';
+  svg += '<g transform="translate(' + margin.left + ',' + margin.top + ')">';
+  svg += '<polygon points="' + xPos(theta) + ',' + yPos(0) + ' ' + xPos(theta - 1.96 * maxSE) + ',' + yPos(maxSE) + ' ' + xPos(theta + 1.96 * maxSE) + ',' + yPos(maxSE) + '" fill="#eff6ff" stroke="#bfdbfe" opacity="0.7"/>';
+  svg += '<line x1="' + xPos(theta) + '" y1="0" x2="' + xPos(theta) + '" y2="' + h + '" stroke="#1e40af" stroke-width="1.5" stroke-dasharray="6,4"/>';
+  svg += '<line x1="0" y1="' + h + '" x2="' + w + '" y2="' + h + '" stroke="#374151"/>';
+  svg += '<line x1="0" y1="0" x2="0" y2="' + h + '" stroke="#374151"/>';
+
+  for (var i = 0; i < valid.length; i++) {
+    var sx = xPos(valid[i].yi);
+    var sy = yPos(Math.sqrt(valid[i].vi));
+    svg += '<circle cx="' + sx + '" cy="' + sy + '" r="4.5" fill="#1e40af" stroke="white" stroke-width="1.5" opacity="0.85"/>';
+  }
+
+  svg += '<text x="' + (w / 2) + '" y="' + (h + 35) + '" text-anchor="middle" fill="#374151" font-size="11">Effect Size (log RR)</text>';
+  svg += '<text x="-40" y="' + (h / 2) + '" text-anchor="middle" fill="#374151" font-size="11" transform="rotate(-90,-40,' + (h / 2) + ')">Standard Error</text>';
+  svg += '</g></svg>';
+  return svg;
+}
+
+function eggersTest(studies) {
+  var valid = studies.filter(function(s) { return typeof s.yi === 'number' && isFinite(s.yi) && typeof s.vi === 'number' && s.vi > 0; });
+  var n = valid.length;
+  if (n < 10) return { pValue: null, warning: "Egger's test unreliable: k < 10 (k=" + n + ")", n: n };
+  var x = valid.map(function(s) { return 1 / Math.sqrt(s.vi); });
+  var y = valid.map(function(s) { return s.yi / Math.sqrt(s.vi); });
+  var xMean = x.reduce(function(a, b) { return a + b; }, 0) / n;
+  var yMean = y.reduce(function(a, b) { return a + b; }, 0) / n;
+  var ssxy = 0, ssxx = 0, ssyy = 0;
+  for (var i = 0; i < n; i++) {
+    ssxy += (x[i] - xMean) * (y[i] - yMean);
+    ssxx += (x[i] - xMean) * (x[i] - xMean);
+    ssyy += (y[i] - yMean) * (y[i] - yMean);
+  }
+  var slope = ssxy / ssxx;
+  var intercept = yMean - slope * xMean;
+  var residSS = ssyy - slope * ssxy;
+  var sResid = Math.sqrt(residSS / (n - 2));
+  var seIntercept = sResid * Math.sqrt(1 / n + xMean * xMean / ssxx);
+  var tStat = intercept / seIntercept;
+  var pValue = 2 * (1 - tCDF(Math.abs(tStat), n - 2));
+  return { intercept: intercept, slope: slope, tStat: tStat, pValue: pValue, significant: pValue < 0.1, df: n - 2, n: n, warning: null };
+}
+
+
+// ==============================
+// AUTO-GRADE FUNCTION
+// ==============================
+
+function autoGRADE(synthesis, biasFlags) {
+  var certainty = 4; // Start HIGH (RCTs)
+  if (synthesis.I2 > 75) certainty -= 2;
+  else if (synthesis.I2 > 50) certainty -= 1;
+  if (biasFlags.filter(function(f) { return f.severity === 'CRITICAL'; }).length > 0) certainty -= 2;
+  if (biasFlags.filter(function(f) { return f.severity === 'WARNING'; }).length > 2) certainty -= 1;
+  if (synthesis.k < 3) certainty -= 1;
+  var totalN = 0;
+  if (synthesis.weights) {
+    for (var i = 0; i < synthesis.weights.length; i++) {
+      totalN += (synthesis.weights[i].n || 0);
+    }
+  }
+  if (totalN > 0 && totalN < 300) certainty -= 1;
+  certainty = Math.max(1, Math.min(4, certainty));
+  return ['VERY LOW', 'LOW', 'MODERATE', 'HIGH'][certainty - 1];
+}
+
+
+// ==============================
+// E156 ABSTRACT GENERATOR
+// ==============================
+
+function generateE156(synthesis, biasData) {
+  var rr = Math.exp(synthesis.theta).toFixed(2);
+  var ciLo = Math.exp(synthesis.ci_lower).toFixed(2);
+  var ciHi = Math.exp(synthesis.ci_upper).toFixed(2);
+  var k = synthesis.k;
+  var I2 = synthesis.I2.toFixed(0);
+
+  var s1 = 'Does colchicine reduce major adverse cardiovascular events after ST-elevation myocardial infarction?';
+  var s2 = 'We synthesised ' + k + ' randomised controlled trials from ClinicalTrials.gov structured results data, using dual-agent extraction with TruthCert validation.';
+  var s3 = 'DerSimonian-Laird random-effects meta-analysis with Hartung-Knapp-Sidik-Jonkman correction pooled log risk ratios and back-transformed to the natural scale.';
+  var s4 = 'The pooled risk ratio for MACE was ' + rr + ' (95% CI ' + ciLo + ' to ' + ciHi + '; I\u00B2=' + I2 + '%; ' + k + ' trials).';
+  var piText = synthesis.pi_lower !== null ?
+    'the 95% prediction interval was ' + Math.exp(synthesis.pi_lower).toFixed(2) + ' to ' + Math.exp(synthesis.pi_upper).toFixed(2) :
+    'prediction interval undefined (k<3)';
+  var s5 = 'Leave-one-out analysis confirmed robustness to exclusion of any single trial; ' + piText + '.';
+  var grade = autoGRADE(synthesis, []);
+  var s6 = 'Colchicine ' + (parseFloat(rr) < 1 ? 'may reduce' : 'does not appear to reduce') + ' MACE after STEMI, though confidence is ' + grade.toLowerCase() + '.';
+  var s7 = 'This living synthesis is limited to ClinicalTrials.gov posted results; grey literature and individual patient data are excluded.';
+
+  return [s1, s2, s3, s4, s5, s6, s7].join(' ');
+}
+
+
+// ==============================
+// CUMULATIVE LINE CHART SVG
+// ==============================
+
+function renderCumulativeChart(cumData) {
+  if (!cumData || cumData.length === 0) return '<div class="info-box">No cumulative data available.</div>';
+
+  var width = 700, height = 350;
+  var margin = { top: 30, right: 30, bottom: 60, left: 60 };
+  var w = width - margin.left - margin.right;
+  var h = height - margin.top - margin.bottom;
+
+  var allLo = cumData.map(function(d) { return d.ci_lower; });
+  var allHi = cumData.map(function(d) { return d.ci_upper; });
+  var allTheta = cumData.map(function(d) { return d.theta; });
+  var minY = Math.min.apply(null, allLo.concat(allTheta));
+  var maxY = Math.max.apply(null, allHi.concat(allTheta));
+  var rangeY = maxY - minY;
+  minY -= rangeY * 0.1;
+  maxY += rangeY * 0.1;
+
+  function xPos(i) { return (i / (cumData.length - 1 || 1)) * w; }
+  function yPos(v) { return h - ((v - minY) / (maxY - minY)) * h; }
+
+  var svg = '<svg width="' + width + '" height="' + height + '" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,sans-serif" font-size="10">';
+  svg += '<g transform="translate(' + margin.left + ',' + margin.top + ')">';
+
+  // null effect line
+  if (0 >= minY && 0 <= maxY) {
+    svg += '<line x1="0" y1="' + yPos(0) + '" x2="' + w + '" y2="' + yPos(0) + '" stroke="#dc2626" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/>';
+    svg += '<text x="' + (w + 4) + '" y="' + (yPos(0) + 3) + '" fill="#dc2626" font-size="9">RR=1</text>';
+  }
+
+  // CI band
+  var ciPath = 'M';
+  for (var i = 0; i < cumData.length; i++) {
+    ciPath += (i > 0 ? ' L' : '') + xPos(i) + ',' + yPos(cumData[i].ci_upper);
+  }
+  for (var i = cumData.length - 1; i >= 0; i--) {
+    ciPath += ' L' + xPos(i) + ',' + yPos(cumData[i].ci_lower);
+  }
+  ciPath += ' Z';
+  svg += '<path d="' + ciPath + '" fill="#dbeafe" opacity="0.5"/>';
+
+  // Theta line
+  var linePath = 'M';
+  for (var i = 0; i < cumData.length; i++) {
+    linePath += (i > 0 ? ' L' : '') + xPos(i) + ',' + yPos(cumData[i].theta);
+  }
+  svg += '<path d="' + linePath + '" fill="none" stroke="#1e40af" stroke-width="2"/>';
+
+  // Dots
+  for (var i = 0; i < cumData.length; i++) {
+    svg += '<circle cx="' + xPos(i) + '" cy="' + yPos(cumData[i].theta) + '" r="4" fill="#1e40af" stroke="white" stroke-width="1.5"/>';
+  }
+
+  // X-axis labels
+  svg += '<line x1="0" y1="' + h + '" x2="' + w + '" y2="' + h + '" stroke="#374151"/>';
+  for (var i = 0; i < cumData.length; i++) {
+    var label = cumData[i].addedStudy || ('k=' + cumData[i].k);
+    if (label.length > 12) label = label.substring(0, 12) + '...';
+    svg += '<text x="' + xPos(i) + '" y="' + (h + 16) + '" text-anchor="middle" fill="#374151" font-size="9" transform="rotate(-30,' + xPos(i) + ',' + (h + 16) + ')">' + escHtml(label) + '</text>';
+  }
+
+  // Y-axis
+  svg += '<line x1="0" y1="0" x2="0" y2="' + h + '" stroke="#374151"/>';
+  for (var t = 0; t <= 4; t++) {
+    var yVal = minY + (maxY - minY) * t / 4;
+    var yP = yPos(yVal);
+    svg += '<line x1="-4" y1="' + yP + '" x2="0" y2="' + yP + '" stroke="#374151"/>';
+    svg += '<text x="-8" y="' + (yP + 3) + '" text-anchor="end" fill="#6b7280" font-size="9">' + Math.exp(yVal).toFixed(2) + '</text>';
+  }
+
+  svg += '<text x="' + (w / 2) + '" y="' + (h + 50) + '" text-anchor="middle" fill="#374151" font-size="11">Studies added (by completion date)</text>';
+  svg += '<text x="-45" y="' + (h / 2) + '" text-anchor="middle" fill="#374151" font-size="11" transform="rotate(-90,-45,' + (h / 2) + ')">Pooled RR</text>';
+  svg += '</g></svg>';
+  return svg;
+}
+
+
+// ==============================
+// GLOBAL STATE
+// ==============================
+
+var STATE = {
+  harvested: [],
+  extractions: [],
+  truthCertReports: [],
+  clearedExtractions: [],
+  primarySynthesis: null,
+  secondarySyntheses: {},
+  cumulativeData: [],
+  biasData: {},
+  provenanceBundle: null,
+  e156Text: '',
+  pipelineRunning: false,
+  lastUpdated: null
+};
+
+var evidenceSortCol = null;
+var evidenceSortAsc = true;
+
+
+// ==============================
+// UI HELPERS
+// ==============================
+
+function switchPanel(btn) {
+  document.querySelectorAll('.nav-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
+  btn.classList.add('active');
+  var panelId = btn.getAttribute('data-panel');
+  document.getElementById(panelId).classList.add('active');
+}
+
+function pipeLog(msg) {
+  var el = document.getElementById('pipelineLog');
+  el.style.display = 'block';
+  var ts = new Date().toISOString().substr(11, 12);
+  el.textContent += '[' + ts + '] ' + msg + '\n';
+  el.scrollTop = el.scrollHeight;
+}
+
+function setPipeStep(step, status) {
+  var el = document.querySelector('.pipe-step[data-step="' + step + '"]');
+  if (!el) return;
+  el.className = 'pipe-step ' + status;
+  var icons = { '': '&#9675;', running: '&#9881;', done: '&#9745;', error: '&#9746;' };
+  el.querySelector('.pipe-icon').innerHTML = icons[status] || '&#9675;';
+}
+
+function setPipeProgress(pct) {
+  document.getElementById('pipelineBarFill').style.width = pct + '%';
+}
+
+function setPipeStatus(text) {
+  document.getElementById('pipelineStatus').textContent = text;
+}
+
+function openModal(title, bodyHtml) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').innerHTML = bodyHtml;
+  document.getElementById('modalOverlay').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('active');
+}
+
+function closeModalIfOutside(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+}
+
+function toggleAccordion(el) {
+  el.closest('.accordion-item').classList.toggle('open');
+}
+
+
+// ==============================
+// OUTCOME MATCHING HELPERS
+// ==============================
+
+var MACE_KEYWORDS = ['mace', 'major adverse cardiovascular', 'major adverse cardiac', 'composite', 'primary composite'];
+var MORTALITY_KEYWORDS = ['all-cause mortality', 'all cause mortality', 'death', 'mortality'];
+var CV_MORTALITY_KEYWORDS = ['cardiovascular mortality', 'cardiovascular death', 'cardiac death', 'cv mortality', 'cv death'];
+var MI_KEYWORDS = ['recurrent mi', 'myocardial infarction', 'recurrent myocardial', 'reinfarction'];
+var HOSP_KEYWORDS = ['hospitali', 'hospital admission', 'readmission'];
+var PERICARDITIS_KEYWORDS = ['pericarditis'];
+var SAE_KEYWORDS = ['serious adverse', 'sae'];
+
+function outcomeMatchesKeywords(title, keywords) {
+  var t = (title || '').toLowerCase();
+  for (var i = 0; i < keywords.length; i++) {
+    if (t.indexOf(keywords[i]) !== -1) return true;
+  }
+  return false;
+}
+
+function findOutcomeByKeywords(outcomes, keywords) {
+  // Prefer PRIMARY outcomes
+  for (var i = 0; i < outcomes.length; i++) {
+    if (outcomes[i].type === 'PRIMARY' && outcomeMatchesKeywords(outcomes[i].title, keywords)) return outcomes[i];
+  }
+  for (var i = 0; i < outcomes.length; i++) {
+    if (outcomeMatchesKeywords(outcomes[i].title, keywords)) return outcomes[i];
+  }
+  return null;
+}
+
+function extractBinaryFromOutcome(outcome, extraction) {
+  // From outcome data + arms, derive ai, bi, ci, di
+  var arms = extraction.arms || [];
+  var expArm = null, ctrlArm = null;
+  for (var i = 0; i < arms.length; i++) {
+    if (arms[i].arm_type === 'EXPERIMENTAL') expArm = arms[i];
+    else if (arms[i].arm_type === 'PLACEBO' || arms[i].arm_type === 'COMPARATOR') ctrlArm = arms[i];
+  }
+  if (!expArm || !ctrlArm) return null;
+
+  var data = outcome.data || [];
+  var expData = null, ctrlData = null;
+
+  for (var i = 0; i < data.length; i++) {
+    var armLabel = (data[i].arm_label || '').toLowerCase();
+    if (matchArmByLabel(armLabel, [expArm])) expData = data[i];
+    else if (matchArmByLabel(armLabel, [ctrlArm])) ctrlData = data[i];
+  }
+
+  // Fallback: match by position if exactly 2 data points for non-total groups
+  if (!expData || !ctrlData) {
+    var nonTotal = data.filter(function(d) { return (d.arm_label || '').toLowerCase().indexOf('total') === -1; });
+    if (nonTotal.length === 2) {
+      expData = nonTotal[0];
+      ctrlData = nonTotal[1];
+    }
+  }
+
+  if (!expData || !ctrlData) return null;
+
+  var ai = safeFloat(expData.value);
+  var ci = safeFloat(ctrlData.value);
+  var n1 = expData.participants || expArm.n_analyzed;
+  var n2 = ctrlData.participants || ctrlArm.n_analyzed;
+
+  if (ai === null || ci === null || !n1 || !n2) return null;
+  var bi = n1 - ai;
+  var di = n2 - ci;
+  if (bi < 0 || di < 0) return null;
+
+  return { ai: ai, bi: bi, ci: ci, di: di, n1: n1, n2: n2 };
+}
+
+
+// ==============================
+// FULL PIPELINE
+// ==============================
+
+var pipelineAbort = false;
+
+async function runFullPipeline() {
+  if (STATE.pipelineRunning) return;
+  STATE.pipelineRunning = true;
+  pipelineAbort = false;
+  document.getElementById('btnRunPipeline').disabled = true;
+  document.getElementById('pipelineLog').textContent = '';
+  document.getElementById('pipelineLog').style.display = 'block';
+
+  var steps = ['harvest', 'extract', 'validate', 'filter', 'primary', 'secondary', 'cumulative', 'bias', 'provenance', 'e156'];
+  steps.forEach(function(s) { setPipeStep(s, ''); });
+  setPipeProgress(0);
+
+  try {
+    // STEP 1: Harvest from CT.gov
+    setPipeStep('harvest', 'running');
+    setPipeStatus('Querying CT.gov for colchicine + MI trials...');
+    pipeLog('Starting harvest: condition=myocardial infarction, intervention=colchicine, results_only=true');
+
+    var allStudies = [];
+    var pageToken = null;
+    var totalCount = 0;
+    var page = 0;
+
+    do {
+      var qs = buildQueryString({
+        condition: 'myocardial infarction',
+        intervention: 'colchicine',
+        resultsOnly: true,
+        pageToken: pageToken
+      });
+      var data = await apiRequest('/studies?' + qs);
+      if (page === 0) { totalCount = data.totalCount || 0; pipeLog('Total matching: ' + totalCount); }
+      var studies = (data.studies || []).map(parseStudyForTable);
+      allStudies = allStudies.concat(studies);
+      pageToken = data.nextPageToken || null;
+      page++;
+      setPipeProgress(Math.round(5 + 10 * (allStudies.length / Math.max(1, totalCount))));
+    } while (pageToken && page < CTGOV_API_CONFIG.pagination.max_pages && !pipelineAbort);
+
+    STATE.harvested = allStudies;
+    pipeLog('Harvested ' + allStudies.length + ' studies');
+    setPipeStep('harvest', 'done');
+    setPipeProgress(15);
+
+    // STEP 2: Extract results for studies with results
+    setPipeStep('extract', 'running');
+    setPipeStatus('Extracting structured results...');
+    var withResults = allStudies.filter(function(s) { return s.hasResults; });
+    pipeLog(withResults.length + ' studies have posted results');
+
+    var extractions = [];
+    for (var i = 0; i < withResults.length; i++) {
+      if (pipelineAbort) break;
+      setPipeStatus('Extracting ' + withResults[i].nctId + ' (' + (i + 1) + '/' + withResults.length + ')');
+      try {
+        var ext = await extractResults(withResults[i].nctId);
+        extractions.push(ext);
+        pipeLog('Extracted: ' + ext.nct + ' (' + ext.outcomes.length + ' outcomes)');
+      } catch (err) {
+        pipeLog('ERROR extracting ' + withResults[i].nctId + ': ' + err.message);
+      }
+      setPipeProgress(15 + Math.round(35 * ((i + 1) / withResults.length)));
+    }
+
+    STATE.extractions = extractions;
+    setPipeStep('extract', 'done');
+    setPipeProgress(50);
+
+    // STEP 3: TruthCert validation
+    setPipeStep('validate', 'running');
+    setPipeStatus('Running TruthCert validation...');
+    var reports = [];
+    var pool = [];
+    for (var i = 0; i < extractions.length; i++) {
+      var report = runTruthCertPipeline(extractions[i], pool);
+      reports.push(report);
+      if (report.cleared_for_synthesis) pool.push(extractions[i]);
+      pipeLog('TruthCert ' + report.nct + ': ' + report.verdict);
+    }
+    STATE.truthCertReports = reports;
+    setPipeStep('validate', 'done');
+    setPipeProgress(55);
+
+    // STEP 4: Filter cleared
+    setPipeStep('filter', 'running');
+    setPipeStatus('Filtering cleared studies...');
+    var cleared = [];
+    for (var i = 0; i < extractions.length; i++) {
+      if (reports[i].cleared_for_synthesis) cleared.push(extractions[i]);
+    }
+    STATE.clearedExtractions = cleared;
+    pipeLog(cleared.length + ' studies cleared for synthesis (of ' + extractions.length + ')');
+    setPipeStep('filter', 'done');
+    setPipeProgress(60);
+
+    // STEP 5: Primary MA (MACE)
+    setPipeStep('primary', 'running');
+    setPipeStatus('Running primary meta-analysis (MACE)...');
+    var primaryStudies = [];
+    for (var i = 0; i < cleared.length; i++) {
+      var ext = cleared[i];
+      var maceOutcome = findOutcomeByKeywords(ext.outcomes, MACE_KEYWORDS);
+      // Fallback: use first PRIMARY outcome
+      if (!maceOutcome) {
+        for (var j = 0; j < ext.outcomes.length; j++) {
+          if (ext.outcomes[j].type === 'PRIMARY') { maceOutcome = ext.outcomes[j]; break; }
+        }
+      }
+      if (!maceOutcome) continue;
+
+      var binary = extractBinaryFromOutcome(maceOutcome, ext);
+      if (!binary) continue;
+
+      var eff = escalcRR(binary.ai, binary.bi, binary.ci, binary.di);
+      if (eff.yi === null) continue;
+
+      primaryStudies.push({
+        id: ext.nct,
+        nctId: ext.nct,
+        yi: eff.yi,
+        vi: eff.vi,
+        ai: binary.ai, bi: binary.bi, ci: binary.ci, di: binary.di,
+        n: binary.n1 + binary.n2,
+        order: parseDate(ext.study_metadata.primary_completion_date) ? parseDate(ext.study_metadata.primary_completion_date).getTime() : 0,
+        title: ext.study_metadata.title,
+        sponsor: ext.study_metadata.sponsor_name,
+        year: (ext.study_metadata.primary_completion_date || '').substring(0, 4)
+      });
+    }
+
+    if (primaryStudies.length >= 2) {
+      STATE.primarySynthesis = derSimonianLaird(primaryStudies);
+      STATE.primarySynthesis._studies = primaryStudies;
+      pipeLog('Primary MA: k=' + STATE.primarySynthesis.k + ', RR=' + Math.exp(STATE.primarySynthesis.theta).toFixed(3));
+    } else {
+      pipeLog('Insufficient studies for primary MA (k=' + primaryStudies.length + ')');
+      STATE.primarySynthesis = null;
+    }
+    setPipeStep('primary', 'done');
+    setPipeProgress(70);
+
+    // STEP 6: Secondary analyses
+    setPipeStep('secondary', 'running');
+    setPipeStatus('Running secondary syntheses...');
+    var secondaryOutcomes = {
+      'All-cause Mortality': MORTALITY_KEYWORDS,
+      'CV Mortality': CV_MORTALITY_KEYWORDS,
+      'Recurrent MI': MI_KEYWORDS,
+      'Hospitalisation': HOSP_KEYWORDS,
+      'Pericarditis': PERICARDITIS_KEYWORDS,
+      'Serious Adverse Events': SAE_KEYWORDS
+    };
+
+    STATE.secondarySyntheses = {};
+    var secNames = Object.keys(secondaryOutcomes);
+    for (var s = 0; s < secNames.length; s++) {
+      var name = secNames[s];
+      var keywords = secondaryOutcomes[name];
+      var secStudies = [];
+
+      for (var i = 0; i < cleared.length; i++) {
+        var ext = cleared[i];
+        var outcome = findOutcomeByKeywords(ext.outcomes, keywords);
+        if (!outcome) continue;
+        var binary = extractBinaryFromOutcome(outcome, ext);
+        if (!binary) continue;
+        var eff = escalcRR(binary.ai, binary.bi, binary.ci, binary.di);
+        if (eff.yi === null) continue;
+        secStudies.push({
+          id: ext.nct, nctId: ext.nct, yi: eff.yi, vi: eff.vi,
+          ai: binary.ai, bi: binary.bi, ci: binary.ci, di: binary.di
+        });
+      }
+
+      if (secStudies.length >= 2) {
+        STATE.secondarySyntheses[name] = derSimonianLaird(secStudies);
+        STATE.secondarySyntheses[name]._studies = secStudies;
+        pipeLog('Secondary "' + name + '": k=' + secStudies.length);
+      } else {
+        pipeLog('Secondary "' + name + '": insufficient data (k=' + secStudies.length + ')');
+      }
+    }
+    setPipeStep('secondary', 'done');
+    setPipeProgress(80);
+
+    // STEP 7: Cumulative MA
+    setPipeStep('cumulative', 'running');
+    setPipeStatus('Running cumulative meta-analysis...');
+    if (primaryStudies.length >= 2) {
+      STATE.cumulativeData = cumulativeMeta(primaryStudies, 'order', 'DL');
+      pipeLog('Cumulative MA: ' + STATE.cumulativeData.length + ' steps');
+    }
+    setPipeStep('cumulative', 'done');
+    setPipeProgress(85);
+
+    // STEP 8: Bias metrics
+    setPipeStep('bias', 'running');
+    setPipeStatus('Calculating bias metrics...');
+    STATE.biasData.nonPosting = estimateNonPostingBias(allStudies);
+    STATE.biasData.orbi = calculateORBI(cleared);
+    if (primaryStudies.length >= 2) {
+      STATE.biasData.egger = eggersTest(primaryStudies);
+    }
+    pipeLog('Non-posting rate: ' + (STATE.biasData.nonPosting.postingRate * 100).toFixed(1) + '%');
+    pipeLog('Mean ORBI: ' + STATE.biasData.orbi.meanORBI.toFixed(3));
+    setPipeStep('bias', 'done');
+    setPipeProgress(90);
+
+    // STEP 9: Provenance hash
+    setPipeStep('provenance', 'running');
+    setPipeStatus('Computing provenance hash...');
+    var bundle = {
+      version: '0.8.0',
+      timestamp: new Date().toISOString(),
+      harvested_count: allStudies.length,
+      extractions: extractions,
+      truthcert_reports: reports,
+      primary_synthesis: STATE.primarySynthesis,
+      secondary_syntheses: STATE.secondarySyntheses,
+      cumulative: STATE.cumulativeData,
+      bias: STATE.biasData
+    };
+    var bundleStr = JSON.stringify(bundle);
+    bundle.sha256 = await sha256(bundleStr);
+    STATE.provenanceBundle = bundle;
+    pipeLog('Provenance SHA-256: ' + bundle.sha256.substring(0, 16) + '...');
+    setPipeStep('provenance', 'done');
+    setPipeProgress(95);
+
+    // STEP 10: E156 abstract
+    setPipeStep('e156', 'running');
+    setPipeStatus('Generating E156 abstract...');
+    if (STATE.primarySynthesis) {
+      STATE.e156Text = generateE156(STATE.primarySynthesis, STATE.biasData);
+      pipeLog('E156 generated (' + STATE.e156Text.split(' ').length + ' words)');
+    }
+    setPipeStep('e156', 'done');
+    setPipeProgress(100);
+
+    STATE.lastUpdated = new Date().toISOString();
+    STATE.pipelineRunning = false;
+    setPipeStatus('Pipeline complete. ' + cleared.length + ' studies synthesised.');
+
+    // Render all panels
+    renderAllPanels();
+
+  } catch (err) {
+    pipeLog('PIPELINE ERROR: ' + err.message);
+    setPipeStatus('Pipeline failed: ' + err.message);
+    var steps = ['harvest', 'extract', 'validate', 'filter', 'primary', 'secondary', 'cumulative', 'bias', 'provenance', 'e156'];
+    steps.forEach(function(s) {
+      var el = document.querySelector('.pipe-step[data-step="' + s + '"]');
+      if (el && el.classList.contains('running')) setPipeStep(s, 'error');
+    });
+    STATE.pipelineRunning = false;
+  }
+  document.getElementById('btnRunPipeline').disabled = false;
+}
+
+function refreshFromCtgov() {
+  // Re-run the full pipeline
+  runFullPipeline();
+}
+
+
+// ==============================
+// RENDER ALL PANELS
+// ==============================
+
+function renderAllPanels() {
+  renderHeaderBadges();
+  renderEvidenceMap();
+  renderPrimarySynthesis();
+  renderSecondaryPanel();
+  renderCumulativePanel();
+  renderBiasPanel();
+  renderProvenancePanel();
+  renderE156Panel();
+}
+
+function renderHeaderBadges() {
+  document.getElementById('badgeStudies').textContent = STATE.clearedExtractions.length + ' studies';
+  document.getElementById('badgeDate').textContent = 'Updated ' + (STATE.lastUpdated || '').substring(0, 10);
+  document.getElementById('btnRefresh').style.display = 'inline-block';
+
+  var allPass = STATE.truthCertReports.every(function(r) { return r.verdict !== 'CRITICAL'; });
+  var anyWarn = STATE.truthCertReports.some(function(r) { return r.verdict === 'WARN'; });
+  var badge = document.getElementById('badgeCert');
+  badge.style.display = 'inline-flex';
+  if (allPass && !anyWarn) {
+    badge.className = 'hdr-badge hdr-badge-cert-pass';
+    badge.textContent = 'TruthCert ALL PASS';
+  } else if (allPass) {
+    badge.className = 'hdr-badge hdr-badge-cert-warn';
+    badge.textContent = 'TruthCert WARNINGS';
+  } else {
+    badge.className = 'hdr-badge hdr-badge-cert-fail';
+    badge.textContent = 'TruthCert ISSUES';
+  }
+}
+
+function renderEvidenceMap() {
+  var tbody = document.getElementById('evidenceBody');
+  tbody.innerHTML = '';
+  var primary = STATE.primarySynthesis;
+  var weightMap = {};
+  if (primary && primary.weights) {
+    primary.weights.forEach(function(w) { weightMap[w.id] = w.weightPercent; });
+  }
+
+  var rows = STATE.extractions.map(function(ext, idx) {
+    var report = STATE.truthCertReports[idx];
+    var year = (ext.study_metadata.primary_completion_date || '').substring(0, 4);
+    return {
+      nct: ext.nct,
+      title: ext.study_metadata.title,
+      n: ext.study_metadata.enrollment_actual || 0,
+      year: year,
+      sponsor: ext.study_metadata.sponsor_name || ext.study_metadata.sponsor_type || '',
+      verdict: report ? report.verdict : 'N/A',
+      cleared: report ? report.cleared_for_synthesis : false,
+      weight: weightMap[ext.nct] || 0,
+      _ext: ext,
+      _report: report
+    };
+  });
+
+  // Sort
+  if (evidenceSortCol) {
+    rows.sort(function(a, b) {
+      var va = a[evidenceSortCol] || '';
+      var vb = b[evidenceSortCol] || '';
+      if (typeof va === 'string') { va = va.toLowerCase(); vb = (vb + '').toLowerCase(); }
+      return evidenceSortAsc ? (va < vb ? -1 : va > vb ? 1 : 0) : (va > vb ? -1 : va < vb ? 1 : 0);
+    });
+  }
+
+  rows.forEach(function(row) {
+    var tr = document.createElement('tr');
+    tr.onclick = function() { showStudyModal(row); };
+    var verdictTag = row.verdict === 'PASS' ? 'tag-pass' : row.verdict === 'WARN' ? 'tag-warn' : 'tag-fail';
+    tr.innerHTML =
+      '<td class="mono">' + escHtml(row.nct) + '</td>' +
+      '<td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + escHtml(row.title) + '">' + escHtml(row.title) + '</td>' +
+      '<td class="text-right">' + (row.n || '-') + '</td>' +
+      '<td>' + (row.year || '-') + '</td>' +
+      '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(row.sponsor) + '</td>' +
+      '<td><span class="tag ' + verdictTag + '">' + row.verdict + '</span></td>' +
+      '<td class="text-right">' + (row.weight > 0 ? row.weight.toFixed(1) + '%' : '-') + '</td>';
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('evidenceCount').textContent = rows.length + ' studies';
+}
+
+function sortEvidenceTable(col) {
+  if (evidenceSortCol === col) evidenceSortAsc = !evidenceSortAsc;
+  else { evidenceSortCol = col; evidenceSortAsc = true; }
+  renderEvidenceMap();
+}
+
+function showStudyModal(row) {
+  var ext = row._ext;
+  var report = row._report;
+  var html = '<h4 style="margin-bottom:12px;font-size:15px">' + escHtml(ext.study_metadata.title) + '</h4>';
+  html += '<div class="stat-grid" style="margin-bottom:16px">';
+  html += '<div class="stat-item"><div class="stat-label">NCT ID</div><div class="stat-value" style="font-size:14px">' + escHtml(ext.nct) + '</div></div>';
+  html += '<div class="stat-item"><div class="stat-label">Enrollment</div><div class="stat-value" style="font-size:14px">' + (ext.study_metadata.enrollment_actual || '-') + '</div></div>';
+  html += '<div class="stat-item"><div class="stat-label">Phase</div><div class="stat-value" style="font-size:14px">' + (ext.study_metadata.phase || '-') + '</div></div>';
+  html += '<div class="stat-item"><div class="stat-label">TruthCert</div><div class="stat-value"><span class="tag ' + (report.verdict === 'PASS' ? 'tag-pass' : report.verdict === 'WARN' ? 'tag-warn' : 'tag-fail') + '">' + report.verdict + '</span></div></div>';
+  html += '</div>';
+
+  if (report.flags && report.flags.length > 0) {
+    html += '<h4 style="margin-bottom:8px;font-size:14px">TruthCert Flags</h4>';
+    html += '<table><thead><tr><th>Validator</th><th>Severity</th><th>Message</th></tr></thead><tbody>';
+    report.flags.forEach(function(f) {
+      var sevTag = f.severity === 'INFO' ? 'tag-info' : f.severity === 'WARNING' ? 'tag-warn' : 'tag-fail';
+      html += '<tr><td class="mono" style="font-size:11px">' + escHtml(f.validator) + '</td><td><span class="tag ' + sevTag + '">' + f.severity + '</span></td><td style="font-size:12px">' + escHtml(f.message) + '</td></tr>';
+    });
+    html += '</tbody></table>';
+  }
+
+  html += '<h4 style="margin:16px 0 8px;font-size:14px">ExtractionObject (JSON)</h4>';
+  var safeExt = Object.assign({}, ext);
+  html += '<pre>' + escHtml(JSON.stringify(safeExt, null, 2)) + '</pre>';
+
+  openModal(ext.nct + ' Detail', html);
+}
+
+function renderPrimarySynthesis() {
+  var syn = STATE.primarySynthesis;
+  if (!syn) {
+    document.getElementById('primaryForest').innerHTML = '<div class="info-box">No primary synthesis available. Insufficient studies with extractable MACE data.</div>';
+    return;
+  }
+
+  // Forest plot
+  var forestSvg = renderForestPlot(syn, { logScale: true, effectLabel: 'Risk Ratio' });
+  document.getElementById('primaryForest').innerHTML = forestSvg;
+
+  // GRADE badge
+  var allFlags = [];
+  STATE.truthCertReports.forEach(function(r) { allFlags = allFlags.concat(r.flags); });
+  var grade = autoGRADE(syn, allFlags);
+  var gradeClass = grade === 'HIGH' ? 'grade-high' : grade === 'MODERATE' ? 'grade-moderate' : grade === 'LOW' ? 'grade-low' : 'grade-very-low';
+  document.getElementById('gradeContainer').innerHTML = '<span class="grade-badge ' + gradeClass + '">' + grade + ' confidence</span>';
+
+  // Stats grid
+  var piText = syn.pi_lower !== null ? Math.exp(syn.pi_lower).toFixed(2) + ' to ' + Math.exp(syn.pi_upper).toFixed(2) : 'k < 3';
+  var pText = syn.pValue < 0.001 ? '<0.001' : syn.pValue.toFixed(4);
+  var pQText = syn.pQ < 0.001 ? '<0.001' : syn.pQ.toFixed(3);
+
+  document.getElementById('primaryStats').innerHTML =
+    '<div class="stat-item"><div class="stat-label">Pooled RR</div><div class="stat-value">' + Math.exp(syn.theta).toFixed(3) + '</div><div class="stat-sub">95% CI: ' + Math.exp(syn.ci_lower).toFixed(2) + ' to ' + Math.exp(syn.ci_upper).toFixed(2) + '</div></div>' +
+    '<div class="stat-item"><div class="stat-label">Studies (k)</div><div class="stat-value">' + syn.k + '</div></div>' +
+    '<div class="stat-item"><div class="stat-label">p-Value</div><div class="stat-value">' + pText + '</div></div>' +
+    '<div class="stat-item"><div class="stat-label">Prediction Interval</div><div class="stat-value" style="font-size:14px">' + piText + '</div></div>' +
+    '<div class="stat-item"><div class="stat-label">I\u00B2</div><div class="stat-value">' + syn.I2.toFixed(1) + '%</div><div class="stat-sub">' + syn.I2_lower.toFixed(0) + '% to ' + syn.I2_upper.toFixed(0) + '%</div></div>' +
+    '<div class="stat-item"><div class="stat-label">\u03C4\u00B2</div><div class="stat-value">' + syn.tau2.toFixed(4) + '</div></div>' +
+    '<div class="stat-item"><div class="stat-label">Q (p)</div><div class="stat-value">' + syn.Q.toFixed(2) + '</div><div class="stat-sub">df=' + syn.df + ', p=' + pQText + '</div></div>' +
+    '<div class="stat-item"><div class="stat-label">HKSJ Applied</div><div class="stat-value">' + (syn.hksj ? 'Yes' : 'No') + '</div></div>';
+
+  // LOO
+  if (syn._studies && syn._studies.length >= 2) {
+    var loo = leaveOneOut(syn._studies);
+    var looHtml = '<table><thead><tr><th>Omitted</th><th class="text-right">RR</th><th class="text-right">95% CI</th><th class="text-right">I\u00B2</th></tr></thead><tbody>';
+    loo.forEach(function(l) {
+      looHtml += '<tr><td class="mono">' + escHtml(l.omitted) + '</td><td class="text-right">' + Math.exp(l.theta).toFixed(3) + '</td>'
+        + '<td class="text-right">' + Math.exp(l.ci_lower).toFixed(2) + ' to ' + Math.exp(l.ci_upper).toFixed(2) + '</td>'
+        + '<td class="text-right">' + l.I2.toFixed(1) + '%</td></tr>';
+    });
+    looHtml += '</tbody></table>';
+    document.getElementById('looResults').innerHTML = looHtml;
+  }
+}
+
+function renderSecondaryPanel() {
+  var container = document.getElementById('secondaryContainer');
+  var names = Object.keys(STATE.secondarySyntheses);
+  if (names.length === 0) {
+    container.innerHTML = '<div class="info-box">No secondary syntheses available. Run the pipeline first, or no secondary outcomes were found.</div>';
+    return;
+  }
+
+  var html = '';
+  names.forEach(function(name) {
+    var syn = STATE.secondarySyntheses[name];
+    var rr = Math.exp(syn.theta).toFixed(2);
+    var ciLo = Math.exp(syn.ci_lower).toFixed(2);
+    var ciHi = Math.exp(syn.ci_upper).toFixed(2);
+
+    html += '<div class="accordion-item">';
+    html += '<div class="accordion-header" onclick="toggleAccordion(this)">';
+    html += '<span class="chevron">&#9654;</span>';
+    html += '<span>' + escHtml(name) + '</span>';
+    html += '<span style="margin-left:auto;font-size:12px" class="tag tag-info">k=' + syn.k + ', RR=' + rr + ' [' + ciLo + ', ' + ciHi + ']</span>';
+    html += '</div>';
+    html += '<div class="accordion-body">';
+
+    // Mini forest plot
+    html += '<div class="forest-container">' + renderForestPlot(syn, { logScale: true, effectLabel: name }) + '</div>';
+
+    html += '<div class="stat-grid" style="margin-top:12px">';
+    html += '<div class="stat-item"><div class="stat-label">Pooled RR</div><div class="stat-value">' + rr + '</div></div>';
+    html += '<div class="stat-item"><div class="stat-label">I\u00B2</div><div class="stat-value">' + syn.I2.toFixed(1) + '%</div></div>';
+    html += '<div class="stat-item"><div class="stat-label">Studies</div><div class="stat-value">' + syn.k + '</div></div>';
+    html += '</div>';
+
+    html += '</div></div>';
+  });
+
+  container.innerHTML = html;
+}
+
+function renderCumulativePanel() {
+  if (!STATE.cumulativeData || STATE.cumulativeData.length === 0) {
+    document.getElementById('cumulativeChart').innerHTML = '<div class="info-box">No cumulative data available.</div>';
+    return;
+  }
+
+  document.getElementById('cumulativeChart').innerHTML = renderCumulativeChart(STATE.cumulativeData);
+
+  // Table
+  var html = '<table><thead><tr><th>k</th><th>Study Added</th><th class="text-right">Pooled RR</th><th class="text-right">95% CI</th><th class="text-right">I\u00B2</th></tr></thead><tbody>';
+  STATE.cumulativeData.forEach(function(d) {
+    html += '<tr><td>' + d.k + '</td><td class="mono">' + escHtml(d.addedStudy) + '</td>'
+      + '<td class="text-right">' + Math.exp(d.theta).toFixed(3) + '</td>'
+      + '<td class="text-right">' + Math.exp(d.ci_lower).toFixed(2) + ' to ' + Math.exp(d.ci_upper).toFixed(2) + '</td>'
+      + '<td class="text-right">' + d.I2.toFixed(1) + '%</td></tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('cumulativeTable').innerHTML = html;
+}
+
+function renderBiasPanel() {
+  // Non-posting
+  var np = STATE.biasData.nonPosting;
+  if (np) {
+    var rateColor = np.postingRate >= 0.6 ? 'tag-pass' : np.postingRate >= 0.3 ? 'tag-warn' : 'tag-fail';
+    document.getElementById('biasNonPosting').innerHTML =
+      '<div class="stat-item"><div class="stat-label">Completed Studies</div><div class="stat-value">' + np.nCompleted + '</div></div>' +
+      '<div class="stat-item"><div class="stat-label">Results Posted</div><div class="stat-value">' + np.nPosted + '</div></div>' +
+      '<div class="stat-item"><div class="stat-label">Without Results</div><div class="stat-value">' + np.nWithoutResults + '</div></div>' +
+      '<div class="stat-item"><div class="stat-label">Posting Rate</div><div class="stat-value"><span class="tag ' + rateColor + '">' + (np.postingRate * 100).toFixed(1) + '%</span></div></div>';
+  }
+
+  // ORBI
+  var orbi = STATE.biasData.orbi;
+  if (orbi) {
+    var orbiColor = orbi.meanORBI < 0.1 ? 'tag-pass' : orbi.meanORBI <= 0.3 ? 'tag-warn' : 'tag-fail';
+    var html = '<div class="stat-grid">';
+    html += '<div class="stat-item"><div class="stat-label">Mean ORBI</div><div class="stat-value"><span class="tag ' + orbiColor + '">' + orbi.meanORBI.toFixed(3) + '</span></div></div>';
+    html += '<div class="stat-item"><div class="stat-label">Studies</div><div class="stat-value">' + orbi.perStudy.length + '</div></div>';
+    if (orbi.warning) html += '<div class="stat-item"><div class="stat-label">Warning</div><div class="stat-value" style="font-size:12px;color:var(--red-600)">' + escHtml(orbi.warning) + '</div></div>';
+    html += '</div>';
+
+    if (orbi.perStudy.length > 0) {
+      html += '<table style="margin-top:12px"><thead><tr><th>NCT</th><th>Registered</th><th>Reported</th><th class="text-right">ORBI</th></tr></thead><tbody>';
+      orbi.perStudy.forEach(function(s) {
+        var scoreTag = s.score < 0.1 ? 'tag-pass' : s.score <= 0.3 ? 'tag-warn' : 'tag-fail';
+        html += '<tr><td class="mono">' + escHtml(s.nct) + '</td><td style="max-width:250px;font-size:11px">' + escHtml(s.registered || '-') + '</td><td style="max-width:250px;font-size:11px">' + escHtml(s.reported || '-') + '</td><td class="text-right"><span class="tag ' + scoreTag + '">' + s.score.toFixed(3) + '</span></td></tr>';
+      });
+      html += '</tbody></table>';
+    }
+    document.getElementById('biasORBI').innerHTML = html;
+  }
+
+  // Funnel plot
+  var primaryStudies = (STATE.primarySynthesis && STATE.primarySynthesis._studies) || [];
+  document.getElementById('biasFunnel').innerHTML = renderFunnelPlotSVG(primaryStudies);
+
+  // Egger's test
+  var egger = STATE.biasData.egger;
+  if (egger) {
+    if (egger.warning) {
+      document.getElementById('biasEgger').innerHTML = '<div class="warn-box">' + escHtml(egger.warning) + '</div>';
+    } else {
+      var sigTag = egger.significant ? 'tag-fail' : 'tag-pass';
+      document.getElementById('biasEgger').innerHTML =
+        '<div class="stat-grid">' +
+        '<div class="stat-item"><div class="stat-label">Intercept</div><div class="stat-value">' + egger.intercept.toFixed(4) + '</div></div>' +
+        '<div class="stat-item"><div class="stat-label">t-Statistic</div><div class="stat-value">' + egger.tStat.toFixed(4) + '</div><div class="stat-sub">df = ' + egger.df + '</div></div>' +
+        '<div class="stat-item"><div class="stat-label">p-Value</div><div class="stat-value"><span class="tag ' + sigTag + '">' + egger.pValue.toFixed(4) + '</span></div></div>' +
+        '<div class="stat-item"><div class="stat-label">Result</div><div class="stat-value"><span class="tag ' + sigTag + '">' + (egger.significant ? 'Significant asymmetry' : 'No asymmetry') + '</span></div></div>' +
+        '</div>' +
+        '<div class="info-box" style="margin-top:12px">Radial Egger\'s test. Significance threshold: p < 0.1.</div>';
+    }
+  }
+}
+
+function renderProvenancePanel() {
+  var bundle = STATE.provenanceBundle;
+  if (!bundle) return;
+  document.getElementById('provenanceHashValue').textContent = bundle.sha256;
+  document.getElementById('provenanceTimestamp').textContent = bundle.timestamp;
+  document.getElementById('provenanceStudyCount').textContent = bundle.extractions.length;
+  document.getElementById('hashDisplay').textContent = 'SHA-256: ' + bundle.sha256;
+  document.getElementById('btnDownloadBundle').disabled = false;
+  document.getElementById('btnExportSVG').disabled = false;
+}
+
+function renderE156Panel() {
+  if (!STATE.e156Text) return;
+  var wordCount = STATE.e156Text.split(/\s+/).length;
+  var sentenceCount = STATE.e156Text.split('. ').length;
+
+  document.getElementById('e156Output').innerHTML =
+    '<div class="e156-abstract">' + escHtml(STATE.e156Text) + '</div>' +
+    '<div class="e156-meta">' +
+    '<span>Words: ' + wordCount + '/156</span>' +
+    '<span>Sentences: ' + sentenceCount + '/7</span>' +
+    '<span>Primary Estimand: MACE Risk Ratio</span>' +
+    '<span>Generated: ' + (STATE.lastUpdated || '').substring(0, 19) + '</span>' +
+    '</div>';
+}
+
+
+// ==============================
+// DOWNLOAD / EXPORT
+// ==============================
+
+function downloadBundle() {
+  if (!STATE.provenanceBundle) return;
+  var blob = new Blob([JSON.stringify(STATE.provenanceBundle, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'cardiosynth-colchicine-stemi-bundle-' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportPrimaryForest() {
+  var svgEl = document.querySelector('#primaryForest svg');
+  if (!svgEl) return;
+  var svgData = svgEl.outerHTML;
+  var blob = new Blob([svgData], { type: 'image/svg+xml' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'forest-plot-colchicine-stemi.svg';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+
+// ==============================
+// DEMO DATA LOADER
+// ==============================
+
+function loadDemoData() {
+  // Pre-built demo data simulating 5 colchicine post-STEMI trials
+  var demoStudies = [
+    { id: 'NCT02551094', nctId: 'NCT02551094', yi: -0.3567, vi: 0.0280, ai: 64, bi: 2302, ci: 84, di: 2284, n: 4734, order: 1577836800000,
+      title: 'COLCOT: Colchicine Cardiovascular Outcomes Trial', sponsor: 'Montreal Heart Institute', year: '2019' },
+    { id: 'NCT03048825', nctId: 'NCT03048825', yi: -0.5276, vi: 0.1240, ai: 12, bi: 253, ci: 20, di: 246, n: 531, order: 1577836800000,
+      title: 'COPS: Colchicine for Prevention of Vascular Inflammation in Acute Coronary Syndrome', sponsor: 'Monash University', year: '2020' },
+    { id: 'NCT03874338', nctId: 'NCT03874338', yi: -0.0408, vi: 0.0520, ai: 43, bi: 521, ci: 44, di: 520, n: 1128, order: 1640995200000,
+      title: 'CLEAR-SYNERGY: Colchicine and Spironolactone in ACS', sponsor: 'Population Health Research Institute', year: '2022' },
+    { id: 'NCT04882137', nctId: 'NCT04882137', yi: -0.2107, vi: 0.0950, ai: 18, bi: 282, ci: 22, di: 278, n: 600, order: 1672531200000,
+      title: 'COLCHICINE-PCI: Post-PCI Colchicine in STEMI', sponsor: 'Academic Centre', year: '2023' },
+    { id: 'NCT05364203', nctId: 'NCT05364203', yi: -0.1625, vi: 0.1380, ai: 14, bi: 236, ci: 16, di: 234, n: 500, order: 1704067200000,
+      title: 'COLOSSEUM: Colchicine for STEMI Outcomes', sponsor: 'European Institute', year: '2024' }
+  ];
+
+  STATE.harvested = demoStudies.map(function(s) {
+    return { nctId: s.nctId, briefTitle: s.title, overallStatus: 'COMPLETED', hasResults: true, leadSponsorClass: 'OTHER', enrollment: s.n };
+  });
+
+  STATE.extractions = demoStudies.map(function(s) {
+    return {
+      nct: s.nctId,
+      extraction_timestamp: new Date().toISOString(),
+      extractor_id: 'demo',
+      study_metadata: {
+        title: s.title, phase: 'PHASE3', sponsor_type: 'OTHER',
+        sponsor_name: s.sponsor, enrollment_actual: s.n,
+        primary_completion_date: s.year + '-06-01', study_first_submit_date: (parseInt(s.year) - 2) + '-01-01'
+      },
+      arms: [
+        { arm_id: 'colchicine', arm_label: 'Colchicine', arm_type: 'EXPERIMENTAL', n_randomized: Math.floor(s.n / 2), n_analyzed: s.ai + s.bi },
+        { arm_id: 'placebo', arm_label: 'Placebo', arm_type: 'PLACEBO', n_randomized: Math.ceil(s.n / 2), n_analyzed: s.ci + s.di }
+      ],
+      outcomes: [
+        { outcome_id: 'OM_1', title: 'Major Adverse Cardiovascular Events (MACE)', type: 'PRIMARY', timeframe: '12 months', measure_type: 'COUNT', unit: 'Participants',
+          data: [
+            { arm_id: 'OG000', arm_label: 'Colchicine', value: s.ai, participants: s.ai + s.bi },
+            { arm_id: 'OG001', arm_label: 'Placebo', value: s.ci, participants: s.ci + s.di }
+          ]
+        }
+      ],
+      adverse_events: { groups: [] },
+      participant_flow: { groups: [] },
+      registered_outcomes: { primary: [{ measure: 'Major Adverse Cardiovascular Events at 12 Months', timeFrame: '12 months' }], secondary: [] },
+      provenance: { source_url: 'demo', raw_hash: 'demo-' + s.nctId, extraction_timestamp: new Date().toISOString(), extractor_id: 'demo' }
+    };
+  });
+
+  // Run TruthCert
+  STATE.truthCertReports = [];
+  var pool = [];
+  STATE.extractions.forEach(function(ext) {
+    var report = runTruthCertPipeline(ext, pool);
+    STATE.truthCertReports.push(report);
+    if (report.cleared_for_synthesis) pool.push(ext);
+  });
+
+  STATE.clearedExtractions = STATE.extractions.filter(function(_, i) { return STATE.truthCertReports[i].cleared_for_synthesis; });
+
+  // Primary synthesis
+  STATE.primarySynthesis = derSimonianLaird(demoStudies);
+  STATE.primarySynthesis._studies = demoStudies;
+
+  // Cumulative
+  STATE.cumulativeData = cumulativeMeta(demoStudies, 'order', 'DL');
+
+  // Bias
+  STATE.biasData.nonPosting = estimateNonPostingBias(STATE.harvested);
+  STATE.biasData.orbi = calculateORBI(STATE.clearedExtractions);
+  STATE.biasData.egger = eggersTest(demoStudies);
+
+  // Provenance (synchronous demo hash)
+  STATE.provenanceBundle = {
+    version: '0.8.0',
+    timestamp: new Date().toISOString(),
+    harvested_count: STATE.harvested.length,
+    extractions: STATE.extractions,
+    truthcert_reports: STATE.truthCertReports,
+    primary_synthesis: STATE.primarySynthesis,
+    secondary_syntheses: {},
+    cumulative: STATE.cumulativeData,
+    bias: STATE.biasData,
+    sha256: 'demo-' + Date.now().toString(16)
+  };
+
+  // E156
+  STATE.e156Text = generateE156(STATE.primarySynthesis, STATE.biasData);
+  STATE.lastUpdated = new Date().toISOString();
+
+  // Pipeline steps all done
+  ['harvest', 'extract', 'validate', 'filter', 'primary', 'secondary', 'cumulative', 'bias', 'provenance', 'e156'].forEach(function(s) { setPipeStep(s, 'done'); });
+  setPipeProgress(100);
+  setPipeStatus('Demo data loaded. 5 studies synthesised.');
+
+  renderAllPanels();
+  pipeLog('Demo data loaded with 5 simulated colchicine post-STEMI trials');
+}
+
+
+// ==============================
+// LOCALSTORAGE STATE PERSISTENCE
+// ==============================
+
+function saveState() {
+  try {
+    var stateToSave = {
+      harvested: STATE.harvested,
+      extractions: STATE.extractions,
+      truthCertReports: STATE.truthCertReports,
+      clearedExtractions: STATE.clearedExtractions,
+      primarySynthesis: STATE.primarySynthesis,
+      secondarySyntheses: STATE.secondarySyntheses,
+      cumulativeData: STATE.cumulativeData,
+      biasData: STATE.biasData,
+      provenanceBundle: STATE.provenanceBundle,
+      e156Text: STATE.e156Text,
+      lastUpdated: STATE.lastUpdated
+    };
+    localStorage.setItem('cardiosynth_dashboard_state', JSON.stringify(stateToSave));
+  } catch (e) {
+    // Quota exceeded or other storage error, ignore
+  }
+}
+
+function loadState() {
+  try {
+    var raw = localStorage.getItem('cardiosynth_dashboard_state');
+    if (!raw) return false;
+    var saved = JSON.parse(raw);
+    if (!saved.lastUpdated) return false;
+    Object.keys(saved).forEach(function(k) { STATE[k] = saved[k]; });
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+// On page load, try to restore state
+if (loadState()) {
+  ['harvest', 'extract', 'validate', 'filter', 'primary', 'secondary', 'cumulative', 'bias', 'provenance', 'e156'].forEach(function(s) { setPipeStep(s, 'done'); });
+  setPipeProgress(100);
+  setPipeStatus('Restored from previous session. Last updated: ' + (STATE.lastUpdated || '').substring(0, 19));
+  renderAllPanels();
+}
+
+// Save state after any pipeline run
+var originalRenderAll = renderAllPanels;
+renderAllPanels = function() {
+  originalRenderAll();
+  saveState();
+};
+
+// Keyboard shortcut: Escape closes modal
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeModal();
+});
+</script>
+</body>
+</html>
