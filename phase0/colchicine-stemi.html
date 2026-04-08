@@ -2461,31 +2461,48 @@ async function runFullPipeline() {
   setPipeProgress(0);
 
   try {
-    // STEP 1: Harvest from CT.gov
+    // STEP 1: Harvest from CT.gov (broad search — colchicine as intervention across cardiology conditions)
     setPipeStep('harvest', 'running');
-    setPipeStatus('Querying CT.gov for colchicine + MI trials...');
-    pipeLog('Starting harvest: condition=myocardial infarction, intervention=colchicine, results_only=true');
+    setPipeStatus('Querying CT.gov for colchicine cardiovascular trials...');
+    var CARDIO_CONDITIONS = [
+      'myocardial infarction',
+      'coronary artery disease',
+      'acute coronary syndrome',
+      'pericarditis',
+      'cardiovascular diseases'
+    ];
+    pipeLog('Searching ' + CARDIO_CONDITIONS.length + ' condition queries for colchicine + results_only=true');
 
     var allStudies = [];
-    var pageToken = null;
-    var totalCount = 0;
-    var page = 0;
+    var seenNCTs = new Set();
 
-    do {
-      var qs = buildQueryString({
-        condition: 'myocardial infarction',
-        intervention: 'colchicine',
-        resultsOnly: true,
-        pageToken: pageToken
-      });
-      var data = await apiRequest('/studies?' + qs);
-      if (page === 0) { totalCount = data.totalCount || 0; pipeLog('Total matching: ' + totalCount); }
-      var studies = (data.studies || []).map(parseStudyForTable);
-      allStudies = allStudies.concat(studies);
-      pageToken = data.nextPageToken || null;
-      page++;
-      setPipeProgress(Math.round(5 + 10 * (allStudies.length / Math.max(1, totalCount))));
-    } while (pageToken && page < CTGOV_API_CONFIG.pagination.max_pages && !pipelineAbort);
+    for (var qi = 0; qi < CARDIO_CONDITIONS.length; qi++) {
+      if (pipelineAbort) break;
+      var condQ = CARDIO_CONDITIONS[qi];
+      pipeLog('Query ' + (qi+1) + '/' + CARDIO_CONDITIONS.length + ': condition=' + condQ);
+      var pageToken = null;
+      var page = 0;
+      do {
+        var qs = buildQueryString({
+          condition: condQ,
+          intervention: 'colchicine',
+          resultsOnly: true,
+          pageToken: pageToken
+        });
+        var data = await apiRequest('/studies?' + qs);
+        if (page === 0) { pipeLog('  ' + condQ + ': ' + (data.totalCount || 0) + ' total'); }
+        var studies = (data.studies || []).map(parseStudyForTable);
+        for (var si = 0; si < studies.length; si++) {
+          if (!seenNCTs.has(studies[si].nctId)) {
+            seenNCTs.add(studies[si].nctId);
+            allStudies.push(studies[si]);
+          }
+        }
+        pageToken = data.nextPageToken || null;
+        page++;
+      } while (pageToken && page < 10 && !pipelineAbort);
+      setPipeProgress(Math.round(5 + 10 * ((qi + 1) / CARDIO_CONDITIONS.length)));
+    }
 
     STATE.harvested = allStudies;
     pipeLog('Harvested ' + allStudies.length + ' studies');
