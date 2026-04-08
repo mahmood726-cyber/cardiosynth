@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CardioSynth Living Update Engine</title>
+<meta name="description" content="CardioSynth Phase 0.7 — Living Update Engine: manual update tracking and synthesis versioning">
+<meta property="og:title" content="CardioSynth Living Update Engine">
+<meta property="og:description" content="Browser-native living update tracker with CT.gov change detection, synthesis versioning, and update logs">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue-900: #1e3a5f;
+    --blue-800: #1e40af;
+    --blue-700: #1d4ed8;
+    --blue-600: #2563eb;
+    --blue-500: #3b82f6;
+    --blue-400: #60a5fa;
+    --blue-100: #dbeafe;
+    --blue-50: #eff6ff;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    --green-700: #15803d;
+    --green-600: #16a34a;
+    --green-100: #dcfce7;
+    --green-50: #f0fdf4;
+    --red-700: #b91c1c;
+    --red-600: #dc2626;
+    --red-100: #fee2e2;
+    --red-50: #fef2f2;
+    --amber-700: #b45309;
+    --amber-600: #d97706;
+    --amber-100: #fef3c7;
+    --amber-50: #fffbeb;
+    --purple-700: #7e22ce;
+    --purple-600: #9333ea;
+    --purple-100: #f3e8ff;
+    --purple-50: #faf5ff;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: #fff;
+    color: var(--gray-800);
+    line-height: 1.6;
+  }
+
+  .header {
+    background: linear-gradient(135deg, var(--blue-900) 0%, var(--blue-800) 100%);
+    color: #fff;
+    padding: 24px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .header-icon {
+    width: 48px; height: 48px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+  }
+  .header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+  .header .subtitle { font-size: 13px; opacity: 0.8; margin-top: 2px; }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px 32px; }
+
+  .panel {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .panel h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: 16px;
+  }
+
+  /* Status bar */
+  .status-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .status-card {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    padding: 16px 20px;
+  }
+  .status-card .label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--gray-500);
+    margin-bottom: 4px;
+  }
+  .status-card .value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--gray-900);
+  }
+  .status-card .detail {
+    font-size: 12px;
+    color: var(--gray-500);
+    margin-top: 2px;
+  }
+
+  /* Form controls */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .form-group input[type="text"],
+  .form-group input[type="date"],
+  .form-group select {
+    padding: 8px 12px;
+    border: 1px solid var(--gray-300);
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--gray-800);
+    background: #fff;
+    transition: border-color 0.15s;
+  }
+  .form-group input:focus, .form-group select:focus {
+    outline: none;
+    border-color: var(--blue-500);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+  }
+  .checkbox-group {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    padding-top: 20px;
+  }
+  .checkbox-group input[type="checkbox"] {
+    width: 18px; height: 18px;
+    accent-color: var(--blue-600);
+  }
+  .checkbox-group label {
+    text-transform: none;
+    font-size: 14px;
+    color: var(--gray-700);
+  }
+
+  .form-actions {
+    margin-top: 16px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  /* Buttons */
+  .btn {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary {
+    background: var(--blue-600);
+    color: #fff;
+  }
+  .btn-primary:hover:not(:disabled) { background: var(--blue-700); }
+  .btn-secondary {
+    background: var(--gray-100);
+    color: var(--gray-700);
+    border: 1px solid var(--gray-300);
+  }
+  .btn-secondary:hover:not(:disabled) { background: var(--gray-200); }
+  .btn-danger {
+    background: var(--red-600);
+    color: #fff;
+  }
+  .btn-danger:hover:not(:disabled) { background: var(--red-700); }
+  .btn-sm { padding: 6px 14px; font-size: 13px; }
+
+  /* Change cards */
+  .changes-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
+  .change-section { min-height: 80px; }
+  .change-section h3 {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .change-section.new-studies h3 { color: var(--green-700); }
+  .change-section.updated-studies h3 { color: var(--amber-700); }
+  .change-section.removed-studies h3 { color: var(--red-700); }
+
+  .change-card {
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+  .change-card.new-card { border-left: 3px solid var(--green-600); }
+  .change-card.updated-card { border-left: 3px solid var(--amber-600); }
+  .change-card.removed-card { border-left: 3px solid var(--red-600); }
+  .change-card .nct-id {
+    font-weight: 700;
+    color: var(--blue-700);
+    font-family: 'SF Mono', Consolas, monospace;
+    font-size: 12px;
+  }
+  .change-card .title {
+    color: var(--gray-700);
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+  .change-card .meta {
+    color: var(--gray-500);
+    font-size: 11px;
+    margin-top: 4px;
+  }
+
+  .empty-state {
+    color: var(--gray-400);
+    font-size: 13px;
+    font-style: italic;
+    padding: 12px 0;
+  }
+
+  /* Version timeline */
+  .timeline-container {
+    overflow-x: auto;
+    padding: 16px 0;
+  }
+  .timeline-svg { display: block; }
+
+  .version-list { list-style: none; }
+  .version-item {
+    display: flex;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--gray-100);
+    align-items: flex-start;
+  }
+  .version-item:last-child { border-bottom: none; }
+  .version-badge {
+    background: var(--blue-600);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    min-width: 42px;
+    text-align: center;
+  }
+  .version-info { flex: 1; }
+  .version-info .v-date {
+    font-size: 12px;
+    color: var(--gray-500);
+  }
+  .version-info .v-stats {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gray-800);
+    margin-top: 2px;
+  }
+  .version-info .v-change {
+    font-size: 12px;
+    margin-top: 4px;
+    padding: 4px 8px;
+    background: var(--amber-50);
+    border: 1px solid var(--amber-100);
+    border-radius: 6px;
+    color: var(--amber-700);
+    display: inline-block;
+  }
+  .version-info .v-hash {
+    font-size: 11px;
+    color: var(--gray-400);
+    font-family: 'SF Mono', Consolas, monospace;
+    margin-top: 2px;
+  }
+  .version-actions { flex-shrink: 0; }
+
+  /* Update log */
+  .log-list { list-style: none; max-height: 400px; overflow-y: auto; }
+  .log-item {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--gray-100);
+    font-size: 13px;
+  }
+  .log-item:last-child { border-bottom: none; }
+  .log-item .log-ts {
+    font-size: 11px;
+    color: var(--gray-400);
+    font-family: 'SF Mono', Consolas, monospace;
+  }
+  .log-item .log-msg {
+    color: var(--gray-700);
+    margin-top: 2px;
+  }
+  .log-item .log-details {
+    font-size: 12px;
+    color: var(--gray-500);
+    margin-top: 2px;
+    background: var(--gray-50);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-family: 'SF Mono', Consolas, monospace;
+    word-break: break-all;
+  }
+
+  /* Activity log (live) */
+  .activity-log {
+    background: var(--gray-900);
+    color: #a3e635;
+    font-family: 'SF Mono', Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    padding: 16px;
+    border-radius: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  /* Spinner */
+  .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Two column layout */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  @media (max-width: 900px) {
+    .two-col, .changes-grid, .status-bar, .form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Tabs */
+  .tab-bar {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--gray-200);
+    margin-bottom: 16px;
+  }
+  .tab-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--gray-500);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.15s;
+  }
+  .tab-btn:hover { color: var(--gray-700); }
+  .tab-btn.active {
+    color: var(--blue-700);
+    border-bottom-color: var(--blue-600);
+  }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Confirmation modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.visible { display: flex; }
+  .modal-box {
+    background: #fff;
+    border-radius: 12px;
+    padding: 28px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+  .modal-box h3 { font-size: 16px; margin-bottom: 12px; }
+  .modal-box p { font-size: 14px; color: var(--gray-600); margin-bottom: 20px; }
+  .modal-box .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">&#x1F504;</div>
+  <div>
+    <h1>CardioSynth Living Update Engine</h1>
+    <div class="subtitle">Phase 0.7 &mdash; Manual update tracking &amp; synthesis versioning</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <div class="status-card">
+      <div class="label">Last Check</div>
+      <div class="value" id="statusLastCheck">Never</div>
+      <div class="detail" id="statusLastCheckDetail">No queries run yet</div>
+    </div>
+    <div class="status-card">
+      <div class="label">Studies in Snapshot</div>
+      <div class="value" id="statusStudyCount">0</div>
+      <div class="detail" id="statusStudyCountDetail">No snapshot stored</div>
+    </div>
+    <div class="status-card">
+      <div class="label">Synthesis Versions</div>
+      <div class="value" id="statusVersionCount">0</div>
+      <div class="detail" id="statusVersionDetail">No versions saved</div>
+    </div>
+    <div class="status-card">
+      <div class="label">Log Entries</div>
+      <div class="value" id="statusLogCount">0</div>
+      <div class="detail" id="statusLogDetail">Update log empty</div>
+    </div>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="tab-update">Update Checker</button>
+    <button class="tab-btn" data-tab="tab-versions">Synthesis Versions</button>
+    <button class="tab-btn" data-tab="tab-log">Update Log</button>
+    <button class="tab-btn" data-tab="tab-config">Query Config</button>
+  </div>
+
+  <!-- Tab: Update Checker -->
+  <div class="tab-content active" id="tab-update">
+    <div class="panel">
+      <h2>Check for CT.gov Updates</h2>
+      <p style="font-size:13px;color:var(--gray-500);margin-bottom:16px;">
+        Re-runs your stored CT.gov query and compares against the previous snapshot to detect new, updated, or removed studies.
+      </p>
+      <div class="form-actions">
+        <button class="btn btn-primary" id="btnCheckUpdates" onclick="handleCheckUpdates()">
+          Check for Updates
+        </button>
+        <span id="updateStatus" style="font-size:13px;color:var(--gray-500);"></span>
+      </div>
+    </div>
+
+    <!-- Change Results -->
+    <div id="changeResults" style="display:none;">
+      <div class="panel">
+        <h2>Changes Detected</h2>
+        <div id="changeSummary" style="font-size:14px;color:var(--gray-700);margin-bottom:16px;"></div>
+        <div class="changes-grid">
+          <div class="change-section new-studies">
+            <h3>
+              <svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="7" y1="4" x2="7" y2="10" stroke="currentColor" stroke-width="1.5"/><line x1="4" y1="7" x2="10" y2="7" stroke="currentColor" stroke-width="1.5"/></svg>
+              New Studies (<span id="newCount">0</span>)
+            </h3>
+            <div id="newStudiesList"></div>
+          </div>
+          <div class="change-section updated-studies">
+            <h3>
+              <svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1.5v11M3.5 8.5L7 12.5l3.5-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Updated Studies (<span id="updatedCount">0</span>)
+            </h3>
+            <div id="updatedStudiesList"></div>
+          </div>
+          <div class="change-section removed-studies">
+            <h3>
+              <svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="4" y1="7" x2="10" y2="7" stroke="currentColor" stroke-width="1.5"/></svg>
+              Removed Studies (<span id="removedCount">0</span>)
+            </h3>
+            <div id="removedStudiesList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity Log -->
+    <details style="margin-top:16px;">
+      <summary style="font-size:13px;font-weight:600;color:var(--gray-500);cursor:pointer;">Activity Log</summary>
+      <div class="activity-log" id="activityLog">Ready.</div>
+    </details>
+  </div>
+
+  <!-- Tab: Synthesis Versions -->
+  <div class="tab-content" id="tab-versions">
+    <div class="panel">
+      <h2>Version Timeline</h2>
+      <p style="font-size:13px;color:var(--gray-500);margin-bottom:16px;">
+        Each synthesis version captures k, pooled effect, CI, I&sup2;, tau&sup2;, and a SHA-256 integrity hash.
+      </p>
+      <div class="timeline-container" id="timelineSvgContainer"></div>
+    </div>
+
+    <div class="panel">
+      <h2>All Versions</h2>
+      <div id="versionListContainer">
+        <div class="empty-state">No synthesis versions saved yet.</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Save New Version (Demo)</h2>
+      <p style="font-size:13px;color:var(--gray-500);margin-bottom:16px;">
+        Manually enter synthesis state for testing. In production, MetaEngine pipes results here.
+      </p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Number of Studies (k)</label>
+          <input type="text" id="demoK" value="12" placeholder="e.g. 12">
+        </div>
+        <div class="form-group">
+          <label>Pooled Effect (log scale)</label>
+          <input type="text" id="demoTheta" value="-0.2877" placeholder="e.g. -0.2877">
+        </div>
+        <div class="form-group">
+          <label>Effect Measure</label>
+          <select id="demoMeasure">
+            <option value="logRR" selected>logRR</option>
+            <option value="logOR">logOR</option>
+            <option value="logHR">logHR</option>
+            <option value="SMD">SMD</option>
+            <option value="MD">MD</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>CI Lower</label>
+          <input type="text" id="demoCILow" value="-0.4463" placeholder="e.g. -0.4463">
+        </div>
+        <div class="form-group">
+          <label>CI Upper</label>
+          <input type="text" id="demoCIHigh" value="-0.1291" placeholder="e.g. -0.1291">
+        </div>
+        <div class="form-group">
+          <label>I&sup2; (%)</label>
+          <input type="text" id="demoI2" value="18.3" placeholder="e.g. 18.3">
+        </div>
+        <div class="form-group">
+          <label>tau&sup2;</label>
+          <input type="text" id="demoTau2" value="0.0042" placeholder="e.g. 0.0042">
+        </div>
+        <div class="form-group">
+          <label>Study IDs (comma-sep)</label>
+          <input type="text" id="demoStudyIds" value="NCT001,NCT002,NCT003" placeholder="NCT001,NCT002,...">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="handleSaveVersion()">Save Version</button>
+        <button class="btn btn-danger btn-sm" onclick="confirmClearVersions()">Clear All Versions</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: Update Log -->
+  <div class="tab-content" id="tab-log">
+    <div class="panel">
+      <h2>Update Log</h2>
+      <p style="font-size:13px;color:var(--gray-500);margin-bottom:16px;">
+        Chronological record of all update events. Persisted in localStorage.
+      </p>
+      <div id="updateLogContainer">
+        <div class="empty-state">No update log entries yet.</div>
+      </div>
+      <div class="form-actions" style="margin-top:16px;">
+        <button class="btn btn-danger btn-sm" onclick="confirmClearLog()">Clear Log</button>
+        <button class="btn btn-secondary btn-sm" onclick="exportLog()">Export Log (JSON)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: Query Config -->
+  <div class="tab-content" id="tab-config">
+    <div class="panel">
+      <h2>Living Query Configuration</h2>
+      <p style="font-size:13px;color:var(--gray-500);margin-bottom:16px;">
+        Configure the CT.gov query that the update checker re-runs. Stored in localStorage.
+      </p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Condition</label>
+          <input type="text" id="cfgCondition" placeholder="e.g. myocardial infarction">
+        </div>
+        <div class="form-group">
+          <label>Intervention</label>
+          <input type="text" id="cfgIntervention" placeholder="e.g. colchicine">
+        </div>
+        <div class="form-group">
+          <label>Study Type</label>
+          <select id="cfgStudyType">
+            <option value="">Any</option>
+            <option value="INTERVENTIONAL">Interventional</option>
+            <option value="OBSERVATIONAL">Observational</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Date From</label>
+          <input type="date" id="cfgDateFrom">
+        </div>
+        <div class="form-group">
+          <label>Date To</label>
+          <input type="date" id="cfgDateTo">
+        </div>
+        <div class="form-group checkbox-group">
+          <input type="checkbox" id="cfgResultsOnly">
+          <label for="cfgResultsOnly">Results posted only</label>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="saveQueryConfig()">Save Configuration</button>
+        <button class="btn btn-secondary" onclick="loadQueryConfig()">Reload from Storage</button>
+        <button class="btn btn-danger btn-sm" onclick="confirmClearSnapshot()">Clear Snapshot</button>
+      </div>
+      <div id="configStatus" style="font-size:13px;color:var(--gray-500);margin-top:12px;"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-box">
+    <h3 id="modalTitle">Confirm Action</h3>
+    <p id="modalMessage">Are you sure?</p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary btn-sm" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger btn-sm" id="modalConfirmBtn" onclick="closeModal()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CardioSynth Living Update Engine — Phase 0.7
+// Single-file, zero-dependency browser tool
+// ============================================================
+
+// --- Constants: localStorage keys ---
+var LS_LAST_QUERY_TS = 'cardiosynth_last_query_ts';
+var LS_SYNTHESIS_VERSIONS = 'cardiosynth_synthesis_versions';
+var LS_UPDATE_LOG = 'cardiosynth_update_log';
+var LS_QUERY_SNAPSHOT = 'cardiosynth_query_snapshot';
+var LS_QUERY_CONFIG = 'cardiosynth_query_config';
+
+// --- Utilities ---
+function sleep(ms) { return new Promise(function(resolve) { setTimeout(resolve, ms); }); }
+
+async function retry(fn, config) {
+  var lastError;
+  for (var attempt = 0; attempt < config.max_attempts; attempt++) {
+    try { return await fn(); } catch (err) {
+      lastError = err;
+      if (attempt < config.max_attempts - 1) {
+        var delay = Math.min(
+          config.initial_delay_ms * Math.pow(config.backoff_multiplier, attempt),
+          config.max_delay_ms
+        );
+        actLog('Retry attempt ' + (attempt + 1) + ', waiting ' + delay + 'ms...');
+        await sleep(delay);
+      }
+    }
+  }
+  throw lastError;
+}
+
+function actLog(msg) {
+  var el = document.getElementById('activityLog');
+  if (!el) return;
+  var ts = new Date().toISOString().substr(11, 12);
+  el.textContent += '[' + ts + '] ' + msg + '\n';
+  el.scrollTop = el.scrollHeight;
+}
+
+// SHA-256 hash of a JSON-serializable object
+async function sha256(obj) {
+  var str = JSON.stringify(obj);
+  var data = new TextEncoder().encode(str);
+  var hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  var hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+}
+
+function formatDate(isoStr) {
+  if (!isoStr) return 'N/A';
+  try {
+    var d = new Date(isoStr);
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+      + ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  } catch (e) { return isoStr; }
+}
+
+function escapeHtml(s) {
+  var div = document.createElement('div');
+  div.appendChild(document.createTextNode(s));
+  return div.innerHTML;
+}
+
+// --- CT.gov API v2 Client (inline, matching ct-harvester.html) ---
+var CTGOV_API_CONFIG = {
+  base_url: 'https://clinicaltrials.gov/api/v2',
+  rate_limit: {
+    requests_per_minute: 10,
+    burst_limit: 3
+  },
+  retry: {
+    max_attempts: 3,
+    initial_delay_ms: 1000,
+    backoff_multiplier: 2,
+    max_delay_ms: 30000
+  },
+  timeout_ms: 30000,
+  pagination: {
+    page_size: 100,
+    max_pages: 100
+  }
+};
+
+var rateLimiter = {
+  tokens: CTGOV_API_CONFIG.rate_limit.burst_limit,
+  lastRefill: Date.now()
+};
+
+async function acquireToken() {
+  var now = Date.now();
+  var elapsed = now - rateLimiter.lastRefill;
+  var refillAmount = (elapsed / 60000) * CTGOV_API_CONFIG.rate_limit.requests_per_minute;
+  rateLimiter.tokens = Math.min(
+    CTGOV_API_CONFIG.rate_limit.burst_limit,
+    rateLimiter.tokens + refillAmount
+  );
+  rateLimiter.lastRefill = now;
+  if (rateLimiter.tokens >= 1) {
+    rateLimiter.tokens--;
+    return;
+  }
+  var waitTime = ((1 - rateLimiter.tokens) / CTGOV_API_CONFIG.rate_limit.requests_per_minute) * 60000;
+  actLog('Rate limit: waiting ' + Math.round(waitTime) + 'ms for token');
+  await sleep(waitTime);
+  rateLimiter.tokens = 0;
+}
+
+async function apiRequest(endpoint) {
+  await acquireToken();
+  var url = CTGOV_API_CONFIG.base_url + endpoint;
+  actLog('GET ' + endpoint.substring(0, 120) + (endpoint.length > 120 ? '...' : ''));
+  var controller = new AbortController();
+  var timeoutId = setTimeout(function() { controller.abort(); }, CTGOV_API_CONFIG.timeout_ms);
+  try {
+    var response = await retry(
+      async function() {
+        var res = await fetch(url, {
+          signal: controller.signal,
+          headers: { 'Accept': 'application/json' }
+        });
+        if (!res.ok) {
+          if (res.status === 429) {
+            var retryAfter = parseInt(res.headers.get('Retry-After') || '60', 10);
+            actLog('Rate limited by server, waiting ' + retryAfter + 's');
+            await sleep(retryAfter * 1000);
+            throw new Error('Rate limited');
+          }
+          var body = await res.text().catch(function() { return ''; });
+          throw new Error('API error: ' + res.status + ' ' + res.statusText + ' ' + body.substring(0, 200));
+        }
+        return res;
+      },
+      CTGOV_API_CONFIG.retry
+    );
+    clearTimeout(timeoutId);
+    return await response.json();
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      throw new Error('Request timeout after ' + CTGOV_API_CONFIG.timeout_ms + 'ms');
+    }
+    throw err;
+  }
+}
+
+// --- Query Builder ---
+function buildQueryString(params) {
+  var parts = [];
+  if (params.condition) {
+    parts.push('query.cond=' + encodeURIComponent(params.condition));
+  }
+  if (params.intervention) {
+    parts.push('query.intr=' + encodeURIComponent(params.intervention));
+  }
+  if (params.studyType) {
+    parts.push('filter.studyType=' + encodeURIComponent(params.studyType));
+  }
+  if (params.resultsOnly) {
+    parts.push('aggFilters=results:with');
+  }
+  if (params.dateFrom || params.dateTo) {
+    var from = params.dateFrom || 'MIN';
+    var to = params.dateTo || 'MAX';
+    parts.push('filter.advanced=' + encodeURIComponent('AREA[CompletionDate]RANGE[' + from + ',' + to + ']'));
+  }
+  parts.push('pageSize=' + (params.pageSize || CTGOV_API_CONFIG.pagination.page_size));
+  if (params.pageToken) {
+    parts.push('pageToken=' + params.pageToken);
+  }
+  parts.push('countTotal=true');
+  return parts.join('&');
+}
+
+// --- Fetch all pages for a query ---
+async function fetchAllStudies(queryParams) {
+  var allStudies = [];
+  var pageToken = null;
+  var totalCount = 0;
+  var page = 0;
+
+  while (page < CTGOV_API_CONFIG.pagination.max_pages) {
+    var params = Object.assign({}, queryParams);
+    if (pageToken) params.pageToken = pageToken;
+    var qs = buildQueryString(params);
+    var data = await apiRequest('/studies?' + qs);
+
+    if (page === 0 && data.totalCount !== undefined) {
+      totalCount = data.totalCount;
+      actLog('Total studies matching query: ' + totalCount);
+    }
+
+    var studies = data.studies || [];
+    if (studies.length === 0) break;
+
+    for (var i = 0; i < studies.length; i++) {
+      var s = studies[i];
+      var proto = s.protocolSection || {};
+      var ident = proto.identificationModule || {};
+      var stat = proto.statusModule || {};
+      allStudies.push({
+        nctId: ident.nctId || 'N/A',
+        briefTitle: ident.briefTitle || 'Untitled',
+        overallStatus: stat.overallStatus || 'Unknown',
+        hasResults: !!s.hasResults,
+        lastUpdatePostDate: (stat.lastUpdatePostDateStruct && stat.lastUpdatePostDateStruct.date) || ''
+      });
+    }
+
+    actLog('Fetched page ' + (page + 1) + ': ' + studies.length + ' studies (' + allStudies.length + '/' + totalCount + ')');
+
+    pageToken = data.nextPageToken;
+    if (!pageToken) break;
+    page++;
+  }
+
+  return { studies: allStudies, totalCount: totalCount };
+}
+
+// --- Update Checker ---
+function checkForUpdates(lastQueryTimestamp, queryParams) {
+  // Returns a Promise resolving to the diff object
+  return (async function() {
+    // 1. Store timestamp
+    localStorage.setItem(LS_LAST_QUERY_TS, new Date().toISOString());
+
+    // 2. Re-run query
+    actLog('Re-running CT.gov query...');
+    var result = await fetchAllStudies(queryParams);
+    var currentStudies = result.studies;
+
+    // 3. Load previous snapshot
+    var prevRaw = localStorage.getItem(LS_QUERY_SNAPSHOT);
+    var prevStudies = prevRaw ? JSON.parse(prevRaw) : [];
+
+    // Build lookup maps by NCT ID
+    var prevMap = {};
+    for (var i = 0; i < prevStudies.length; i++) {
+      prevMap[prevStudies[i].nctId] = prevStudies[i];
+    }
+    var currMap = {};
+    for (var j = 0; j < currentStudies.length; j++) {
+      currMap[currentStudies[j].nctId] = currentStudies[j];
+    }
+
+    // 4. Compare
+    var newStudies = [];
+    var updatedStudies = [];
+    var removedStudies = [];
+
+    // New and updated
+    for (var nctId in currMap) {
+      if (!prevMap[nctId]) {
+        newStudies.push(currMap[nctId]);
+      } else {
+        // Check if anything changed (title, status, results flag, or update date)
+        var prev = prevMap[nctId];
+        var curr = currMap[nctId];
+        if (prev.overallStatus !== curr.overallStatus ||
+            prev.hasResults !== curr.hasResults ||
+            prev.lastUpdatePostDate !== curr.lastUpdatePostDate ||
+            prev.briefTitle !== curr.briefTitle) {
+          updatedStudies.push(curr);
+        }
+      }
+    }
+
+    // Removed
+    for (var prevId in prevMap) {
+      if (!currMap[prevId]) {
+        removedStudies.push(prevMap[prevId]);
+      }
+    }
+
+    // Save new snapshot
+    localStorage.setItem(LS_QUERY_SNAPSHOT, JSON.stringify(currentStudies));
+
+    var now = new Date().toISOString();
+    var diffResult = {
+      newStudies: newStudies,
+      updatedStudies: updatedStudies,
+      removedStudies: removedStudies,
+      lastCheck: lastQueryTimestamp || null,
+      currentCheck: now,
+      totalCurrent: currentStudies.length,
+      totalPrevious: prevStudies.length
+    };
+
+    actLog('Comparison complete: ' + newStudies.length + ' new, ' + updatedStudies.length + ' updated, ' + removedStudies.length + ' removed');
+
+    return diffResult;
+  })();
+}
+
+// --- Synthesis Versioning ---
+async function saveSynthesisVersion(synthesisState) {
+  var versions = JSON.parse(localStorage.getItem(LS_SYNTHESIS_VERSIONS) || '[]');
+  var version = {
+    version: 'v' + (versions.length + 1),
+    timestamp: new Date().toISOString(),
+    k: synthesisState.k,
+    pooledEffect: synthesisState.theta,
+    pooledCI: [synthesisState.ci_lower, synthesisState.ci_upper],
+    I2: synthesisState.I2,
+    tau2: synthesisState.tau2,
+    studyIds: synthesisState.weights ? synthesisState.weights.map(function(w) { return w.id; }) : (synthesisState.studyIds || []),
+    effectMeasure: synthesisState.effectMeasure || 'logRR',
+    hash: null
+  };
+  // Compute SHA-256 hash of the version state (excluding hash field itself)
+  var hashInput = {
+    k: version.k,
+    pooledEffect: version.pooledEffect,
+    pooledCI: version.pooledCI,
+    I2: version.I2,
+    tau2: version.tau2,
+    studyIds: version.studyIds,
+    effectMeasure: version.effectMeasure,
+    timestamp: version.timestamp
+  };
+  version.hash = await sha256(hashInput);
+  versions.push(version);
+  localStorage.setItem(LS_SYNTHESIS_VERSIONS, JSON.stringify(versions));
+  return version;
+}
+
+function getSynthesisVersions() {
+  return JSON.parse(localStorage.getItem(LS_SYNTHESIS_VERSIONS) || '[]');
+}
+
+function compareSynthesisVersions(v1, v2) {
+  return {
+    kChange: v2.k - v1.k,
+    effectChange: v2.pooledEffect - v1.pooledEffect,
+    I2Change: v2.I2 - v1.I2,
+    tau2Change: v2.tau2 - v1.tau2,
+    newStudies: v2.studyIds.filter(function(id) { return v1.studyIds.indexOf(id) === -1; }),
+    removedStudies: v1.studyIds.filter(function(id) { return v2.studyIds.indexOf(id) === -1; })
+  };
+}
+
+// --- Update Log ---
+function logUpdate(message, details) {
+  var log = JSON.parse(localStorage.getItem(LS_UPDATE_LOG) || '[]');
+  log.push({
+    timestamp: new Date().toISOString(),
+    message: message,
+    details: details || null
+  });
+  localStorage.setItem(LS_UPDATE_LOG, JSON.stringify(log));
+}
+
+function getUpdateLog() {
+  return JSON.parse(localStorage.getItem(LS_UPDATE_LOG) || '[]');
+}
+
+// --- Query Config ---
+function saveQueryConfig() {
+  var config = {
+    condition: document.getElementById('cfgCondition').value.trim(),
+    intervention: document.getElementById('cfgIntervention').value.trim(),
+    studyType: document.getElementById('cfgStudyType').value,
+    dateFrom: document.getElementById('cfgDateFrom').value,
+    dateTo: document.getElementById('cfgDateTo').value,
+    resultsOnly: document.getElementById('cfgResultsOnly').checked
+  };
+  if (!config.condition && !config.intervention) {
+    document.getElementById('configStatus').textContent = 'Error: At least condition or intervention is required.';
+    document.getElementById('configStatus').style.color = 'var(--red-600)';
+    return;
+  }
+  localStorage.setItem(LS_QUERY_CONFIG, JSON.stringify(config));
+  document.getElementById('configStatus').textContent = 'Configuration saved at ' + new Date().toLocaleTimeString();
+  document.getElementById('configStatus').style.color = 'var(--green-600)';
+  logUpdate('Query configuration updated', config);
+  refreshStatusBar();
+}
+
+function loadQueryConfig() {
+  var raw = localStorage.getItem(LS_QUERY_CONFIG);
+  if (!raw) {
+    document.getElementById('configStatus').textContent = 'No stored configuration found.';
+    document.getElementById('configStatus').style.color = 'var(--amber-600)';
+    return null;
+  }
+  var config = JSON.parse(raw);
+  document.getElementById('cfgCondition').value = config.condition || '';
+  document.getElementById('cfgIntervention').value = config.intervention || '';
+  document.getElementById('cfgStudyType').value = config.studyType || '';
+  document.getElementById('cfgDateFrom').value = config.dateFrom || '';
+  document.getElementById('cfgDateTo').value = config.dateTo || '';
+  document.getElementById('cfgResultsOnly').checked = !!config.resultsOnly;
+  document.getElementById('configStatus').textContent = 'Configuration loaded from storage.';
+  document.getElementById('configStatus').style.color = 'var(--blue-600)';
+  return config;
+}
+
+// --- UI: Handle Check for Updates ---
+async function handleCheckUpdates() {
+  var btn = document.getElementById('btnCheckUpdates');
+  var statusEl = document.getElementById('updateStatus');
+
+  // Load query config
+  var raw = localStorage.getItem(LS_QUERY_CONFIG);
+  if (!raw) {
+    statusEl.textContent = 'No query configured. Go to Query Config tab first.';
+    statusEl.style.color = 'var(--red-600)';
+    return;
+  }
+  var queryParams = JSON.parse(raw);
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Checking...';
+  statusEl.textContent = '';
+
+  var lastTs = localStorage.getItem(LS_LAST_QUERY_TS) || null;
+
+  try {
+    var diff = await checkForUpdates(lastTs, queryParams);
+
+    // Render results
+    renderChangeResults(diff);
+
+    // Log the update
+    var msg = 'Update check: ' + diff.newStudies.length + ' new, ' +
+              diff.updatedStudies.length + ' updated, ' +
+              diff.removedStudies.length + ' removed';
+    logUpdate(msg, {
+      newStudies: diff.newStudies.map(function(s) { return s.nctId; }),
+      updatedStudies: diff.updatedStudies.map(function(s) { return s.nctId; }),
+      removedStudies: diff.removedStudies.map(function(s) { return s.nctId; }),
+      totalCurrent: diff.totalCurrent
+    });
+
+    statusEl.textContent = 'Check completed at ' + formatDate(diff.currentCheck);
+    statusEl.style.color = 'var(--green-600)';
+
+    refreshStatusBar();
+    renderUpdateLog();
+
+  } catch (err) {
+    actLog('ERROR: ' + err.message);
+    statusEl.textContent = 'Error: ' + err.message;
+    statusEl.style.color = 'var(--red-600)';
+    logUpdate('Update check failed', { error: err.message });
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Check for Updates';
+  }
+}
+
+function renderChangeResults(diff) {
+  var container = document.getElementById('changeResults');
+  container.style.display = 'block';
+
+  // Summary
+  var total = diff.newStudies.length + diff.updatedStudies.length + diff.removedStudies.length;
+  document.getElementById('changeSummary').innerHTML = total === 0
+    ? 'No changes detected. Snapshot has <strong>' + diff.totalCurrent + '</strong> studies.'
+    : '<strong>' + total + '</strong> change(s) detected. Snapshot: <strong>' + diff.totalPrevious + '</strong> &rarr; <strong>' + diff.totalCurrent + '</strong> studies.';
+
+  document.getElementById('newCount').textContent = diff.newStudies.length;
+  document.getElementById('updatedCount').textContent = diff.updatedStudies.length;
+  document.getElementById('removedCount').textContent = diff.removedStudies.length;
+
+  renderStudyCards('newStudiesList', diff.newStudies, 'new-card');
+  renderStudyCards('updatedStudiesList', diff.updatedStudies, 'updated-card');
+  renderStudyCards('removedStudiesList', diff.removedStudies, 'removed-card');
+}
+
+function renderStudyCards(containerId, studies, cardClass) {
+  var el = document.getElementById(containerId);
+  if (studies.length === 0) {
+    el.innerHTML = '<div class="empty-state">None</div>';
+    return;
+  }
+  var html = '';
+  var limit = Math.min(studies.length, 20);
+  for (var i = 0; i < limit; i++) {
+    var s = studies[i];
+    html += '<div class="change-card ' + cardClass + '">' +
+      '<div class="nct-id">' + escapeHtml(s.nctId) + '</div>' +
+      '<div class="title">' + escapeHtml(s.briefTitle) + '</div>' +
+      '<div class="meta">' + escapeHtml(s.overallStatus) +
+      (s.hasResults ? ' | Has results' : '') + '</div>' +
+      '</div>';
+  }
+  if (studies.length > 20) {
+    html += '<div class="empty-state">... and ' + (studies.length - 20) + ' more</div>';
+  }
+  el.innerHTML = html;
+}
+
+// --- UI: Save Synthesis Version ---
+async function handleSaveVersion() {
+  var k = parseInt(document.getElementById('demoK').value, 10);
+  var theta = parseFloat(document.getElementById('demoTheta').value);
+  var ciLow = parseFloat(document.getElementById('demoCILow').value);
+  var ciHigh = parseFloat(document.getElementById('demoCIHigh').value);
+  var I2 = parseFloat(document.getElementById('demoI2').value);
+  var tau2 = parseFloat(document.getElementById('demoTau2').value);
+  var measure = document.getElementById('demoMeasure').value;
+  var idsRaw = document.getElementById('demoStudyIds').value.trim();
+  var ids = idsRaw ? idsRaw.split(',').map(function(s) { return s.trim(); }).filter(Boolean) : [];
+
+  if (!isFinite(k) || k < 1) { alert('Invalid k'); return; }
+  if (!isFinite(theta)) { alert('Invalid pooled effect'); return; }
+
+  var state = {
+    k: k,
+    theta: theta,
+    ci_lower: isFinite(ciLow) ? ciLow : null,
+    ci_upper: isFinite(ciHigh) ? ciHigh : null,
+    I2: isFinite(I2) ? I2 : null,
+    tau2: isFinite(tau2) ? tau2 : null,
+    effectMeasure: measure,
+    studyIds: ids
+  };
+
+  var ver = await saveSynthesisVersion(state);
+  logUpdate('Synthesis version ' + ver.version + ' saved: k=' + ver.k + ', effect=' + ver.pooledEffect.toFixed(4), {
+    version: ver.version,
+    k: ver.k,
+    pooledEffect: ver.pooledEffect,
+    I2: ver.I2,
+    hash: ver.hash
+  });
+
+  renderVersions();
+  renderUpdateLog();
+  refreshStatusBar();
+}
+
+// --- UI: Render Versions ---
+function renderVersions() {
+  var versions = getSynthesisVersions();
+  var container = document.getElementById('versionListContainer');
+
+  if (versions.length === 0) {
+    container.innerHTML = '<div class="empty-state">No synthesis versions saved yet.</div>';
+    renderTimelineSvg([]);
+    return;
+  }
+
+  var html = '<ul class="version-list">';
+  for (var i = versions.length - 1; i >= 0; i--) {
+    var v = versions[i];
+    var changeHtml = '';
+    if (i > 0) {
+      var diff = compareSynthesisVersions(versions[i - 1], v);
+      var parts = [];
+      if (diff.kChange !== 0) parts.push('k ' + (diff.kChange > 0 ? '+' : '') + diff.kChange);
+      if (Math.abs(diff.effectChange) > 1e-6) parts.push('effect ' + (diff.effectChange > 0 ? '+' : '') + diff.effectChange.toFixed(4));
+      if (diff.I2Change !== null && diff.I2Change !== undefined && Math.abs(diff.I2Change) > 0.01) {
+        parts.push('I\u00B2 ' + versions[i - 1].I2.toFixed(1) + '% \u2192 ' + v.I2.toFixed(1) + '%');
+      }
+      if (diff.newStudies.length > 0) parts.push('+' + diff.newStudies.length + ' studies');
+      if (diff.removedStudies.length > 0) parts.push('-' + diff.removedStudies.length + ' studies');
+      if (parts.length > 0) {
+        changeHtml = '<div class="v-change">' + escapeHtml(parts.join(', ')) + '</div>';
+      }
+    }
+
+    var ciStr = (v.pooledCI && v.pooledCI[0] !== null && v.pooledCI[1] !== null)
+      ? ' [' + v.pooledCI[0].toFixed(4) + ', ' + v.pooledCI[1].toFixed(4) + ']'
+      : '';
+    var i2Str = (v.I2 !== null && v.I2 !== undefined) ? ', I\u00B2=' + v.I2.toFixed(1) + '%' : '';
+    var tau2Str = (v.tau2 !== null && v.tau2 !== undefined) ? ', \u03C4\u00B2=' + v.tau2.toFixed(4) : '';
+
+    html += '<li class="version-item">' +
+      '<div class="version-badge">' + escapeHtml(v.version) + '</div>' +
+      '<div class="version-info">' +
+        '<div class="v-date">' + formatDate(v.timestamp) + ' &middot; ' + escapeHtml(v.effectMeasure) + '</div>' +
+        '<div class="v-stats">k=' + v.k + ', ' + v.effectMeasure + '=' + v.pooledEffect.toFixed(4) + ciStr + i2Str + tau2Str + '</div>' +
+        changeHtml +
+        '<div class="v-hash">SHA-256: ' + (v.hash ? v.hash.substring(0, 16) + '...' : 'N/A') + '</div>' +
+      '</div>' +
+    '</li>';
+  }
+  html += '</ul>';
+  container.innerHTML = html;
+
+  renderTimelineSvg(versions);
+}
+
+// --- UI: SVG Timeline ---
+function renderTimelineSvg(versions) {
+  var container = document.getElementById('timelineSvgContainer');
+  if (versions.length === 0) {
+    container.innerHTML = '<div class="empty-state">No versions to display.</div>';
+    return;
+  }
+
+  var nodeW = 140;
+  var nodeH = 90;
+  var gap = 40;
+  var padX = 30;
+  var padY = 20;
+  var totalW = padX * 2 + versions.length * nodeW + (versions.length - 1) * gap;
+  var totalH = padY * 2 + nodeH;
+
+  var svg = '<svg class="timeline-svg" width="' + totalW + '" height="' + totalH + '" viewBox="0 0 ' + totalW + ' ' + totalH + '" xmlns="http://www.w3.org/2000/svg">';
+
+  // Connection lines
+  for (var i = 0; i < versions.length - 1; i++) {
+    var x1 = padX + i * (nodeW + gap) + nodeW;
+    var x2 = padX + (i + 1) * (nodeW + gap);
+    var y = padY + nodeH / 2;
+    svg += '<line x1="' + x1 + '" y1="' + y + '" x2="' + x2 + '" y2="' + y + '" stroke="#d1d5db" stroke-width="2" stroke-dasharray="6,3"/>';
+    // Arrow
+    svg += '<polygon points="' + (x2 - 6) + ',' + (y - 4) + ' ' + x2 + ',' + y + ' ' + (x2 - 6) + ',' + (y + 4) + '" fill="#9ca3af"/>';
+  }
+
+  // Version nodes
+  for (var j = 0; j < versions.length; j++) {
+    var v = versions[j];
+    var x = padX + j * (nodeW + gap);
+    var cy = padY;
+
+    // Determine node color based on change direction
+    var fillColor = '#1e40af';
+    if (j > 0) {
+      var eDiff = v.pooledEffect - versions[j - 1].pooledEffect;
+      if (Math.abs(eDiff) > 1e-6) {
+        fillColor = eDiff < 0 ? '#15803d' : '#b91c1c';
+      }
+    }
+
+    svg += '<rect x="' + x + '" y="' + cy + '" width="' + nodeW + '" height="' + nodeH + '" rx="10" fill="' + fillColor + '" opacity="0.9"/>';
+    svg += '<text x="' + (x + nodeW / 2) + '" y="' + (cy + 20) + '" text-anchor="middle" fill="white" font-size="14" font-weight="700">' + escapeHtml(v.version) + '</text>';
+    svg += '<text x="' + (x + nodeW / 2) + '" y="' + (cy + 38) + '" text-anchor="middle" fill="rgba(255,255,255,0.85)" font-size="11">k=' + v.k + '</text>';
+    svg += '<text x="' + (x + nodeW / 2) + '" y="' + (cy + 53) + '" text-anchor="middle" fill="rgba(255,255,255,0.85)" font-size="11">' + v.pooledEffect.toFixed(4) + '</text>';
+
+    var i2Label = (v.I2 !== null && v.I2 !== undefined) ? 'I\u00B2=' + v.I2.toFixed(1) + '%' : '';
+    svg += '<text x="' + (x + nodeW / 2) + '" y="' + (cy + 68) + '" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="10">' + i2Label + '</text>';
+
+    // Date below node
+    var shortDate = '';
+    try { shortDate = new Date(v.timestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); } catch (e) { shortDate = ''; }
+    svg += '<text x="' + (x + nodeW / 2) + '" y="' + (cy + 83) + '" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="9">' + shortDate + '</text>';
+  }
+
+  svg += '</svg>';
+  container.innerHTML = svg;
+}
+
+// --- UI: Render Update Log ---
+function renderUpdateLog() {
+  var log = getUpdateLog();
+  var container = document.getElementById('updateLogContainer');
+
+  if (log.length === 0) {
+    container.innerHTML = '<div class="empty-state">No update log entries yet.</div>';
+    return;
+  }
+
+  var html = '<ul class="log-list">';
+  for (var i = log.length - 1; i >= 0; i--) {
+    var entry = log[i];
+    html += '<li class="log-item">' +
+      '<div class="log-ts">' + formatDate(entry.timestamp) + '</div>' +
+      '<div class="log-msg">' + escapeHtml(entry.message) + '</div>';
+    if (entry.details) {
+      html += '<div class="log-details">' + escapeHtml(JSON.stringify(entry.details, null, 2).substring(0, 500)) + '</div>';
+    }
+    html += '</li>';
+  }
+  html += '</ul>';
+  container.innerHTML = html;
+}
+
+// --- UI: Status Bar ---
+function refreshStatusBar() {
+  // Last check
+  var lastTs = localStorage.getItem(LS_LAST_QUERY_TS);
+  document.getElementById('statusLastCheck').textContent = lastTs ? formatDate(lastTs) : 'Never';
+  document.getElementById('statusLastCheckDetail').textContent = lastTs ? 'Timestamp stored' : 'No queries run yet';
+
+  // Snapshot count
+  var snapRaw = localStorage.getItem(LS_QUERY_SNAPSHOT);
+  var snapCount = 0;
+  if (snapRaw) {
+    try { snapCount = JSON.parse(snapRaw).length; } catch (e) { snapCount = 0; }
+  }
+  document.getElementById('statusStudyCount').textContent = snapCount;
+  document.getElementById('statusStudyCountDetail').textContent = snapCount > 0 ? 'In current snapshot' : 'No snapshot stored';
+
+  // Versions
+  var versions = getSynthesisVersions();
+  document.getElementById('statusVersionCount').textContent = versions.length;
+  if (versions.length > 0) {
+    var latest = versions[versions.length - 1];
+    document.getElementById('statusVersionDetail').textContent = 'Latest: ' + latest.version + ' (k=' + latest.k + ')';
+  } else {
+    document.getElementById('statusVersionDetail').textContent = 'No versions saved';
+  }
+
+  // Log
+  var log = getUpdateLog();
+  document.getElementById('statusLogCount').textContent = log.length;
+  document.getElementById('statusLogDetail').textContent = log.length > 0 ? 'Last: ' + formatDate(log[log.length - 1].timestamp) : 'Update log empty';
+}
+
+// --- UI: Tab Switching ---
+function initTabs() {
+  var btns = document.querySelectorAll('.tab-btn');
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].addEventListener('click', function(e) {
+      var tabId = e.target.getAttribute('data-tab');
+
+      // Deactivate all
+      var allBtns = document.querySelectorAll('.tab-btn');
+      for (var j = 0; j < allBtns.length; j++) allBtns[j].classList.remove('active');
+      var allPanes = document.querySelectorAll('.tab-content');
+      for (var k = 0; k < allPanes.length; k++) allPanes[k].classList.remove('active');
+
+      // Activate selected
+      e.target.classList.add('active');
+      var pane = document.getElementById(tabId);
+      if (pane) pane.classList.add('active');
+    });
+  }
+}
+
+// --- UI: Modal Helpers ---
+var pendingModalAction = null;
+
+function showModal(title, message, onConfirm) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalMessage').textContent = message;
+  pendingModalAction = onConfirm;
+  document.getElementById('modalConfirmBtn').onclick = function() {
+    closeModal();
+    if (pendingModalAction) pendingModalAction();
+    pendingModalAction = null;
+  };
+  document.getElementById('confirmModal').classList.add('visible');
+}
+
+function closeModal() {
+  document.getElementById('confirmModal').classList.remove('visible');
+}
+
+function confirmClearVersions() {
+  showModal('Clear All Versions', 'This will permanently delete all synthesis version history. Continue?', function() {
+    localStorage.removeItem(LS_SYNTHESIS_VERSIONS);
+    logUpdate('All synthesis versions cleared');
+    renderVersions();
+    renderUpdateLog();
+    refreshStatusBar();
+  });
+}
+
+function confirmClearLog() {
+  showModal('Clear Update Log', 'This will permanently delete all update log entries. Continue?', function() {
+    localStorage.removeItem(LS_UPDATE_LOG);
+    renderUpdateLog();
+    refreshStatusBar();
+  });
+}
+
+function confirmClearSnapshot() {
+  showModal('Clear Query Snapshot', 'This will clear the stored study snapshot. The next update check will treat all studies as new. Continue?', function() {
+    localStorage.removeItem(LS_QUERY_SNAPSHOT);
+    localStorage.removeItem(LS_LAST_QUERY_TS);
+    logUpdate('Query snapshot cleared');
+    renderUpdateLog();
+    refreshStatusBar();
+  });
+}
+
+function exportLog() {
+  var log = getUpdateLog();
+  if (log.length === 0) { alert('No log entries to export.'); return; }
+  var json = JSON.stringify(log, null, 2);
+  var blob = new Blob([json], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'cardiosynth-update-log-' + new Date().toISOString().substring(0, 10) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// --- Initialization ---
+function init() {
+  initTabs();
+  loadQueryConfig();
+  refreshStatusBar();
+  renderVersions();
+  renderUpdateLog();
+}
+
+init();
+</script>
+
+</body>
+</html>
