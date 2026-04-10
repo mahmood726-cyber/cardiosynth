@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="CardioSynth Portfolio Aggregator — read-only meta-view of 57 independent living MA apps">
+<title>CardioSynth Portfolio Aggregator</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#020617;color:#f1f5f9;font-family:system-ui,-apple-system,sans-serif;min-height:100vh;padding:32px 20px}
+.container{max-width:1400px;margin:0 auto}
+h1{font-size:28px;font-weight:800;background:linear-gradient(135deg,#3b82f6,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+.subtitle{font-size:14px;color:#64748b;margin-bottom:8px}
+.notice{background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:12px;padding:14px 18px;margin-bottom:24px;font-size:12px;color:#94a3b8;line-height:1.6}
+.notice strong{color:#60a5fa}
+.stats{display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap}
+.stat{background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:12px 20px;text-align:center;min-width:120px}
+.stat-num{font-size:24px;font-weight:800;color:#3b82f6}
+.stat-label{font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:0.1em;margin-top:4px}
+.controls{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
+.search-input{flex:1;min-width:280px;background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:10px 16px;color:#f1f5f9;font-size:13px}
+.search-input:focus{outline:none;border-color:#3b82f6}
+.pill{background:#0f172a;border:1px solid #1e293b;border-radius:18px;padding:6px 14px;font-size:11px;font-weight:600;color:#94a3b8;cursor:pointer;transition:all 0.2s}
+.pill:hover,.pill.active{background:rgba(59,130,246,0.15);color:#60a5fa;border-color:rgba(59,130,246,0.3)}
+table{width:100%;border-collapse:collapse;background:#0f172a;border-radius:12px;overflow:hidden;border:1px solid #1e293b}
+th{background:#1e293b;text-align:left;padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8}
+td{padding:10px 14px;border-bottom:1px solid #1e293b;font-size:12px;color:#cbd5e1}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#1e293b}
+.specialty-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.app-link{color:#60a5fa;text-decoration:none;font-weight:600}
+.app-link:hover{text-decoration:underline}
+.badge{display:inline-block;padding:1px 6px;border-radius:6px;font-size:9px;font-weight:700;margin-right:3px}
+.badge-dr{background:rgba(244,63,94,0.15);color:#fb7185;border:1px solid rgba(244,63,94,0.3)}
+.badge-nma{background:rgba(99,102,241,0.15);color:#a5b4fc;border:1px solid rgba(99,102,241,0.3)}
+.badge-ok{background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3)}
+.hidden{display:none}
+footer{margin-top:32px;padding-top:20px;border-top:1px solid #1e293b;text-align:center;font-size:11px;color:#475569}
+.loading{text-align:center;padding:40px;color:#64748b}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1><i class="fa-solid fa-network-wired" style="margin-right:8px"></i>CardioSynth Portfolio Aggregator</h1>
+  <p class="subtitle">Cross-portfolio meta-view of independent living MA apps</p>
+
+  <div class="notice">
+    <strong>Aggregator only.</strong> CardioSynth does not host, modify, or replicate the underlying meta-analyses.
+    Each living MA app remains an independently published, citable, version-controlled artifact at its own GitHub Pages URL.
+    This view provides cross-portfolio search, filter, and benchmark tracking — click any app to open its full self-contained dashboard.
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="controls">
+    <input type="text" class="search-input" id="search" placeholder="Search apps by name, specialty, drug...">
+    <button class="pill active" onclick="filterSpec(this,'all')" data-spec="all">All</button>
+    <button class="pill" onclick="filterSpec(this,'Cardiology')" data-spec="Cardiology">Cardiology</button>
+    <button class="pill" onclick="filterSpec(this,'Oncology')" data-spec="Oncology">Oncology</button>
+    <button class="pill" onclick="filterSpec(this,'Nephrology')" data-spec="Nephrology">Nephrology</button>
+    <button class="pill" onclick="filterSpec(this,'Pulmonology')" data-spec="Pulmonology">Pulmonology</button>
+    <button class="pill" onclick="filterSpec(this,'Cardiometabolic')" data-spec="Cardiometabolic">Cardiometabolic</button>
+    <button class="pill" onclick="filterSpec(this,'Interventional')" data-spec="Interventional">Interventional</button>
+    <button class="pill" onclick="filterSpec(this,'NMA')" data-spec="NMA">NMA</button>
+  </div>
+
+  <table id="appTable">
+    <thead>
+      <tr>
+        <th>App</th>
+        <th>Specialty</th>
+        <th>Trials</th>
+        <th>Pooled</th>
+        <th>Benchmark</th>
+        <th>Features</th>
+        <th>Source</th>
+      </tr>
+    </thead>
+    <tbody id="appBody">
+      <tr><td colspan="7" class="loading">Loading portfolio inventory...</td></tr>
+    </tbody>
+  </table>
+
+  <footer>
+    CardioSynth &middot; Portfolio Aggregator v1.0 &middot; Read-only meta-view &middot;
+    Each app is independently published. CardioSynth aggregates references without ownership.
+  </footer>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// Inventory: 57 independent living MA apps
+// Each entry is a REFERENCE pointer, not a copy.
+// ═══════════════════════════════════════════════════════════
+const APPS = [
+  // ─── Cardiology ──────────────────────────────────────
+  {name:'FINERENONE',spec:'Cardiology',color:'#3b82f6',trials:4,pooled:'HR 0.86 (0.79-0.92)',bench:'0.86 OK',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/rapidmeta-finerenone/FINERENONE_REVIEW.html'},
+  {name:'BEMPEDOIC ACID',spec:'Cardiology',color:'#3b82f6',trials:1,pooled:'HR 0.87',bench:'0.87 OK',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/rapidmeta-finerenone/BEMPEDOIC_ACID_REVIEW.html'},
+  {name:'PCSK9',spec:'Cardiology',color:'#3b82f6',trials:1,pooled:'HR 0.85',bench:'0.85 OK',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/rapidmeta-finerenone/PCSK9_REVIEW.html'},
+  {name:'ARNI HF',spec:'Cardiology',color:'#3b82f6',trials:3,pooled:'HR 0.84 (0.78-0.90)',bench:'0.84 OK',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/rapidmeta-finerenone/ARNI_HF_REVIEW.html'},
+  {name:'SGLT2 HF',spec:'Cardiology',color:'#3b82f6',trials:5,pooled:'HR 0.77 (0.72-0.82)',bench:'0.77 OK',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/rapidmeta-finerenone/SGLT2_HF_REVIEW.html'},
+  {name:'ABLATION AF',spec:'Cardiology',color:'#3b82f6',trials:4,pooled:'HR ~0.77',bench:'0.77 OK',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/rapidmeta-finerenone/ABLATION_AF_REVIEW.html'},
+  {name:'IV IRON HF',spec:'Cardiology',color:'#3b82f6',trials:4,pooled:'HR ~0.84',bench:'0.84 OK',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/rapidmeta-finerenone/IV_IRON_HF_REVIEW.html'},
+  {name:'COLCHICINE CVD',spec:'Cardiology',color:'#3b82f6',trials:5,pooled:'HR 0.88 (0.75-1.02)',bench:'0.85 OK',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/rapidmeta-finerenone/COLCHICINE_CVD_REVIEW.html'},
+  {name:'RIVAROXABAN VASC',spec:'Cardiology',color:'#3b82f6',trials:4,pooled:'HR 0.85 (0.78-0.93)',bench:'0.85 OK',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/rapidmeta-finerenone/RIVAROXABAN_VASC_REVIEW.html'},
+  {name:'INTENSIVE BP',spec:'Cardiology',color:'#3b82f6',trials:3,pooled:'HR 0.81 (0.72-0.92)',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/rapidmeta-finerenone/INTENSIVE_BP_REVIEW.html'},
+  {name:'LIPID HUB',spec:'Cardiology',color:'#3b82f6',trials:1,pooled:'HR 0.74',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/rapidmeta-finerenone/LIPID_HUB_REVIEW.html'},
+  {name:'MAVACAMTEN HCM',spec:'Cardiology',color:'#3b82f6',trials:1,pooled:'OR 2.80',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/rapidmeta-finerenone/MAVACAMTEN_HCM_REVIEW.html'},
+  {name:'ATTR CM',spec:'Cardiology',color:'#3b82f6',trials:1,pooled:'HR 0.70',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/rapidmeta-finerenone/ATTR_CM_REVIEW.html'},
+  {name:'INCLISIRAN',spec:'Cardiology',color:'#3b82f6',trials:3,pooled:'HR 0.77 (0.56-1.07)',bench:'0.80 OK',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/Inclisiran-LivingMeta/'},
+  {name:'OMECAMTIV',spec:'Cardiology',color:'#3b82f6',trials:3,pooled:'HR 0.92 (0.86-0.99)',bench:'0.92 OK',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/Omecamtiv-LivingMeta/'},
+  {name:'VERICIGUAT',spec:'Cardiology',color:'#3b82f6',trials:1,pooled:'HR 0.90',bench:'0.90 OK',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/Vericiguat-LivingMeta/'},
+  {name:'SOTAGLIFLOZIN',spec:'Cardiology',color:'#3b82f6',trials:2,pooled:'HR 0.72 (0.62-0.82)',bench:'0.72 OK',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/Sotagliflozin-LivingMeta/'},
+  {name:'EMPA MI',spec:'Cardiology',color:'#3b82f6',trials:2,pooled:'OR 1.26',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/Empa-MI-LivingMeta/'},
+  {name:'TICAGRELOR MONO',spec:'Cardiology',color:'#3b82f6',trials:3,pooled:'HR 0.71 (0.49-1.02)',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/Ticagrelor-Mono-LivingMeta/'},
+  {name:'ICOSAPENT ETHYL',spec:'Cardiology',color:'#3b82f6',trials:3,pooled:'HR 0.85 (0.70-1.02)',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/Icosapent-Ethyl-LivingMeta/'},
+  {name:'DAPA ACUTE HF',spec:'Cardiology',color:'#3b82f6',trials:3,pooled:'OR 0.67',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/Dapa-AcuteHF-LivingMeta/'},
+  {name:'INCRETIN HFpEF',spec:'Cardiology',color:'#3b82f6',trials:1,pooled:'OR 0.08',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/rapidmeta-finerenone/INCRETIN_HFpEF_REVIEW.html'},
+  {name:'DOAC CANCER VTE',spec:'Cardiology',color:'#3b82f6',trials:1,pooled:'HR 0.97',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/rapidmeta-finerenone/DOAC_CANCER_VTE_REVIEW.html'},
+  {name:'RENAL DENERV',spec:'Cardiology',color:'#3b82f6',trials:0,pooled:'--',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/rapidmeta-finerenone/RENAL_DENERV_REVIEW.html'},
+  // ─── Oncology ────────────────────────────────────────
+  {name:'OSIMERTINIB NSCLC',spec:'Oncology',color:'#f43f5e',trials:4,pooled:'HR 0.36 (0.23-0.58)',bench:'0.38 OK',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/Osimertinib-NSCLC-LivingMeta/'},
+  {name:'TDXd BREAST',spec:'Oncology',color:'#f43f5e',trials:4,pooled:'HR 0.43 (0.30-0.61)',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/TDXd-Breast-LivingMeta/'},
+  {name:'PEMBRO ADJ MEL',spec:'Oncology',color:'#f43f5e',trials:2,pooled:'HR 0.63 (0.46-0.84)',bench:'0.64 OK',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/Pembro-Adj-Mel-LivingMeta/'},
+  {name:'KRAS G12C NSCLC',spec:'Oncology',color:'#f43f5e',trials:2,pooled:'HR 0.62 (0.51-0.74)',bench:'0.64 OK',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/KRAS-G12C-LivingMeta/'},
+  {name:'ENFORTUMAB UC',spec:'Oncology',color:'#f43f5e',trials:2,pooled:'HR 0.57 (0.39-0.84)',bench:'0.55 OK',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/Enfortumab-UC-LivingMeta/'},
+  {name:'SACITUZUMAB TNBC',spec:'Oncology',color:'#f43f5e',trials:2,pooled:'HR 0.52 (0.33-0.83)',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/Sacituzumab-TNBC-LivingMeta/'},
+  // ─── Nephrology ──────────────────────────────────────
+  {name:'SGLT2 CKD',spec:'Nephrology',color:'#10b981',trials:3,pooled:'HR 0.68 (0.62-0.75)',bench:'0.68 OK',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/rapidmeta-finerenone/SGLT2_CKD_REVIEW.html'},
+  {name:'SEMAGLUTIDE CKD',spec:'Nephrology',color:'#10b981',trials:1,pooled:'HR 0.76',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/Semaglutide-CKD-LivingMeta/'},
+  {name:'SPARSENTAN IgAN',spec:'Nephrology',color:'#10b981',trials:1,pooled:'OR 2.88',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/Sparsentan-IgAN-LivingMeta/'},
+  {name:'IPTACOPAN PNH',spec:'Nephrology',color:'#10b981',trials:1,pooled:'OR ~158',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/Iptacopan-LivingMeta/'},
+  {name:'K BINDERS',spec:'Nephrology',color:'#10b981',trials:3,pooled:'OR 4.40 (1.90-10.21)',bench:'--',dr:true,nma:false,url:'https://mahmood726-cyber.github.io/K-Binders-LivingMeta/'},
+  // ─── Pulmonology ─────────────────────────────────────
+  {name:'TEZEPELUMAB ASTHMA',spec:'Pulmonology',color:'#06b6d4',trials:3,pooled:'RR 0.44 (0.35-0.54)',bench:'0.44 OK',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/Tezepelumab-Asthma-LivingMeta/'},
+  {name:'DUPILUMAB COPD',spec:'Pulmonology',color:'#06b6d4',trials:2,pooled:'RR 0.77 (0.64-0.93)',bench:'0.70 OK',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/Dupilumab-COPD-LivingMeta/'},
+  // ─── Cardiometabolic ─────────────────────────────────
+  {name:'GLP1 CVOT',spec:'Cardiometabolic',color:'#f97316',trials:10,pooled:'HR 0.86 (0.81-0.90)',bench:'0.88 OK',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/rapidmeta-finerenone/GLP1_CVOT_REVIEW.html'},
+  {name:'TIRZEPATIDE CV',spec:'Cardiometabolic',color:'#f97316',trials:4,pooled:'OR ~22.94',bench:'--',dr:true,nma:false,url:'https://mahmood726-cyber.github.io/Tirzepatide-LivingMeta/'},
+  {name:'SEMAGLUTIDE HFpEF',spec:'Cardiometabolic',color:'#f97316',trials:2,pooled:'OR 1.98 (1.33-2.94)',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/Semaglutide-HFpEF-LivingMeta/'},
+  {name:'ORFORGLIPRON',spec:'Cardiometabolic',color:'#f97316',trials:0,pooled:'--',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/Orforglipron-LivingMeta/'},
+  // ─── Interventional ──────────────────────────────────
+  {name:'PFA AF',spec:'Interventional',color:'#0ea5e9',trials:3,pooled:'OR 1.16 (0.78-1.72)',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/PFA-AF-LivingMeta/'},
+  {name:'WATCHMAN AMULET',spec:'Interventional',color:'#0ea5e9',trials:2,pooled:'OR 0.72 (0.35-1.45)',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/LivingMeta-Watchman-Amulet/'},
+  {name:'TRICUSPID TEER',spec:'Interventional',color:'#0ea5e9',trials:1,pooled:'OR ~138',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/Tricuspid-TEER-LivingMeta/'},
+  {name:'LEADLESS PACING',spec:'Interventional',color:'#0ea5e9',trials:1,pooled:'HR 0.49',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/Leadless-Pacing-LivingMeta/'},
+  {name:'CSP',spec:'Interventional',color:'#0ea5e9',trials:2,pooled:'OR 2.50 (1.34-4.66)',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/CSP-LivingMeta/'},
+  {name:'CORONARY IVL',spec:'Interventional',color:'#0ea5e9',trials:0,pooled:'--',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/Coronary-IVL-LivingMeta/'},
+  {name:'CT-FFR',spec:'Interventional',color:'#0ea5e9',trials:2,pooled:'OR 0.61 (0.34-1.09)',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/CTFFR-LivingMeta/'},
+  // ─── Other Specialties ───────────────────────────────
+  {name:'ANTI-AMYLOID AD',spec:'Neurology',color:'#8b5cf6',trials:4,pooled:'OR 22.59 (15.23-33.50)',bench:'--',dr:true,nma:false,url:'https://mahmood726-cyber.github.io/AntiAmyloid-AD-LivingMeta/'},
+  {name:'RESMETIROM MASH',spec:'Hepatology',color:'#f59e0b',trials:3,pooled:'OR 5.76 (3.30-10.08)',bench:'--',dr:true,nma:false,url:'https://mahmood726-cyber.github.io/Resmetirom-MASH-LivingMeta/'},
+  {name:'BIMEKIZUMAB Pso',spec:'Dermatology',color:'#a855f7',trials:4,pooled:'OR 25.69 (4.29-153.92)',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/Bimekizumab-Pso-LivingMeta/'},
+  {name:'DCB PAD',spec:'Peripheral Vascular',color:'#ec4899',trials:5,pooled:'OR 2.07 (1.01-4.25)',bench:'--',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/DCB-PAD-LivingMeta/'},
+  {name:'SOTATERCEPT PAH',spec:'Pulm Vascular',color:'#14b8a6',trials:3,pooled:'HR 0.22 (0.15-0.31)',bench:'0.20 OK',dr:false,nma:false,url:'https://mahmood726-cyber.github.io/Sotatercept-PAH-LivingMeta/'},
+  // ─── NMA ─────────────────────────────────────────────
+  {name:'OBESITY NMA',spec:'NMA',color:'#6366f1',trials:5,pooled:'OR 13.64 (7.97-23.34)',bench:'--',dr:true,nma:true,url:'https://mahmood726-cyber.github.io/Obesity-NMA-LivingMeta/'},
+  {name:'ANTIPLATELET NMA',spec:'NMA',color:'#6366f1',trials:4,pooled:'HR 0.70 (0.57-0.87)',bench:'0.70 OK',dr:false,nma:true,url:'https://mahmood726-cyber.github.io/Antiplatelet-NMA-LivingMeta/'},
+  {name:'HFrEF NMA',spec:'NMA',color:'#6366f1',trials:3,pooled:'HR 0.77 (0.73-0.83)',bench:'--',dr:false,nma:true,url:'https://mahmood726-cyber.github.io/HFrEF-NMA-LivingMeta/'},
+  {name:'PAH NMA',spec:'NMA',color:'#6366f1',trials:4,pooled:'HR 0.44 (0.29-0.67)',bench:'--',dr:false,nma:true,url:'https://mahmood726-cyber.github.io/PAH-NMA-LivingMeta/'},
+];
+
+// ═══════════════════════════════════════════════════════════
+// Render
+// ═══════════════════════════════════════════════════════════
+function renderStats() {
+  const dr = APPS.filter(a => a.dr).length;
+  const nma = APPS.filter(a => a.nma).length;
+  const benched = APPS.filter(a => a.bench !== '--').length;
+  const okCount = APPS.filter(a => a.bench.includes('OK')).length;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="stat-num">${APPS.length}</div><div class="stat-label">Apps</div></div>
+    <div class="stat"><div class="stat-num">${new Set(APPS.map(a => a.spec)).size}</div><div class="stat-label">Specialties</div></div>
+    <div class="stat"><div class="stat-num">${APPS.reduce((s,a) => s + a.trials, 0)}</div><div class="stat-label">Trials</div></div>
+    <div class="stat"><div class="stat-num">${dr}</div><div class="stat-label">Dose-Response</div></div>
+    <div class="stat"><div class="stat-num">${nma}</div><div class="stat-label">NMA</div></div>
+    <div class="stat"><div class="stat-num">${okCount}/${benched}</div><div class="stat-label">Benchmark Match</div></div>
+  `;
+}
+
+function renderTable() {
+  const body = document.getElementById('appBody');
+  body.innerHTML = APPS.sort((a,b) => a.name.localeCompare(b.name)).map(a => {
+    const drBadge = a.dr ? '<span class="badge badge-dr">DR</span>' : '';
+    const nmaBadge = a.nma ? '<span class="badge badge-nma">NMA</span>' : '';
+    const okBadge = a.bench.includes('OK') ? '<span class="badge badge-ok">VALIDATED</span>' : '';
+    return `<tr data-spec="${a.spec}" data-name="${a.name.toLowerCase()}">
+      <td><a href="${a.url}" target="_blank" rel="noopener" class="app-link">${a.name}</a></td>
+      <td><span class="specialty-dot" style="background:${a.color}"></span>${a.spec}</td>
+      <td>${a.trials || '--'}</td>
+      <td>${a.pooled}</td>
+      <td>${a.bench}</td>
+      <td>${drBadge}${nmaBadge}${okBadge}</td>
+      <td><a href="${a.url}" target="_blank" rel="noopener" class="app-link"><i class="fa-solid fa-external-link"></i></a></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterSpec(btn, spec) {
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('#appBody tr').forEach(tr => {
+    tr.classList.toggle('hidden', spec !== 'all' && tr.dataset.spec !== spec);
+  });
+}
+
+document.getElementById('search').addEventListener('input', (e) => {
+  const q = e.target.value.toLowerCase();
+  document.querySelectorAll('#appBody tr').forEach(tr => {
+    const text = (tr.dataset.name + ' ' + tr.dataset.spec + ' ' + tr.textContent).toLowerCase();
+    tr.classList.toggle('hidden', !text.includes(q));
+  });
+});
+
+renderStats();
+renderTable();
+</script>
+</body>
+</html>
