@@ -531,7 +531,7 @@ function levenshteinSimilarity(a, b) {
 // --- Duration Parser ---
 function parseDuration(text) {
   if (!text || typeof text !== 'string') return null;
-  var t = text.toLowerCase().trim();
+  var t = String(text ?? "").toLowerCase().trim();
   // Extract number and unit pairs
   var matches = [];
   var re = /(\d+(?:\.\d+)?)\s*(year|yr|month|mo|week|wk|day|d|hour|hr|h)/gi;
@@ -661,7 +661,7 @@ function validateTimepointDrift(obj) {
   }
 
   // Text comparison
-  if (regTimeframe.toLowerCase().trim() !== repTimeframe.toLowerCase().trim()) {
+  if (String(regTimeframe ?? "").toLowerCase().trim() !== String(repTimeframe ?? "").toLowerCase().trim()) {
     flags.push(makeFlag('TIMEPOINT_DRIFT', 'WARNING', 'outcomes.PRIMARY.timeframe',
       'Timeframe wording differs (registered: "' + regTimeframe + '", reported: "' + repTimeframe + '")',
       { registered: regTimeframe, reported: repTimeframe }));
@@ -1070,7 +1070,7 @@ function renderReport(report) {
 
   // Verdict section
   var vs = document.getElementById('verdictSection');
-  vs.className = 'verdict-section verdict-' + report.verdict.toLowerCase();
+  vs.className = 'verdict-section verdict-' + report.String(verdict ?? "").toLowerCase();
   vs.innerHTML = '<div class="verdict-nct">' + escapeHtml(report.nct) + '</div>' +
     '<div class="verdict-badge">' + escapeHtml(report.verdict) + '</div>' +
     '<div class="verdict-meta">Certified: ' + escapeHtml(report.certified_at) + ' | Flags: ' + report.flags.length + ' | CRITICAL: ' + report.witness_count + '</div>' +
@@ -1092,9 +1092,9 @@ function renderReport(report) {
   for (var i = 0; i < report.flags.length; i++) {
     var f = report.flags[i];
     var tr = document.createElement('tr');
-    tr.className = 'severity-' + f.severity.toLowerCase();
+    tr.className = 'severity-' + f.String(severity ?? "").toLowerCase();
     tr.innerHTML = '<td><strong>' + escapeHtml(f.validator) + '</strong></td>' +
-      '<td><span class="severity-tag ' + f.severity.toLowerCase() + '">' + escapeHtml(f.severity) + '</span></td>' +
+      '<td><span class="severity-tag ' + f.String(severity ?? "").toLowerCase() + '">' + escapeHtml(f.severity) + '</span></td>' +
       '<td>' + (f.field ? '<span class="field-path">' + escapeHtml(f.field) + '</span>' : '--') + '</td>' +
       '<td>' + escapeHtml(f.message) + '</td>';
     tbody.appendChild(tr);

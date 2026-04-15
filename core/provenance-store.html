@@ -1110,7 +1110,7 @@ function showChain(nct) {
   for (var i = 0; i < reversed.length; i++) {
     var rec = reversed[i];
     var verdict = (rec.truthCert && rec.truthCert.verdict) || 'N/A';
-    var verdictLower = verdict.toLowerCase();
+    var verdictLower = String(verdict ?? "").toLowerCase();
     // Map verdict to CSS class
     var itemClass = 'verdict-pass';
     if (verdictLower === 'critical') itemClass = 'verdict-critical';

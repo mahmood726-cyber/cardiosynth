@@ -2,7 +2,7 @@
 
 ## Statistical Engine Validation
 
-All statistical functions were ported from `C:/HTML apps/living-meta/src/lib/` and validated against R metafor 4.8.
+All statistical functions were ported from the earlier `living-meta` browser library and validated against R metafor 4.8.
 
 ### DerSimonian-Laird Random Effects
 
@@ -44,11 +44,11 @@ All utility functions validated:
 
 ## TruthCert Validators
 
-23/23 tests passing across all 10 validators.
+23 documented validation checks completed across all 10 validators.
 
 ## MetaEngine Integration
 
-29/29 validation tests passing including:
+29 documented integration validation checks completed including:
 - DS-L pooling
 - HKSJ correction
 - Effect size calculators (RR, OR, RD)
@@ -58,7 +58,7 @@ All utility functions validated:
 
 ## Bias Quantifier
 
-46/46 tests passing:
+46 documented bias-quantifier validation checks completed:
 - Non-posting bias estimation
 - ORBI calculation
 - Egger's radial test

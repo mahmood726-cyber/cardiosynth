@@ -867,7 +867,7 @@ function handleSort(key) {
     if (vb == null) vb = '';
 
     if (typeof va === 'string') {
-      va = va.toLowerCase();
+      va = String(va ?? "").toLowerCase();
       vb = (vb + '').toLowerCase();
     }
 

@@ -185,7 +185,7 @@ function renderTable() {
     const drBadge = a.dr ? '<span class="badge badge-dr">DR</span>' : '';
     const nmaBadge = a.nma ? '<span class="badge badge-nma">NMA</span>' : '';
     const okBadge = a.bench.includes('OK') ? '<span class="badge badge-ok">VALIDATED</span>' : '';
-    return `<tr data-spec="${a.spec}" data-name="${a.name.toLowerCase()}">
+    return `<tr data-spec="${a.spec}" data-name="${a.String(name ?? "").toLowerCase()}">
       <td><a href="${a.url}" target="_blank" rel="noopener" class="app-link">${a.name}</a></td>
       <td><span class="specialty-dot" style="background:${a.color}"></span>${a.spec}</td>
       <td>${a.trials || '--'}</td>
@@ -206,7 +206,7 @@ function filterSpec(btn, spec) {
 }
 
 document.getElementById('search').addEventListener('input', (e) => {
-  const q = e.target.value.toLowerCase();
+  const q = e.target.String(value ?? "").toLowerCase();
   document.querySelectorAll('#appBody tr').forEach(tr => {
     const text = (tr.dataset.name + ' ' + tr.dataset.spec + ' ' + tr.textContent).toLowerCase();
     tr.classList.toggle('hidden', !text.includes(q));

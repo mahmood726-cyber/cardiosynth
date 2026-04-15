@@ -1622,7 +1622,7 @@ function levenshteinSimilarity(a, b) {
 
 function parseDuration(text) {
   if (!text || typeof text !== 'string') return null;
-  var tt = text.toLowerCase().trim();
+  var tt = String(text ?? "").toLowerCase().trim();
   var matches = [];
   var re = /(\d+(?:\.\d+)?)\s*(year|yr|month|mo|week|wk|day|d|hour|hr|h)/gi;
   var m;
@@ -1846,16 +1846,16 @@ function classifyArmType(armGroup, allArmGroups) {
 }
 
 function sanitizeArmId(label) {
-  return label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+  return String(label ?? "").toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
 }
 
 function matchArmByLabel(titleLower, arms) {
   for (var i = 0; i < arms.length; i++) {
-    if (titleLower === arms[i].arm_label.toLowerCase()) return arms[i];
+    if (titleLower === arms[i].String(arm_label ?? "").toLowerCase()) return arms[i];
   }
   var sorted = arms.slice().sort(function(a, b) { return b.arm_label.length - a.arm_label.length; });
   for (var j = 0; j < sorted.length; j++) {
-    var armLower = sorted[j].arm_label.toLowerCase();
+    var armLower = sorted[j].String(arm_label ?? "").toLowerCase();
     if (titleLower.indexOf(armLower) !== -1 || armLower.indexOf(titleLower) !== -1) return sorted[j];
   }
   return null;
@@ -1863,7 +1863,7 @@ function matchArmByLabel(titleLower, arms) {
 
 function inferMeasureType(paramType) {
   if (!paramType) return 'OTHER';
-  var pt = paramType.toLowerCase();
+  var pt = String(paramType ?? "").toLowerCase();
   if (pt.indexOf('count') !== -1 || pt.indexOf('number') !== -1) return 'COUNT';
   if (pt.indexOf('mean') !== -1 || pt.indexOf('least') !== -1) return 'MEAN';
   if (pt.indexOf('median') !== -1) return 'MEDIAN';
@@ -2148,7 +2148,7 @@ function validateTimepointDrift(obj) {
       return flags;
     }
   }
-  if (regTimeframe.toLowerCase().trim() !== repTimeframe.toLowerCase().trim()) {
+  if (String(regTimeframe ?? "").toLowerCase().trim() !== String(repTimeframe ?? "").toLowerCase().trim()) {
     flags.push(makeFlag('TIMEPOINT_DRIFT', 'WARNING', null, 'Timeframe wording differs', { registered: regTimeframe, reported: repTimeframe }));
   } else {
     flags.push(makeFlag('TIMEPOINT_DRIFT', 'INFO', null, 'Timeframes match', null));
@@ -2872,7 +2872,7 @@ function generateE156(synthesis, biasData) {
   // [P2-1 FIX] Pass actual bias flags instead of empty array
   var grade = autoGRADE(synthesis, biasData && biasData.flags ? biasData.flags : []);
   var beneficial = useLog ? parseFloat(effectVal) < 1 : parseFloat(effectVal) < 0;
-  var s6 = 'Colchicine ' + (beneficial ? 'may reduce' : 'does not appear to reduce') + ' MACE after STEMI, though confidence is ' + grade.toLowerCase() + '.';
+  var s6 = 'Colchicine ' + (beneficial ? 'may reduce' : 'does not appear to reduce') + ' MACE after STEMI, though confidence is ' + String(grade ?? "").toLowerCase() + '.';
   var s7 = 'This living synthesis is limited to ClinicalTrials.gov posted results; grey literature and individual patient data are excluded.';
 
   return [s1, s2, s3, s4, s5, s6, s7].join(' ');
@@ -3618,7 +3618,7 @@ function renderEvidenceMap() {
     rows.sort(function(a, b) {
       var va = a[evidenceSortCol] || '';
       var vb = b[evidenceSortCol] || '';
-      if (typeof va === 'string') { va = va.toLowerCase(); vb = (vb + '').toLowerCase(); }
+      if (typeof va === 'string') { va = String(va ?? "").toLowerCase(); vb = (vb + '').toLowerCase(); }
       return evidenceSortAsc ? (va < vb ? -1 : va > vb ? 1 : 0) : (va > vb ? -1 : va < vb ? 1 : 0);
     });
   }
@@ -4236,8 +4236,8 @@ function showRecordExcerpt(nct) {
         var eData = null, cData = null;
         nonTotalData.forEach(function(d) {
           var lbl = (d.arm_label || '').toLowerCase();
-          if (expArm && lbl.indexOf(expArm.arm_label.toLowerCase()) !== -1) eData = d;
-          if (ctrlArm && lbl.indexOf(ctrlArm.arm_label.toLowerCase()) !== -1) cData = d;
+          if (expArm && lbl.indexOf(expArm.String(arm_label ?? "").toLowerCase()) !== -1) eData = d;
+          if (ctrlArm && lbl.indexOf(ctrlArm.String(arm_label ?? "").toLowerCase()) !== -1) cData = d;
         });
         if (!eData || !cData) { eData = nonTotalData[0]; cData = nonTotalData[1]; }
 
@@ -4364,8 +4364,8 @@ function buildEffectDerivationSection(ext, expArm, ctrlArm, studyWeight, nct) {
   var expData = null, ctrlData = null;
   (primaryOm.data || []).forEach(function(d) {
     var lbl = (d.arm_label || '').toLowerCase();
-    if (expArm && lbl.indexOf(expArm.arm_label.toLowerCase()) !== -1) expData = d;
-    if (ctrlArm && lbl.indexOf(ctrlArm.arm_label.toLowerCase()) !== -1) ctrlData = d;
+    if (expArm && lbl.indexOf(expArm.String(arm_label ?? "").toLowerCase()) !== -1) expData = d;
+    if (ctrlArm && lbl.indexOf(ctrlArm.String(arm_label ?? "").toLowerCase()) !== -1) ctrlData = d;
   });
   // Fallback positional match
   if ((!expData || !ctrlData) && primaryOm.data.length >= 2) {

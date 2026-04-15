@@ -687,19 +687,19 @@ function classifyArmType(armGroup, allArmGroups) {
 }
 
 function sanitizeArmId(label) {
-  return label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+  return String(label ?? "").toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
 }
 
 // Match a group title to the best arm by label (exact first, then longest substring match)
 function matchArmByLabel(titleLower, arms) {
   // Exact match
   for (var i = 0; i < arms.length; i++) {
-    if (titleLower === arms[i].arm_label.toLowerCase()) return arms[i];
+    if (titleLower === arms[i].String(arm_label ?? "").toLowerCase()) return arms[i];
   }
   // Longest label substring match (sort by label length descending to prefer specific matches)
   var sorted = arms.slice().sort(function(a, b) { return b.arm_label.length - a.arm_label.length; });
   for (var j = 0; j < sorted.length; j++) {
-    var armLower = sorted[j].arm_label.toLowerCase();
+    var armLower = sorted[j].String(arm_label ?? "").toLowerCase();
     if (titleLower.indexOf(armLower) !== -1 || armLower.indexOf(titleLower) !== -1) {
       return sorted[j];
     }
@@ -710,7 +710,7 @@ function matchArmByLabel(titleLower, arms) {
 // --- Measure Type Inference ---
 function inferMeasureType(paramType) {
   if (!paramType) return 'OTHER';
-  var pt = paramType.toLowerCase();
+  var pt = String(paramType ?? "").toLowerCase();
   if (pt.indexOf('count') !== -1 || pt.indexOf('number') !== -1) return 'COUNT';
   if (pt.indexOf('mean') !== -1 || pt.indexOf('least') !== -1) return 'MEAN';
   if (pt.indexOf('median') !== -1) return 'MEDIAN';
@@ -1120,7 +1120,7 @@ function renderArms(obj) {
   document.getElementById('armsCount').textContent = obj.arms.length;
   var html = '<div class="arm-cards">';
   obj.arms.forEach(function(arm) {
-    var typeClass = 'arm-' + arm.arm_type.toLowerCase();
+    var typeClass = 'arm-' + arm.String(arm_type ?? "").toLowerCase();
     html += '<div class="arm-card ' + typeClass + '">';
     html += '<div class="arm-type-tag">' + escapeHtml(arm.arm_type) + '</div>';
     html += '<div class="arm-label">' + escapeHtml(arm.arm_label) + '</div>';
@@ -1144,7 +1144,7 @@ function renderOutcomes(obj) {
   }
 
   obj.outcomes.forEach(function(om, idx) {
-    var typeClass = 'outcome-type-' + om.type.toLowerCase();
+    var typeClass = 'outcome-type-' + om.String(type ?? "").toLowerCase();
     var isOpen = om.type === 'PRIMARY' ? ' open' : '';
     html += '<div class="outcome-card' + isOpen + '">';
     html += '<div class="outcome-header" onclick="toggleOutcome(this)">';
