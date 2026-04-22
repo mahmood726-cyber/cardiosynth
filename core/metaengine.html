@@ -465,6 +465,13 @@ function i2ConfidenceInterval(Q, k) {
 // CORE META-ANALYSIS: computeMAState (ported from meta-cache.js)
 // ============================================================================
 
+// Numerical guard: floor SE at 1e-8 (variance 1e-16) before inverse-variance
+// weighting so that underflowed or degenerate-precision variances do not
+// produce Infinity weights. Fires console.warn when applied so data-quality
+// signals are not silently clamped away.
+const SE_FLOOR = 1e-8;
+const V_FLOOR = SE_FLOOR * SE_FLOOR;
+
 function computeMAState(studies) {
   const k = studies.length;
   if (k === 0) return null;
@@ -480,6 +487,13 @@ function computeMAState(studies) {
   for (let i = 0; i < k; i++) {
     yi[i] = studies[i].yi;
     vi[i] = studies[i].vi;
+    if (vi[i] < V_FLOOR) {
+      console.warn('[cardiosynth] SE floor applied: study=' +
+                   (studies[i].id || studies[i].nctId || i) +
+                   ' vi=' + Number(vi[i]).toExponential(3) +
+                   ' -> ' + V_FLOOR.toExponential(3));
+      vi[i] = V_FLOOR;
+    }
     weights[i] = 1 / vi[i];
     totalWeight += weights[i];
     sumWY += weights[i] * yi[i];
