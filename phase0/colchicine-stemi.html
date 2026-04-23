@@ -5020,7 +5020,7 @@ function saveState() {
       prismaFlowCounts: STATE.prismaFlowCounts,
       versionHistory: STATE.versionHistory
     };
-    localStorage.setItem('cardiosynth_dashboard_state', JSON.stringify(stateToSave));
+    localStorage.setItem('cardiosynth-v1-dashboard-state', JSON.stringify(stateToSave));
   } catch (e) {
     pipeLog('WARNING: Could not save state (' + e.message + '). Results may be lost on page reload.');
   }
@@ -5028,7 +5028,7 @@ function saveState() {
 
 function loadState() {
   try {
-    var raw = localStorage.getItem('cardiosynth_dashboard_state');
+    var raw = localStorage.getItem('cardiosynth-v1-dashboard-state');
     if (!raw) return false;
     var saved = JSON.parse(raw);
     if (!saved.lastUpdated) return false;
@@ -5065,7 +5065,7 @@ renderAllPanels = function() {
 
 function toggleTheme() {
   var isLight = document.body.classList.toggle('light-mode');
-  try { localStorage.setItem('cardiosynth_theme', isLight ? 'light' : 'dark'); } catch(e) {}
+  try { localStorage.setItem('cardiosynth-v1-theme', isLight ? 'light' : 'dark'); } catch(e) {}
   // Update forest plot SVG backgrounds if synthesis exists
   if (STATE.primarySynthesis) reRenderAfterSettingsChange();
 }
@@ -5073,7 +5073,7 @@ function toggleTheme() {
 // Restore theme on load
 (function() {
   try {
-    var saved = localStorage.getItem('cardiosynth_theme');
+    var saved = localStorage.getItem('cardiosynth-v1-theme');
     if (saved === 'light') document.body.classList.add('light-mode');
   } catch(e) {}
 })();
