@@ -497,7 +497,7 @@
     <button class="btn btn-green" onclick="exportAuditTrail()">Export</button>
     <div class="file-input-wrapper">
       <button class="btn btn-secondary">Import</button>
-      <input type="file" accept=".json" onchange="importAuditTrail(event)">
+      <input type="file" accept=".json" aria-label="Import audit trail JSON file" onchange="importAuditTrail(event)">
     </div>
     <button class="btn btn-red" onclick="showClearAllModal()">Clear All</button>
   </div>
@@ -528,7 +528,7 @@
   <!-- Dashboard view (default) -->
   <div id="dashboardView">
     <div class="search-bar">
-      <input type="text" id="searchInput" placeholder="Search by NCT ID..." oninput="renderDashboard()">
+      <input type="text" id="searchInput" aria-label="Search records by NCT ID" placeholder="Search by NCT ID..." oninput="renderDashboard()">
       <button class="btn btn-primary" onclick="showStorePanel()">+ Store Record</button>
       <button class="btn btn-secondary" onclick="computeSynthesisHash()">Synthesis Hash</button>
       <button class="btn btn-secondary" onclick="runTests()">Run Tests</button>
@@ -537,9 +537,9 @@
     <div class="panel" id="storePanel" style="display:none;">
       <h2>Store Provenance Record</h2>
       <h3>ExtractionObject JSON</h3>
-      <textarea id="extractionInput" placeholder="Paste ExtractionObject JSON here..."></textarea>
+      <textarea id="extractionInput" aria-label="ExtractionObject JSON" placeholder="Paste ExtractionObject JSON here..."></textarea>
       <h3 style="margin-top:12px;">TruthCert Report JSON</h3>
-      <textarea id="truthCertInput" placeholder="Paste TruthCert report JSON here..."></textarea>
+      <textarea id="truthCertInput" aria-label="TruthCert report JSON" placeholder="Paste TruthCert report JSON here..."></textarea>
       <div class="btn-row">
         <button class="btn btn-green" onclick="handleStoreRecord()">Store Record</button>
         <button class="btn btn-secondary" onclick="loadDemoData()">Load Demo</button>
@@ -579,7 +579,7 @@
   <div class="modal-box">
     <h3>Clear All Provenance Data</h3>
     <p>This will permanently delete all provenance records from localStorage. Type <strong>DELETE</strong> to confirm.</p>
-    <input type="text" id="clearAllConfirm" placeholder="Type DELETE to confirm">
+    <input type="text" id="clearAllConfirm" aria-label="Type DELETE to confirm clear-all" placeholder="Type DELETE to confirm">
     <div class="btn-row">
       <button class="btn btn-secondary" onclick="hideClearAllModal()">Cancel</button>
       <button class="btn btn-red" onclick="executeClearAll()">Delete Everything</button>
@@ -592,7 +592,7 @@
   <div class="modal-box">
     <h3>Delete Provenance Chain</h3>
     <p id="deleteChainMsg">This will permanently delete all records for this study.</p>
-    <input type="text" id="deleteChainConfirm" placeholder="Type DELETE to confirm">
+    <input type="text" id="deleteChainConfirm" aria-label="Type DELETE to confirm chain deletion" placeholder="Type DELETE to confirm">
     <div class="btn-row">
       <button class="btn btn-secondary" onclick="hideDeleteChainModal()">Cancel</button>
       <button class="btn btn-red" onclick="executeDeleteChain()">Delete Chain</button>

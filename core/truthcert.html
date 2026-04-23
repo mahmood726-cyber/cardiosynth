@@ -374,12 +374,12 @@
       <div class="input-tab" onclick="switchInputTab('upload')">Upload File</div>
     </div>
     <div id="inputPaste" class="input-section active">
-      <textarea id="jsonInput" placeholder="Paste ExtractionObject JSON here..."></textarea>
+      <textarea id="jsonInput" aria-label="ExtractionObject JSON" placeholder="Paste ExtractionObject JSON here..."></textarea>
     </div>
     <div id="inputUpload" class="input-section">
       <div class="file-input-wrapper">
         <button class="btn btn-secondary">Choose JSON File</button>
-        <input type="file" id="fileInput" accept=".json" onchange="loadFile(this)">
+        <input type="file" id="fileInput" aria-label="Upload ExtractionObject JSON file" accept=".json" onchange="loadFile(this)">
       </div>
       <div id="fileName" style="margin-top:8px; font-size:13px; color:var(--gray-500);"></div>
     </div>
@@ -393,12 +393,12 @@
       <div class="input-tab" onclick="switchPoolTab('upload')">Upload File</div>
     </div>
     <div id="poolPaste" class="input-section active">
-      <textarea id="poolInput" placeholder="Paste array of previously validated ExtractionObjects (optional)..." style="min-height:80px;"></textarea>
+      <textarea id="poolInput" aria-label="Existing pool of validated ExtractionObjects" placeholder="Paste array of previously validated ExtractionObjects (optional)..." style="min-height:80px;"></textarea>
     </div>
     <div id="poolUpload" class="input-section">
       <div class="file-input-wrapper">
         <button class="btn btn-secondary">Choose Pool File</button>
-        <input type="file" id="poolFileInput" accept=".json" onchange="loadPoolFile(this)">
+        <input type="file" id="poolFileInput" aria-label="Upload existing pool JSON file" accept=".json" onchange="loadPoolFile(this)">
       </div>
       <div id="poolFileName" style="margin-top:8px; font-size:13px; color:var(--gray-500);"></div>
     </div>

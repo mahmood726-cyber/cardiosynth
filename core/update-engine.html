@@ -555,15 +555,15 @@
       </p>
       <div class="form-grid">
         <div class="form-group">
-          <label>Number of Studies (k)</label>
+          <label for="demoK">Number of Studies (k)</label>
           <input type="text" id="demoK" value="12" placeholder="e.g. 12">
         </div>
         <div class="form-group">
-          <label>Pooled Effect (log scale)</label>
+          <label for="demoTheta">Pooled Effect (log scale)</label>
           <input type="text" id="demoTheta" value="-0.2877" placeholder="e.g. -0.2877">
         </div>
         <div class="form-group">
-          <label>Effect Measure</label>
+          <label for="demoMeasure">Effect Measure</label>
           <select id="demoMeasure">
             <option value="logRR" selected>logRR</option>
             <option value="logOR">logOR</option>
@@ -573,23 +573,23 @@
           </select>
         </div>
         <div class="form-group">
-          <label>CI Lower</label>
+          <label for="demoCILow">CI Lower</label>
           <input type="text" id="demoCILow" value="-0.4463" placeholder="e.g. -0.4463">
         </div>
         <div class="form-group">
-          <label>CI Upper</label>
+          <label for="demoCIHigh">CI Upper</label>
           <input type="text" id="demoCIHigh" value="-0.1291" placeholder="e.g. -0.1291">
         </div>
         <div class="form-group">
-          <label>I&sup2; (%)</label>
+          <label for="demoI2">I&sup2; (%)</label>
           <input type="text" id="demoI2" value="18.3" placeholder="e.g. 18.3">
         </div>
         <div class="form-group">
-          <label>tau&sup2;</label>
+          <label for="demoTau2">tau&sup2;</label>
           <input type="text" id="demoTau2" value="0.0042" placeholder="e.g. 0.0042">
         </div>
         <div class="form-group">
-          <label>Study IDs (comma-sep)</label>
+          <label for="demoStudyIds">Study IDs (comma-sep)</label>
           <input type="text" id="demoStudyIds" value="NCT001,NCT002,NCT003" placeholder="NCT001,NCT002,...">
         </div>
       </div>
@@ -626,15 +626,15 @@
       </p>
       <div class="form-grid">
         <div class="form-group">
-          <label>Condition</label>
+          <label for="cfgCondition">Condition</label>
           <input type="text" id="cfgCondition" placeholder="e.g. myocardial infarction">
         </div>
         <div class="form-group">
-          <label>Intervention</label>
+          <label for="cfgIntervention">Intervention</label>
           <input type="text" id="cfgIntervention" placeholder="e.g. colchicine">
         </div>
         <div class="form-group">
-          <label>Study Type</label>
+          <label for="cfgStudyType">Study Type</label>
           <select id="cfgStudyType">
             <option value="">Any</option>
             <option value="INTERVENTIONAL">Interventional</option>
@@ -642,11 +642,11 @@
           </select>
         </div>
         <div class="form-group">
-          <label>Date From</label>
+          <label for="cfgDateFrom">Date From</label>
           <input type="date" id="cfgDateFrom">
         </div>
         <div class="form-group">
-          <label>Date To</label>
+          <label for="cfgDateTo">Date To</label>
           <input type="date" id="cfgDateTo">
         </div>
         <div class="form-group checkbox-group">

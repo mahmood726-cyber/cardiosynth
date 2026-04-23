@@ -552,17 +552,17 @@
   <div class="input-panels">
     <div class="input-panel">
       <h3><span class="label-badge label-a">A</span> Extraction A (Agent 1)</h3>
-      <textarea id="inputA" placeholder="Paste ExtractionObject JSON from Agent A..."></textarea>
+      <textarea id="inputA" aria-label="Extraction A JSON" placeholder="Paste ExtractionObject JSON from Agent A..."></textarea>
       <div class="upload-row">
-        <input type="file" id="fileA" accept=".json" onchange="loadFile('A')">
+        <input type="file" id="fileA" aria-label="Upload Extraction A JSON file" accept=".json" onchange="loadFile('A')">
         <button class="btn btn-secondary btn-small" onclick="loadDemoData('A')">Load Demo</button>
       </div>
     </div>
     <div class="input-panel">
       <h3><span class="label-badge label-b">B</span> Extraction B (Agent 2)</h3>
-      <textarea id="inputB" placeholder="Paste ExtractionObject JSON from Agent B..."></textarea>
+      <textarea id="inputB" aria-label="Extraction B JSON" placeholder="Paste ExtractionObject JSON from Agent B..."></textarea>
       <div class="upload-row">
-        <input type="file" id="fileB" accept=".json" onchange="loadFile('B')">
+        <input type="file" id="fileB" aria-label="Upload Extraction B JSON file" accept=".json" onchange="loadFile('B')">
         <button class="btn btn-secondary btn-small" onclick="loadDemoData('B')">Load Demo</button>
       </div>
     </div>
@@ -1167,10 +1167,10 @@ function renderDisagreements(disagreements) {
 function buildResolutionControl(idx) {
   var nameAttr = 'res_' + idx;
   return '<div class="resolution-group" id="resGroup_' + idx + '">' +
-    '<label onclick="selectResolution(' + idx + ', \'A\', this)"><input type="radio" name="' + nameAttr + '" value="A"> Use A</label>' +
-    '<label onclick="selectResolution(' + idx + ', \'B\', this)"><input type="radio" name="' + nameAttr + '" value="B"> Use B</label>' +
-    '<label onclick="selectResolution(' + idx + ', \'custom\', this)"><input type="radio" name="' + nameAttr + '" value="custom"> Custom</label>' +
-    '<input type="text" class="custom-input" id="custom_' + idx + '" placeholder="Enter custom value" onchange="updateCustomValue(' + idx + ')" onkeyup="updateCustomValue(' + idx + ')">' +
+    '<label onclick="selectResolution(' + idx + ', \'A\', this)"><input type="radio" aria-label="Use extraction A" name="' + nameAttr + '" value="A"> Use A</label>' +
+    '<label onclick="selectResolution(' + idx + ', \'B\', this)"><input type="radio" aria-label="Use extraction B" name="' + nameAttr + '" value="B"> Use B</label>' +
+    '<label onclick="selectResolution(' + idx + ', \'custom\', this)"><input type="radio" aria-label="Use custom resolution" name="' + nameAttr + '" value="custom"> Custom</label>' +
+    '<input type="text" class="custom-input" id="custom_' + idx + '" aria-label="Custom resolution value" placeholder="Enter custom value" onchange="updateCustomValue(' + idx + ')" onkeyup="updateCustomValue(' + idx + ')">' +
     '</div>';
 }
 
