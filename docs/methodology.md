@@ -35,7 +35,7 @@ Only extractions with no CRITICAL flags enter synthesis.
 - **Pooling**: DerSimonian-Laird random effects with HKSJ variance correction
 - **Heterogeneity**: I-squared, tau-squared, Cochran's Q
 - **Sensitivity**: Leave-one-out, cumulative meta-analysis
-- **Prediction interval**: t_{k-2} distribution per Higgins-Thompson-Spiegelhalter 2009
+- **Prediction interval**: t_{k-1} distribution per Cochrane Handbook v6.5 (matches metafor `predict` v4+; the earlier IntHout-2016 t_{k-2} form is superseded)
 
 All computations validated against R metafor to |delta| < 0.0001.
 

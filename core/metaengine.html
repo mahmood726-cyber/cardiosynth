@@ -629,11 +629,12 @@ function derSimonianLaird(studies, options) {
     ci_upper = theta + tCrit * se;
   }
 
-  // Prediction interval (df = k-2 per rules, NOT k-1)
+  // Prediction interval (df = k-1 per Cochrane Handbook v6.5; matches metafor predict v4+.
+  // IntHout-2016 t_{k-2} is superseded.)
   let pi_lower = null;
   let pi_upper = null;
   if (k >= 3) {
-    const piDF = k - 2;
+    const piDF = k - 1;
     const piTCrit = tQuantile(0.975, piDF);
     const piSE = Math.sqrt(variance + tau2);
     pi_lower = theta - piTCrit * piSE;
@@ -754,7 +755,7 @@ function pauleMandel(studies, options) {
 
   let pi_lower = null, pi_upper = null;
   if (k >= 3) {
-    const piTCrit = tQuantile(0.975, k - 2);
+    const piTCrit = tQuantile(0.975, k - 1);
     const piSE = Math.sqrt(variance + tau2);
     pi_lower = theta - piTCrit * piSE;
     pi_upper = theta + piTCrit * piSE;
@@ -856,7 +857,7 @@ function reml(studies, options) {
 
   let pi_lower = null, pi_upper = null;
   if (k >= 3) {
-    const piTCrit = tQuantile(0.975, k - 2);
+    const piTCrit = tQuantile(0.975, k - 1);
     const piSE = Math.sqrt(variance + tau2);
     pi_lower = theta - piTCrit * piSE;
     pi_upper = theta + piTCrit * piSE;
@@ -1600,7 +1601,7 @@ function displayResults(result) {
     const piU = isLog ? Math.exp(p.pi_upper).toFixed(4) : p.pi_upper.toFixed(4);
     pooledHtml += '<div class="stat-item"><div class="stat-label">Prediction Interval</div>'
       + '<div class="stat-value">[' + piL + ', ' + piU + ']</div>'
-      + '<div class="stat-sub">df = k-2 = ' + (p.k - 2) + '</div></div>';
+      + '<div class="stat-sub">df = k-1 = ' + (p.k - 1) + '</div></div>';
   }
 
   document.getElementById('pooledStats').innerHTML = pooledHtml;
@@ -1763,9 +1764,9 @@ function runValidation() {
     logFail('t-critical df=4', 'got ' + expectedTCrit.toFixed(3) + ', expected ~2.776');
   }
 
-  // --- Test 3: Prediction interval uses t_{k-2} ---
+  // --- Test 3: Prediction interval uses t_{k-1} (Cochrane Handbook v6.5, matches metafor) ---
   logMsg('');
-  logMsg('--- Test 3: Prediction Interval (t_{k-2}) ---');
+  logMsg('--- Test 3: Prediction Interval (t_{k-1}) ---');
   if (dlHKSJ.pi_lower !== null && dlHKSJ.pi_upper !== null) {
     const piWidth = dlHKSJ.pi_upper - dlHKSJ.pi_lower;
     // PI should be wider than CI
@@ -1774,12 +1775,12 @@ function runValidation() {
     } else {
       logFail('PI > CI', 'PI width (' + piWidth.toFixed(4) + ') <= CI width');
     }
-    // Verify uses k-2=3 df (t_0.975,3 ~ 3.182)
-    const piTCrit = tQuantile(0.975, 3);
-    if (approxEq(piTCrit, 3.182, 0.01)) {
-      logPass('PI t-crit df=3', 'got ' + piTCrit.toFixed(3) + ', expected ~3.182');
+    // Verify uses k-1=4 df (t_0.975,4 ~ 2.776) for the 5-study fixture
+    const piTCrit = tQuantile(0.975, 4);
+    if (approxEq(piTCrit, 2.776, 0.01)) {
+      logPass('PI t-crit df=4', 'got ' + piTCrit.toFixed(3) + ', expected ~2.776');
     } else {
-      logFail('PI t-crit df=3', 'got ' + piTCrit.toFixed(3) + ', expected ~3.182');
+      logFail('PI t-crit df=4', 'got ' + piTCrit.toFixed(3) + ', expected ~2.776');
     }
   } else {
     logFail('PI computed', 'Prediction interval not computed');

@@ -17,13 +17,16 @@ One complete, publishable living meta-analysis delivered end-to-end.
 
 ## Structure
 
-- `/core` -- MetaEngine, TruthCert, provenance store, disagreement queue
-- `/harvesters` -- CT.gov harvester, cardiology classifier, results extractor
-- `/validators` -- 10 validation modules (arm swap, timepoint drift, etc.)
-- `/synthesis` -- Dashboard, NMA engine, bias quantifier
-- `/phase0` -- Colchicine-STEMI deliverables
+- `/core` -- MetaEngine, TruthCert (10 validators), provenance store, disagreement queue, update engine
+- `/harvesters` -- CT.gov harvester, results extractor
+- `/synthesis` -- bias quantifier, portfolio aggregator
+- `/phase0` -- Colchicine-STEMI deliverable
+- `/tests` -- pytest static-artifact contracts
+- `/docs` -- methodology, validation report, reference published MAs
 
-## Tools (14,827 lines, 9 HTML files)
+The 10 TruthCert validators (arm swap, timepoint drift, etc.) are implemented inside `core/truthcert.html`, not as separate files.
+
+## Tools (18,052 lines, 10 HTML files)
 
 | Tool | Lines | Purpose |
 |------|-------|---------|
@@ -32,12 +35,21 @@ One complete, publishable living meta-analysis delivered end-to-end.
 | `core/truthcert.html` | 1,522 | 10-validator suite (23 documented validation checks) |
 | `core/provenance-store.html` | 1,494 | Audit trail + chain of custody (36 documented validation checks) |
 | `core/disagreement-queue.html` | 1,501 | Two-agent arbitration UI |
-| `core/metaengine.html` | 2,016 | DS-L/HKSJ engine + SVG forest plots (29 documented validation checks) |
+| `core/metaengine.html` | 2,031 | DS-L/HKSJ engine + SVG forest plots (29 documented validation checks) |
 | `core/update-engine.html` | 1,480 | Living update + synthesis versioning |
 | `synthesis/bias-quantifier.html` | 1,135 | Non-posting bias, ORBI, Egger's (46 documented validation checks) |
-| `phase0/colchicine-stemi.html` | 3,222 | Master dashboard (Phase 0 deliverable) |
+| `synthesis/portfolio-aggregator.html` | 219 | Read-only cross-portfolio meta-view (offline, zero-dependency) |
+| `phase0/colchicine-stemi.html` | 6,213 | Master dashboard (Phase 0 deliverable) |
 
-These counts refer to validation checks summarized in `docs/validation-report.md`. A standalone committed automated test harness is still a separate TODO.
+The validation-check counts above refer to the in-page self-tests summarized in `docs/validation-report.md`. A committed static-contract test harness lives in `/tests`.
+
+## Tests
+
+```
+python -m pytest
+```
+
+Static-artifact contracts assert README claims are backed by real files, the validation report covers core methods, key dashboards expose expected markers, and all local asset links resolve.
 
 ## Status
 

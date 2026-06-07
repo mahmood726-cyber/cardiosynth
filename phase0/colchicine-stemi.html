@@ -2440,7 +2440,7 @@ function derSimonianLaird(studies, options) {
 
   var pi_lower = null, pi_upper = null;
   if (k >= 3) {
-    var piDF = k - 2;
+    var piDF = k - 1; // Cochrane Handbook v6.5 (matches metafor predict v4+); t_{k-2} superseded
     var piTCrit = tQuantile(1 - alpha / 2, piDF);
     var piSE = Math.sqrt(variance + tau2);
     pi_lower = theta - piTCrit * piSE;

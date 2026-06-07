@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="CardioSynth Portfolio Aggregator — read-only meta-view of 57 independent living MA apps">
 <title>CardioSynth Portfolio Aggregator</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{background:#020617;color:#f1f5f9;font-family:system-ui,-apple-system,sans-serif;min-height:100vh;padding:32px 20px}
@@ -42,7 +41,7 @@ footer{margin-top:32px;padding-top:20px;border-top:1px solid #1e293b;text-align:
 </head>
 <body>
 <div class="container">
-  <h1><i class="fa-solid fa-network-wired" style="margin-right:8px"></i>CardioSynth Portfolio Aggregator</h1>
+  <h1><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;vertical-align:-3px"><rect x="9" y="2" width="6" height="6" rx="1"></rect><rect x="2" y="16" width="6" height="6" rx="1"></rect><rect x="16" y="16" width="6" height="6" rx="1"></rect><path d="M12 8v4M12 12H5v4M12 12h7v4"></path></svg>CardioSynth Portfolio Aggregator</h1>
   <p class="subtitle">Cross-portfolio meta-view of independent living MA apps</p>
 
   <div class="notice">
@@ -192,7 +191,7 @@ function renderTable() {
       <td>${a.pooled}</td>
       <td>${a.bench}</td>
       <td>${drBadge}${nmaBadge}${okBadge}</td>
-      <td><a href="${a.url}" target="_blank" rel="noopener" class="app-link"><i class="fa-solid fa-external-link"></i></a></td>
+      <td><a href="${a.url}" target="_blank" rel="noopener" class="app-link"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path></svg></a></td>
     </tr>`;
   }).join('');
 }

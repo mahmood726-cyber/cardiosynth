@@ -20,7 +20,7 @@ Test data: 5 studies with known effect sizes and variances.
 
 - Uses t-distribution with df=k-1 (NOT z-distribution)
 - HKSJ floor applied: max(1, Q/(k-1)) when Q < k-1
-- Prediction interval uses t_{k-2} per Higgins-Thompson-Spiegelhalter 2009
+- Prediction interval uses t_{k-1} per Cochrane Handbook v6.5 (matches metafor `predict` v4+; IntHout-2016 t_{k-2} superseded)
 
 Verified: t-critical values match R qt():
 - df=4: JS=2.7764, R=2.7764
