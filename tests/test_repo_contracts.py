@@ -142,3 +142,17 @@ def test_validation_report_documents_tk1_prediction_interval() -> None:
     # If the superseded t_{k-2} is mentioned at all, it must be flagged as superseded.
     if "t_{k-2}" in report:
         assert "superseded" in report
+
+
+def test_index_landing_page_links_resolve() -> None:
+    """Root index.html (GitHub Pages landing) must link only to files that exist."""
+    index = REPO_ROOT / "index.html"
+    assert index.is_file(), "missing root index.html landing page"
+    html = index.read_text(encoding="utf-8")
+    missing: list[str] = []
+    for target in re.findall(r'href="([^"]+)"', html):
+        if target.startswith(("http://", "https://", "#", "mailto:")):
+            continue
+        if not (REPO_ROOT / target).exists():
+            missing.append(target)
+    assert not missing, f"broken landing-page links: {missing}"

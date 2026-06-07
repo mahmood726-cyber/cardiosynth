@@ -3,6 +3,8 @@
 Browser-native, zero-dependency, provenance-tracked living meta-analysis engine for cardiology.
 Draws exclusively on ClinicalTrials.gov structured results data.
 
+**Live:** https://mahmood726-cyber.github.io/cardiosynth/
+
 ## Phase 0: Colchicine post-STEMI
 
 One complete, publishable living meta-analysis delivered end-to-end.

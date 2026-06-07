@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="CardioSynth — browser-native, zero-dependency living cardiology meta-analysis engine. Phase 0: Colchicine post-STEMI.">
+<meta property="og:title" content="CardioSynth: Living Cardiology Evidence Synthesis Engine">
+<meta property="og:description" content="Browser-native, provenance-tracked living meta-analysis engine for cardiology. Draws exclusively on ClinicalTrials.gov structured results data.">
+<meta property="og:type" content="website">
+<title>CardioSynth — Living Cardiology Evidence Synthesis Engine</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#020617;color:#f1f5f9;font-family:system-ui,-apple-system,sans-serif;min-height:100vh;padding:40px 20px;line-height:1.5}
+.container{max-width:1100px;margin:0 auto}
+h1{font-size:32px;font-weight:800;background:linear-gradient(135deg,#3b82f6,#8b5cf6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+.tagline{font-size:15px;color:#94a3b8;margin-bottom:6px}
+.sub{font-size:13px;color:#64748b;margin-bottom:28px}
+.notice{background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:12px;padding:14px 18px;margin-bottom:28px;font-size:12px;color:#94a3b8}
+.notice strong{color:#60a5fa}
+h2{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#64748b;margin:24px 0 12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+a.card{display:block;background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:16px 18px;text-decoration:none;transition:all 0.2s}
+a.card:hover{border-color:rgba(59,130,246,0.4);background:#111c33;transform:translateY(-2px)}
+.card-title{font-size:15px;font-weight:700;color:#f1f5f9;margin-bottom:4px}
+.card-desc{font-size:12px;color:#94a3b8}
+.featured{grid-column:1/-1;border-color:rgba(139,92,246,0.4);background:linear-gradient(135deg,rgba(59,130,246,0.08),rgba(139,92,246,0.08))}
+footer{margin-top:40px;padding-top:20px;border-top:1px solid #1e293b;font-size:11px;color:#475569}
+footer a{color:#60a5fa;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>CardioSynth</h1>
+  <p class="tagline">Living Cardiology Evidence Synthesis Engine</p>
+  <p class="sub">Browser-native &middot; zero-dependency &middot; provenance-tracked &middot; ClinicalTrials.gov structured results only</p>
+
+  <div class="notice">
+    <strong>How it works.</strong> Each tool is a single self-contained HTML file that runs entirely in your browser with no server, build step, or external dependency. Numbers pass fail-closed TruthCert validation; pooling uses DerSimonian&ndash;Laird random effects with HKSJ correction, validated against R&nbsp;metafor.
+  </div>
+
+  <h2>Phase 0 deliverable</h2>
+  <div class="grid">
+    <a class="card featured" href="phase0/colchicine-stemi.html">
+      <div class="card-title">Colchicine post-STEMI &mdash; master dashboard</div>
+      <div class="card-desc">Complete end-to-end living meta-analysis: harvest &rarr; extract &rarr; validate &rarr; pool &rarr; forest plot &rarr; narrative synthesis.</div>
+    </a>
+  </div>
+
+  <h2>Core engine</h2>
+  <div class="grid">
+    <a class="card" href="core/metaengine.html"><div class="card-title">MetaEngine</div><div class="card-desc">DS-L / HKSJ pooling, prediction intervals (t<sub>k-1</sub>), SVG forest plots.</div></a>
+    <a class="card" href="core/truthcert.html"><div class="card-title">TruthCert</div><div class="card-desc">10-validator fail-closed suite (arm swap, timepoint drift, outcome switching&hellip;).</div></a>
+    <a class="card" href="core/provenance-store.html"><div class="card-title">Provenance Store</div><div class="card-desc">Audit trail and chain of custody for every extracted number.</div></a>
+    <a class="card" href="core/disagreement-queue.html"><div class="card-title">Disagreement Queue</div><div class="card-desc">Two-agent extraction arbitration UI.</div></a>
+    <a class="card" href="core/update-engine.html"><div class="card-title">Update Engine</div><div class="card-desc">Living update protocol and SHA-256 synthesis versioning.</div></a>
+  </div>
+
+  <h2>Harvesters</h2>
+  <div class="grid">
+    <a class="card" href="harvesters/ct-harvester.html"><div class="card-title">CT.gov Harvester</div><div class="card-desc">ClinicalTrials.gov API v2 search with cardiology filter.</div></a>
+    <a class="card" href="harvesters/results-extractor.html"><div class="card-title">Results Extractor</div><div class="card-desc">Structured results parser into standardized extraction objects.</div></a>
+  </div>
+
+  <h2>Synthesis &amp; bias</h2>
+  <div class="grid">
+    <a class="card" href="synthesis/bias-quantifier.html"><div class="card-title">Bias Quantifier</div><div class="card-desc">Non-posting bias, ORBI, Egger's radial test, funnel plot (k&ge;10).</div></a>
+    <a class="card" href="synthesis/portfolio-aggregator.html"><div class="card-title">Portfolio Aggregator</div><div class="card-desc">Read-only cross-portfolio meta-view of independent living MA apps.</div></a>
+  </div>
+
+  <footer>
+    Source &amp; methodology on <a href="https://github.com/mahmood726-cyber/cardiosynth">GitHub</a>.
+    Statistical methods documented in <code>docs/validation-report.md</code>, validated against R metafor to |&Delta;|&nbsp;&lt;&nbsp;0.0001.
+  </footer>
+</div>
+</body>
+</html>
