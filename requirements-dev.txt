@@ -1,0 +1,7 @@
+# Test/dev dependencies for cardiosynth.
+# The tools themselves are zero-dependency offline HTML; these are only needed
+# to run the pytest contract + numeric-engine suite.
+#   pip install -r requirements-dev.txt
+# The numeric engine tests (tests/test_engine_numeric.py) also require Node.js
+# on PATH; they skip cleanly if Node is absent.
+pytest>=7.0

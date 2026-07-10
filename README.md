@@ -48,10 +48,11 @@ The validation-check counts above refer to the in-page self-tests summarized in 
 ## Tests
 
 ```
+pip install -r requirements-dev.txt
 python -m pytest
 ```
 
-Static-artifact contracts assert README claims are backed by real files, the validation report covers core methods, key dashboards expose expected markers, and all local asset links resolve.
+Static-artifact contracts assert README claims are backed by real files, the validation report covers core methods, key dashboards expose expected markers, and all local asset links resolve. Numeric-engine regression tests (`tests/test_engine_numeric.py`) execute the actual MetaEngine JS pooling functions headless under Node.js and lock in the Q-based I2/H2 heterogeneity formulas; they skip cleanly when Node.js is not on PATH.
 
 ## Status
 

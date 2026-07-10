@@ -647,10 +647,13 @@ function derSimonianLaird(studies, options) {
     : 2 * (1 - normalCDF(Math.abs(zTest)));
 
   const tau = Math.sqrt(tau2);
-  const typicalVariance = variance;
-  const I2 = tau2 > 0 ? (tau2 / (tau2 + typicalVariance)) * 100 : 0;
+  // I2/H2 use the Higgins-Thompson "typical within-study variance" (s2), NOT
+  // the RE pooled variance (1/sumWiStar). For the DL estimator this reduces
+  // exactly to the Q-based forms I2=(Q-df)/Q and H2=Q/df (matches metafor
+  // rma method="DL"). stateI2 is the Q-based value from computeMAState.
+  const I2 = stateI2;
   const I2CI = i2ConfidenceInterval(fe.Q, k);
-  const H2 = tau2 > 0 ? 1 + tau2 / typicalVariance : 1;
+  const H2 = k > 1 ? fe.Q / (k - 1) : 1;
 
   return {
     model: 'RE-DL', k, theta, se, variance,
@@ -761,7 +764,14 @@ function pauleMandel(studies, options) {
     pi_upper = theta + piTCrit * piSE;
   }
 
-  const I2 = tau2 > 0 ? (tau2 / (tau2 + variance)) * 100 : 0;
+  // I2 denominator = Higgins-Thompson typical within-study variance (s2) from
+  // FE weights, NOT the RE pooled variance (1/sumWiStar). Estimator-agnostic:
+  // s2 = (k-1)*sum(wfe) / (sum(wfe)^2 - sum(wfe^2)), wfe = 1/vi.
+  const sumWfe = validStudies.reduce(function(a, s) { return a + 1 / s.vi; }, 0);
+  const sumW2fe = validStudies.reduce(function(a, s) { return a + 1 / (s.vi * s.vi); }, 0);
+  const s2Typical = (k > 1 && sumWfe * sumWfe > sumW2fe)
+    ? (k - 1) * sumWfe / (sumWfe * sumWfe - sumW2fe) : 0;
+  const I2 = (tau2 > 0 && s2Typical > 0) ? (tau2 / (tau2 + s2Typical)) * 100 : 0;
 
   return {
     model: 'RE-PM', estimator: 'Paule-Mandel',
@@ -863,7 +873,13 @@ function reml(studies, options) {
     pi_upper = theta + piTCrit * piSE;
   }
 
-  const I2 = tau2 > 0 ? (tau2 / (tau2 + variance)) * 100 : 0;
+  // I2 denominator = Higgins-Thompson typical within-study variance (s2) from
+  // FE weights, NOT the RE pooled variance (1/sumWiStar). Matches metafor.
+  const sumWfe = validStudies.reduce(function(a, s) { return a + 1 / s.vi; }, 0);
+  const sumW2fe = validStudies.reduce(function(a, s) { return a + 1 / (s.vi * s.vi); }, 0);
+  const s2Typical = (k > 1 && sumWfe * sumWfe > sumW2fe)
+    ? (k - 1) * sumWfe / (sumWfe * sumWfe - sumW2fe) : 0;
+  const I2 = (tau2 > 0 && s2Typical > 0) ? (tau2 / (tau2 + s2Typical)) * 100 : 0;
   const I2CI = i2ConfidenceInterval(dlResult.Q, k);
 
   const zTest = theta / se;
